@@ -281,30 +281,54 @@
     var baseUnit = (baseUnitOverride != null) ? baseUnitOverride : style.baseUnit;
     var eq = doc.createElementNS(HP_NS, 'hp:equation');
     eq.setAttribute('id', id);
-    eq.setAttribute('type', '0');
+    eq.setAttribute('zOrder', '0');
+    // numberingType="EQUATION" 은 한글 수식 편집기로 직접 삽입할 때의 기본값.
+    // textWrap/textFlow/lock/dropcapstyle 은 한글이 누락 시 채워 넣는 기본값이지만,
+    // 처음부터 명시해 두지 않으면 한글이 수식 개체 전체를 옛 엔진 호환으로 취급해
+    // 폭/높이 재계산 전까지 잘못된 모양으로 그린다.
+    eq.setAttribute('numberingType', 'EQUATION');
+    eq.setAttribute('textWrap', 'TOP_AND_BOTTOM');
+    eq.setAttribute('textFlow', 'BOTH_SIDES');
+    eq.setAttribute('lock', '0');
+    eq.setAttribute('dropcapstyle', 'None');
+    // version="Equation Version 60" 이 핵심. 비어 있으면 한글이 구버전 수식 엔진
+    // (3.0) 으로 렌더링해 모양이 깨지고, 사용자가 수식 편집기를 한 번 열어 닫아야
+    // 한글이 이 속성을 채우면서 새 엔진(6.0)으로 다시 그린다.
+    eq.setAttribute('version', 'Equation Version 60');
+    eq.setAttribute('baseLine', '0');
     eq.setAttribute('textColor', style.textColor);
     eq.setAttribute('baseUnit', String(baseUnit));
-    eq.setAttribute('letterSpacing', String(style.letterSpacing));
-    eq.setAttribute('lineThickness', String(style.lineThickness));
-    eq.setAttribute('baseLine', '0');
+    eq.setAttribute('lineMode', 'CHAR');
     eq.setAttribute('font', EQUATION_FONT);
 
     var sz = doc.createElementNS(HP_NS, 'hp:sz');
     sz.setAttribute('width', '0');
     sz.setAttribute('height', '0');
-    sz.setAttribute('widthRelTo', 'ABS');
-    sz.setAttribute('heightRelTo', 'ABS');
+    sz.setAttribute('widthRelTo', 'ABSOLUTE');
+    sz.setAttribute('heightRelTo', 'ABSOLUTE');
+    sz.setAttribute('protect', '0');
     eq.appendChild(sz);
 
     var pos = doc.createElementNS(HP_NS, 'hp:pos');
     var posAttrs = [
-      ['treatAsChar', '1'], ['affectLSpacing', '0'], ['flowWithText', '0'],
-      ['allowOverlap', '0'], ['holdAnchorAndSO', '0'], ['rgroupWithPrevCtrl', '0'],
+      ['treatAsChar', '1'], ['affectLSpacing', '0'], ['flowWithText', '1'],
+      ['allowOverlap', '0'], ['holdAnchorAndSO', '0'],
       ['vertRelTo', 'PARA'], ['horzRelTo', 'PARA'], ['vertAlign', 'TOP'],
       ['horzAlign', 'LEFT'], ['vertOffset', '0'], ['horzOffset', '0']
     ];
     for (var i = 0; i < posAttrs.length; i++) pos.setAttribute(posAttrs[i][0], posAttrs[i][1]);
     eq.appendChild(pos);
+
+    var outMargin = doc.createElementNS(HP_NS, 'hp:outMargin');
+    outMargin.setAttribute('left', '0');
+    outMargin.setAttribute('right', '0');
+    outMargin.setAttribute('top', '0');
+    outMargin.setAttribute('bottom', '0');
+    eq.appendChild(outMargin);
+
+    var shapeComment = doc.createElementNS(HP_NS, 'hp:shapeComment');
+    shapeComment.appendChild(doc.createTextNode('수식입니다.'));
+    eq.appendChild(shapeComment);
 
     var sc = doc.createElementNS(HP_NS, 'hp:script');
     sc.appendChild(doc.createTextNode((script || '').trim()));

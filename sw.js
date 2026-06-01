@@ -15,7 +15,7 @@
  * 로직을 고칠 때 CACHE_VERSION을 올리면 사용자 브라우저가 새 셸을 받는다.
  */
 
-var CACHE_VERSION = 'v1-2026-05-29';
+var CACHE_VERSION = 'v1-2026-06-01';
 var CACHE_NAME = 'whip-app-shell-' + CACHE_VERSION;
 
 var APP_SHELL = [
