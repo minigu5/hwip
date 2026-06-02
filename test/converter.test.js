@@ -145,6 +145,20 @@ test('\\boxed → {BOX{...}} 변환', () => {
   );
 });
 
+test('손실된 위첨자 별표 복원: ^$, ^_, [A-Z]^(복잡한 본문)', () => {
+  // 수식 종료 직전의 빈 위첨자 — 항상 별표 손실로 본다.
+  assert.strictEqual(convert('$N^$'), 'N ^{*}');
+  // 빈 위첨자 + 아래첨자 — 항상 별표 손실로 본다.
+  assert.strictEqual(convert('$N^_0$'), 'N ^{*} _{0}');
+  // 대문자 변수 + ^(복잡한 본문) — 별표 손실로 본다.
+  assert.strictEqual(convert('$N^(t + \\tau)$'), 'N ^{*} (t `+` tau)');
+  // 영문자 1~2자 ^(letter) 패턴은 기존대로 복원.
+  assert.strictEqual(convert('$N^(t)$'), 'N ^{*} (t)');
+  // 소문자 변수 + ^(복잡한 본문) 은 손대지 않는다 (e^(x+y) 같은 비형식 표기 보호).
+  // 별표가 들어가지 않은 채 본문이 위첨자 그룹으로 해석되는 기존 동작 유지.
+  assert.strictEqual(convert('$e^(x+y)$'), 'e ^{(} x `+` y)');
+});
+
 test('오류 케이스: n in N Rarr n geq 1 특수 띄어쓰기 및 대문자 매핑', () => {
   assert.strictEqual(
     convert('$$n \\in \\mathbb { N } \\Rarr n \\geq 1$$'),
