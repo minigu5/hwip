@@ -20,9 +20,7 @@
   var modalStepSolutions = document.getElementById('modalStepSolutions');
   var showSolutionsBtn = document.getElementById('showSolutionsBtn');
   var modalDismissBtn = document.getElementById('modalDismissBtn');
-  var modalBackBtn = document.getElementById('modalBackBtn');
   var modalDoneBtn = document.getElementById('modalDoneBtn');
-  var modalHideCheckbox = document.getElementById('modalHideTodayCheckbox');
   var promptCopyBtn = document.getElementById('promptCopyBtn');
   var gotoOcrBtn = document.getElementById('gotoOcrBtn');
   var solutionTabs = modal.querySelectorAll('.solution-tab');
@@ -34,21 +32,8 @@
   var autoCopyTimer = null;
   var hintTimer = null;
 
-  var HIDE_WARNING_KEY = 'latexToHwp_hideWarningUntil';
-
-  function shouldShowWarning() {
-    var hideUntil = localStorage.getItem(HIDE_WARNING_KEY);
-    if (!hideUntil) return true;
-    return Date.now() > parseInt(hideUntil, 10);
-  }
-
   function hideWarningModal() {
     modal.classList.remove('show');
-    if (modalHideCheckbox.checked) {
-      // Set to hide for 24 hours
-      var tomorrow = Date.now() + 24 * 60 * 60 * 1000;
-      localStorage.setItem(HIDE_WARNING_KEY, tomorrow.toString());
-    }
   }
 
   function showModalStep(step) {
@@ -69,8 +54,6 @@
   }
 
   function showWarningModal() {
-    if (!shouldShowWarning()) return;
-    modalHideCheckbox.checked = false;
     showModalStep('warn');
     selectSolution('1');
     modal.classList.add('show');
@@ -94,7 +77,6 @@
   }
 
   showSolutionsBtn.addEventListener('click', function () { showModalStep('solutions'); });
-  modalBackBtn.addEventListener('click', function () { showModalStep('warn'); });
   modalDismissBtn.addEventListener('click', hideWarningModal);
   modalDoneBtn.addEventListener('click', hideWarningModal);
 

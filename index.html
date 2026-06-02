@@ -397,20 +397,8 @@
     .modal-primary-btn { width: 100%; padding: 12px; font-size: 0.98rem; }
     .modal-dismiss-btn { width: 100%; padding: 9px; }
     .modal-dismiss-btn:disabled { color: var(--muted); cursor: not-allowed; opacity: 0.6; }
-    .modal-checkbox-wrapper {
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      font-size: 0.82rem; color: var(--muted); cursor: pointer; margin-top: 2px;
-    }
 
     /* 모달 — 해결 방안 단계 */
-    .modal-back {
-      position: absolute; top: 16px; left: 14px;
-      border: none; background: none; cursor: pointer;
-      color: var(--muted); font-size: 0.85rem; font-weight: 600;
-      padding: 5px 8px; border-radius: 7px;
-      transition: color 0.15s, background 0.15s;
-    }
-    .modal-back:hover { color: var(--text); background: var(--code-bg); }
     .solutions-title { margin-top: 6px; }
     .solution-tabs {
       display: flex; gap: 5px; margin: 16px 0 18px;
@@ -693,7 +681,6 @@
 
       <!-- 2단계: 해결 방안 -->
       <div class="modal-step" id="modalStepSolutions" hidden>
-        <button class="modal-back" id="modalBackBtn" type="button">← 뒤로</button>
         <h2 class="modal-title solutions-title">3가지 해결 방법</h2>
 
         <div class="solution-tabs" role="tablist">
@@ -735,9 +722,6 @@
 
         <div class="solutions-footer">
           <button class="btn modal-close-btn" id="modalDoneBtn" type="button">닫기</button>
-          <label class="modal-checkbox-wrapper">
-            <input type="checkbox" id="modalHideTodayCheckbox"> 오늘 하루 보지 않기
-          </label>
         </div>
       </div>
 
