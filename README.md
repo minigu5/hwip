@@ -15,6 +15,43 @@ LaTeX와 한글 수식 편집기는 문법이 서로 호환되지 않아, AI가 
 open index.html        # macOS  
 ```
 
+### REST API
+
+별도 설치 없이 HTTP로 바로 쓸 수 있습니다.
+
+**엔드포인트**: `POST https://hwip.vercel.app/api/convert`
+
+```bash
+curl -X POST https://hwip.vercel.app/api/convert \
+  -H "Content-Type: application/json" \
+  -d '{"latex": "$$\\frac{2\\pi}{24}$$"}'
+# → {"result":"{2 pi} over {24}"}
+```
+
+```js
+const res = await fetch('https://hwip.vercel.app/api/convert', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ latex: '$$\\frac{2\\pi}{24}$$' }),
+});
+const { result } = await res.json();
+// result → "{2 pi} over {24}"
+```
+
+간단한 테스트는 GET도 됩니다:
+
+```
+GET https://hwip.vercel.app/api/convert?latex=\frac{a}{b}
+```
+
+| 항목 | 내용 |
+|------|------|
+| 메서드 | `POST` (권장) · `GET` |
+| 요청 본문 | `{ "latex": "<LaTeX 문자열>" }` |
+| 응답 (성공) | `{ "result": "<한글 수식>" }` |
+| 응답 (오류) | `{ "error": "<메시지>" }` |
+| CORS | 전체 허용 (`*`) |
+
 ### 코드에서 직접
 
 ```js

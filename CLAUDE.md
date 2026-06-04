@@ -55,6 +55,8 @@ index.html              메인 UI (탭 2개: 텍스트 변환 / 파일 변환)
 privacy.html            개인정보 처리방침 페이지
 app.js                  UI 이벤트, OCR 흐름, 파일 변환 흐름
 sw.js                   Service Worker — 앱 쉘 캐시·오프라인 지원
+api/
+  convert.js            Vercel 서버리스 함수 — REST API 엔드포인트 (POST /api/convert)
 src/
   converter.js          LaTeX → 한글 수식 변환 엔진 (순수 함수, window.LatexToHwp)
   hwpx-convert.js       HWPX(ZIP+XML) 파싱·수식 개체 삽입·재압축 (window.HwpxConvert)
@@ -114,7 +116,7 @@ CONVERSION_RULES.md     LaTeX → 한글 수식 전체 매핑 규칙 (스펙 기
 
 ## 이미지 OCR (브라우저 로컬)
 
-수식 이미지 → LaTeX 인식까지 **접속자 브라우저에서** 처리하고, 그 LaTeX를 `window.LatexToHwp.convert`에 그대로 넘긴다. **서버리스 함수는 쓰지 않는다** — `vercel.json`은 정적 서빙 그대로.
+수식 이미지 → LaTeX 인식까지 **접속자 브라우저에서** 처리하고, 그 LaTeX를 `window.LatexToHwp.convert`에 그대로 넘긴다. OCR 자체는 서버리스 함수를 쓰지 않는다(모델 추론이 브라우저 WASM에서 실행됨). 변환 로직은 `api/convert.js` REST API로도 별도 제공한다.
 
 - **모델**: `alephpi/FormulaNet` (PP-FormulaNet-S 파인튜닝, 20M, `image-to-text` ONNX). 라이선스 **AGPL-3.0** — 호스팅 시 소스 공개 의무 유의.
 - **런타임**: `@huggingface/transformers`(transformers.js v3)를 CDN ESM으로 로드. 추론은 Web Worker `src/ocr-worker.js`에서 별도 스레드로 수행.
@@ -150,6 +152,17 @@ HWP/HWPX 파일을 업로드하면 브라우저 안에서 LaTeX 수식을 한컴
 - **캐시 무효화**: `CACHE_VERSION` 상수를 올리면 사용자 브라우저가 새 셸을 받는다. 앱 쉘 목록(`APP_SHELL`)이나 변환 로직을 고칠 때 함께 올린다.
 - **오프라인 배너**: `index.html`이 `navigator.onLine`/`online`/`offline` 이벤트로 상단에 "⚠️ 오프라인" 배너를 슬라이드 표시.
 
+## REST API
+
+외부 개발자가 변환기를 HTTP로 사용할 수 있도록 Vercel 서버리스 함수(`api/convert.js`)로 노출한다.
+
+- **엔드포인트**: `POST https://hwip.vercel.app/api/convert`
+- **요청**: `{ "latex": "<LaTeX 문자열>" }` (Content-Type: application/json)
+- **응답**: `{ "result": "<한글 수식>" }` 또는 `{ "error": "..." }`
+- GET `?latex=...` 쿼리 파라미터도 지원 (브라우저 테스트용)
+- CORS 전체 허용(`*`). `api/convert.js`가 직접 헤더를 설정하며 `vercel.json`은 수정하지 않는다.
+- 내부적으로 `src/converter.js`의 `convert()` 함수를 그대로 `require`해 사용하므로 로직을 한 곳에서만 관리한다.
+
 ## 개발 방침
 
 - 변환 로직은 순수 함수로 작성하고 골든 테스트 케이스 모음을 함께 유지한다.
@@ -157,3 +170,4 @@ HWP/HWPX 파일을 업로드하면 브라우저 안에서 LaTeX 수식을 한컴
 - 커밋·푸시는 사용자가 요청할 때만 한다.
 - `src/converter.js` 수정 시 `chrome-extension/lib/converter.js`도 함께 동기화한다.
 - 앱 쉘 자원(HTML/JS/CSS/벤더) 추가·삭제 시 `sw.js`의 `APP_SHELL`과 `CACHE_VERSION`을 함께 갱신.
+- `api/convert.js`는 변환 로직을 직접 구현하지 않고 `src/converter.js`에만 의존한다 — 중복 구현 금지.
