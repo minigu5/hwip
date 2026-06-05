@@ -14,7 +14,7 @@
   var clearBtn = document.getElementById('clearBtn');
   var copyHint = document.getElementById('copyHint');
 
-  // Modal elements
+  // Modal elements — 렌더링된 수식 경고
   var modal = document.getElementById('warningModal');
   var modalStepWarn = document.getElementById('modalStepWarn');
   var modalStepSolutions = document.getElementById('modalStepSolutions');
@@ -27,6 +27,12 @@
   var solutionPanels = modal.querySelectorAll('.solution-panel');
   var modalDismissTimer = null;
 
+  // Modal elements — $$ 없는 LaTeX 경고
+  var noDelimModal = document.getElementById('noDelimiterModal');
+  var noDelimDismissBtn = document.getElementById('noDelimDismissBtn');
+  var noDelimPromptCopyBtn = document.getElementById('noDelimPromptCopyBtn');
+  var NO_DELIM_PROMPT = 'LaTeX 수식은 $$ 기호로 감싸서 다시 작성해줘. 예시 : $$\\nabla \\cdot \\mathbf{u} = 0$$';
+
   var DEFAULT_HINT = copyHint.textContent;
   var PLACEHOLDER = '<span class="placeholder">수식을 입력하면 여기에 렌더링됩니다.</span>';
   var autoCopyTimer = null;
@@ -34,6 +40,14 @@
 
   function hideWarningModal() {
     modal.classList.remove('show');
+  }
+
+  function hideNoDelimiterModal() {
+    noDelimModal.classList.remove('show');
+  }
+
+  function showNoDelimiterModal() {
+    noDelimModal.classList.add('show');
   }
 
   function showModalStep(step) {
@@ -79,6 +93,21 @@
   showSolutionsBtn.addEventListener('click', function () { showModalStep('solutions'); });
   modalDismissBtn.addEventListener('click', hideWarningModal);
   modalDoneBtn.addEventListener('click', hideWarningModal);
+
+  noDelimDismissBtn.addEventListener('click', hideNoDelimiterModal);
+  noDelimModal.addEventListener('click', function (e) {
+    if (e.target === noDelimModal) hideNoDelimiterModal();
+  });
+
+  if (noDelimPromptCopyBtn) {
+    noDelimPromptCopyBtn.addEventListener('click', function () {
+      copyText(NO_DELIM_PROMPT, function () {
+        var original = noDelimPromptCopyBtn.textContent;
+        noDelimPromptCopyBtn.textContent = '복사됨!';
+        setTimeout(function () { noDelimPromptCopyBtn.textContent = original; }, 1200);
+      });
+    });
+  }
 
   for (var ti = 0; ti < solutionTabs.length; ti++) {
     (function (tab) {
@@ -138,6 +167,14 @@
     }
     
     return false;
+  }
+
+  // $$ / $ / \[ / \( 구분자 없이 LaTeX 명령(\frac, \mu 등)이 있는지 감지
+  function isLikelyUndelimitedLatex(text) {
+    if (!text || text.trim().length === 0) return false;
+    var t = text.trim();
+    if (/^\$\$/.test(t) || /^\$/.test(t) || /^\\\[/.test(t) || /^\\\(/.test(t)) return false;
+    return /\\[a-zA-Z]{2,}/.test(t);
   }
 
   var isPasting = false;
@@ -267,6 +304,7 @@
   function render() {
     var val = input.value;
     var isRendered = isLikelyRenderedMath(val);
+    var isUndelimited = !isRendered && isLikelyUndelimitedLatex(val);
 
     if (isRendered) {
       if (isPasting) {
@@ -286,6 +324,10 @@
       var result = window.LatexToHwp.convert(val);
       output.textContent = result;
       renderPreview(val);
+
+      if (isUndelimited && isPasting) {
+        showNoDelimiterModal();
+      }
 
       // 변환되면 자동으로 클립보드에 복사 (입력이 멈춘 뒤)
       clearTimeout(autoCopyTimer);
@@ -628,6 +670,7 @@
         if (text.trim()) {
           e.preventDefault();
           input.value = text;
+          isPasting = true;
           input.dispatchEvent(new Event('input'));
           input.focus();
         }
@@ -694,19 +737,37 @@
     if (fileResultUrl) URL.revokeObjectURL(fileResultUrl);
     fileResultUrl = URL.createObjectURL(blob);
 
-    var hasEq = stats.equations > 0;
-    var metaParts = ['수식 ' + stats.equations + '개 변환'];
+    var forcedEq = stats.forcedEquations || 0;
+    var normalEq = stats.equations - forcedEq;
+    var hasAny = stats.equations > 0;
+
+    var metaParts = [];
+    if (normalEq > 0) metaParts.push('수식 ' + normalEq + '개 변환');
+    if (forcedEq > 0) metaParts.push('강제 변환 ' + forcedEq + '개');
     if (stats.sectionsChanged > 0) metaParts.push('섹션 ' + stats.sectionsChanged + '개 수정');
     if (stats.skippedNumericDollars > 0) metaParts.push('금액 ' + stats.skippedNumericDollars + '개 유지');
 
     var html = '';
-    if (hasEq) {
-      html += '<div class="conv-summary">' +
-        '<span class="conv-check">✓</span>' +
+    if (hasAny) {
+      var summaryClass = (forcedEq > 0 && normalEq === 0) ? 'no-eq' : '';
+      var checkIcon = (forcedEq > 0 && normalEq === 0) ? '⚠' : '✓';
+      html += '<div class="conv-summary ' + summaryClass + '">' +
+        '<span class="conv-check">' + checkIcon + '</span>' +
         '<span class="conv-fname">' + escHtml(filename) + '</span>' +
         '<span class="conv-meta">' + metaParts.join(' · ') + '</span>' +
         '</div>';
       html += '<a class="dl-btn" href="' + fileResultUrl + '" download="' + escHtml(filename) + '">변환된 파일 다운로드</a>';
+
+      if (forcedEq > 0) {
+        html += '<div class="hwp-notice" style="margin-top:12px;">' +
+          '<b>⚠ 강제 변환 경고</b><br>' +
+          '문서에서 <b>$$</b> 없이 작성된 LaTeX ' + forcedEq + '개를 강제로 변환했습니다. ' +
+          '정확도가 떨어질 수 있으니 아래 프롬프트로 AI에게 다시 요청하세요.<br>' +
+          '<div class="prompt-box" style="margin-top:10px;">' +
+          '<strong class="prompt-text">' + escHtml(NO_DELIM_PROMPT) + '</strong>' +
+          '<button class="btn prompt-copy-btn" id="fileNoDelimCopyBtn" type="button">복사</button>' +
+          '</div></div>';
+      }
     } else {
       html += '<div class="conv-summary no-eq">' +
         '<span class="conv-check">⚠</span>' +
@@ -717,6 +778,16 @@
 
     fileResultEl.innerHTML = html;
     fileResultEl.style.display = 'block';
+
+    var fileNoDelimCopyBtn = document.getElementById('fileNoDelimCopyBtn');
+    if (fileNoDelimCopyBtn) {
+      fileNoDelimCopyBtn.addEventListener('click', function () {
+        copyText(NO_DELIM_PROMPT, function () {
+          fileNoDelimCopyBtn.textContent = '복사됨!';
+          setTimeout(function () { fileNoDelimCopyBtn.textContent = '복사'; }, 1200);
+        });
+      });
+    }
   }
 
   function runFileConvert(file) {

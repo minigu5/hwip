@@ -662,6 +662,28 @@
     </div>
   </footer>
 
+  <!-- $$ 없는 LaTeX 감지 경고 모달 -->
+  <div class="modal-overlay" id="noDelimiterModal">
+    <div class="modal-content">
+      <div class="modal-step">
+        <div class="modal-icon">⚠️</div>
+        <h2 class="modal-title"><span class="warn-accent">$$가 없는 LaTeX</span>가 감지됐어요</h2>
+        <p class="modal-desc">
+          AI가 <b>$$</b> 기호 없이 LaTeX 수식을 작성했어요.<br>
+          일단 강제로 변환했지만 정확도가 떨어질 수 있어요.<br>
+          아래 프롬프트로 AI에게 <b>$$로 감싸서 다시 요청하세요</b>.
+        </p>
+        <div class="prompt-box" style="margin-bottom: 16px;">
+          <strong class="prompt-text" id="noDelimPromptText">LaTeX 수식은 $$ 기호로 감싸서 다시 작성해줘. 예시 : $$\nabla \cdot \mathbf{u} = 0$$</strong>
+          <button class="btn prompt-copy-btn" id="noDelimPromptCopyBtn" type="button">복사</button>
+        </div>
+        <div class="modal-actions">
+          <button class="btn ghost modal-dismiss-btn" id="noDelimDismissBtn" type="button">강제 변환 결과 사용</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="warningModal">
     <div class="modal-content">
 

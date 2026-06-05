@@ -157,6 +157,12 @@
     };
   }
 
+  // $$ 구분자 없이 LaTeX 명령(\frac 등)이 있는지 빠르게 확인
+  var UNDELIMITED_LATEX_RE = /\\[a-zA-Z]{2,}/;
+  function hasRawLatex(s) {
+    return s.indexOf('\\') >= 0 && UNDELIMITED_LATEX_RE.test(s);
+  }
+
   // ── LaTeX 구간 탐지 (파이썬 find_latex_spans 등 그대로 포팅) ────
   function isEscaped(text, index) {
     var backslashes = 0, cursor = index - 1;
@@ -195,6 +201,15 @@
     if (/^[A-Za-z]{1,3}['′’]+$/.test(value)) return true;
     return false;
   }
+  // $$ 구분자 없이 LaTeX 명령이 포함된 텍스트 전체를 하나의 수식 구간으로 반환
+  function findUndelimitedLatexSpan(text) {
+    if (!hasRawLatex(text)) return null;
+    if (text.indexOf('$') >= 0 || text.indexOf('\\(') >= 0 || text.indexOf('\\[') >= 0) return null;
+    var t = text.trim();
+    if (!t) return null;
+    return { start: 0, end: text.length, raw: text };
+  }
+
   function findLatexSpans(text, stats) {
     var spans = [];
     var cursor = 0, n = text.length;
@@ -396,7 +411,12 @@
     var spans = buildTextRunSpans(runs);
     var text = spans.map(function (s) { return s.text; }).join('');
     var latexSpans = findLatexSpans(text, stats);
-    if (!latexSpans.length) return { newRuns: null, count: 0 };
+    if (!latexSpans.length) {
+      var undelim = findUndelimitedLatexSpan(text);
+      if (!undelim) return { newRuns: null, count: 0 };
+      latexSpans = [undelim];
+      stats.forcedEquations = (stats.forcedEquations || 0) + 1;
+    }
 
     var result = [];
     var cursor = 0;
@@ -429,7 +449,8 @@
 
   // ── 섹션 1개 처리 ──────────────────────────────────────────────
   function processSectionXml(xmlString, idGen, convert, style, stats, DOMParserCls, XMLSerializerCls, headerCtx) {
-    if (xmlString.indexOf('$') < 0 && xmlString.indexOf('\\(') < 0 && xmlString.indexOf('\\[') < 0) {
+    var hasDelimiters = xmlString.indexOf('$') >= 0 || xmlString.indexOf('\\(') >= 0 || xmlString.indexOf('\\[') >= 0;
+    if (!hasDelimiters && !hasRawLatex(xmlString)) {
       return { xml: xmlString, changed: false };
     }
     var doc = new DOMParserCls().parseFromString(xmlString, 'application/xml');
@@ -448,7 +469,8 @@
         var group = [];
         while (idx < children.length && isPlainTextRun(children[idx])) { group.push(children[idx]); idx++; }
         var groupText = group.map(runText).join('');
-        if (groupText.indexOf('$') < 0 && groupText.indexOf('\\(') < 0 && groupText.indexOf('\\[') < 0) continue;
+        var groupHasDelim = groupText.indexOf('$') >= 0 || groupText.indexOf('\\(') >= 0 || groupText.indexOf('\\[') >= 0;
+        if (!groupHasDelim && !hasRawLatex(groupText)) continue;
         var res = replaceLatexInRunGroup(doc, group, idGen, convert, style, stats, headerCtx);
         if (res.count) pending.push({ nodes: group, newRuns: res.newRuns, count: res.count });
       }
@@ -544,7 +566,7 @@
   // ── 메인 진입점 ────────────────────────────────────────────────
   function convertArrayBuffer(arrayBuffer, deps) {
     var d = resolveDeps(deps);
-    var stats = { equations: 0, sectionsChanged: 0, skippedNumericDollars: 0 };
+    var stats = { equations: 0, sectionsChanged: 0, skippedNumericDollars: 0, forcedEquations: 0 };
     var style = defaultStyle();
     return d.JSZip.loadAsync(arrayBuffer).then(function (zip) {
       var sectionNames = findSectionNames(zip);
