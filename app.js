@@ -32,6 +32,8 @@
   var noDelimDismissBtn = document.getElementById('noDelimDismissBtn');
   var noDelimPromptCopyBtn = document.getElementById('noDelimPromptCopyBtn');
   var NO_DELIM_PROMPT = 'LaTeX 수식은 $$ 기호로 감싸서 다시 작성해줘. 예시 : $$\\nabla \\cdot \\mathbf{u} = 0$$';
+  var noDelimDismissTimer = null;
+  var noDelimCanClose = false;
 
   var DEFAULT_HINT = copyHint.textContent;
   var PLACEHOLDER = '<span class="placeholder">수식을 입력하면 여기에 렌더링됩니다.</span>';
@@ -43,11 +45,30 @@
   }
 
   function hideNoDelimiterModal() {
+    if (!noDelimCanClose) return;
     noDelimModal.classList.remove('show');
   }
 
   function showNoDelimiterModal() {
+    noDelimCanClose = false;
     noDelimModal.classList.add('show');
+
+    var secondsLeft = 2;
+    var base = '강제 변환 결과 사용';
+    noDelimDismissBtn.disabled = true;
+    noDelimDismissBtn.textContent = base + ' (' + secondsLeft + ')';
+    clearInterval(noDelimDismissTimer);
+    noDelimDismissTimer = setInterval(function () {
+      secondsLeft--;
+      if (secondsLeft > 0) {
+        noDelimDismissBtn.textContent = base + ' (' + secondsLeft + ')';
+      } else {
+        clearInterval(noDelimDismissTimer);
+        noDelimDismissBtn.disabled = false;
+        noDelimDismissBtn.textContent = base;
+        noDelimCanClose = true;
+      }
+    }, 1000);
   }
 
   function showModalStep(step) {
