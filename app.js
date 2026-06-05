@@ -778,17 +778,6 @@
         '<span class="conv-meta">' + metaParts.join(' · ') + '</span>' +
         '</div>';
       html += '<a class="dl-btn" href="' + fileResultUrl + '" download="' + escHtml(filename) + '">변환된 파일 다운로드</a>';
-
-      if (forcedEq > 0) {
-        html += '<div class="hwp-notice" style="margin-top:12px;">' +
-          '<b>⚠ 강제 변환 경고</b><br>' +
-          '문서에서 <b>$$</b> 없이 작성된 LaTeX ' + forcedEq + '개를 강제로 변환했습니다. ' +
-          '정확도가 떨어질 수 있으니 아래 프롬프트로 AI에게 다시 요청하세요.<br>' +
-          '<div class="prompt-box" style="margin-top:10px;">' +
-          '<strong class="prompt-text">' + escHtml(NO_DELIM_PROMPT) + '</strong>' +
-          '<button class="btn prompt-copy-btn" id="fileNoDelimCopyBtn" type="button">복사</button>' +
-          '</div></div>';
-      }
     } else {
       html += '<div class="conv-summary no-eq">' +
         '<span class="conv-check">⚠</span>' +
@@ -800,14 +789,8 @@
     fileResultEl.innerHTML = html;
     fileResultEl.style.display = 'block';
 
-    var fileNoDelimCopyBtn = document.getElementById('fileNoDelimCopyBtn');
-    if (fileNoDelimCopyBtn) {
-      fileNoDelimCopyBtn.addEventListener('click', function () {
-        copyText(NO_DELIM_PROMPT, function () {
-          fileNoDelimCopyBtn.textContent = '복사됨!';
-          setTimeout(function () { fileNoDelimCopyBtn.textContent = '복사'; }, 1200);
-        });
-      });
+    if (forcedEq > 0) {
+      showNoDelimiterModal();
     }
   }
 
