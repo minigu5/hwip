@@ -36,7 +36,6 @@
   var noDelimCanClose = false;
 
   var DEFAULT_HINT = copyHint.textContent;
-  var PLACEHOLDER = '<span class="placeholder">수식을 입력하면 여기에 렌더링됩니다.</span>';
   var autoCopyTimer = null;
   var hintTimer = null;
 
@@ -136,16 +135,14 @@
     })(solutionTabs[ti]);
   }
 
-  // 방안 2: 이미지 OCR 영역으로 이동 (모달 닫고 드롭존을 잠깐 강조)
+  // 방안 2: 이미지 인식 열기 (모달 닫고 입력창으로 스크롤 후 파일 피커 열기)
   if (gotoOcrBtn) {
     gotoOcrBtn.addEventListener('click', function () {
       hideWarningModal();
-      var dz = document.getElementById('dropzone');
-      if (dz) {
-        dz.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        dz.classList.add('dragover');
-        setTimeout(function () { dz.classList.remove('dragover'); }, 1200);
-      }
+      var wrap = document.getElementById('inputWrap');
+      if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      var imgInput = document.getElementById('imageInput');
+      if (imgInput) imgInput.click();
     });
   }
 
@@ -296,21 +293,16 @@
   }
 
   function renderPreview(latex) {
-    if (!latex) { preview.innerHTML = PLACEHOLDER; return; }
-    
-    // Apply AI-friendly preprocessing for preview
+    if (!latex) { preview.style.display = 'none'; return; }
+
     var body = latex.trim();
-    
-    // Handle typos like \fras
     body = body.replace(/\\fras(?=[^a-zA-Z]|$)/g, '\\frac');
-    
-    // Handle specific mapping: \overset{!}{=} -> \neq (consistent with HWP output)
     body = body.replace(/\\overset\s*{\s*!\s*}\s*{\s*`?=`?\s*}/g, '\\neq');
-    
-    // Strip delimiters for KaTeX
     body = stripDelimiters(body);
-    
-    if (!body) { preview.innerHTML = PLACEHOLDER; return; }
+
+    if (!body) { preview.style.display = 'none'; return; }
+
+    preview.style.display = 'flex';
     if (typeof katex === 'undefined') {
       preview.innerHTML = '<span class="placeholder">렌더러 로딩 중…</span>';
       return;
@@ -367,6 +359,11 @@
     input.value = '';
     render();
     input.focus();
+    var ocrRow = document.getElementById('ocrRow');
+    if (ocrRow) ocrRow.style.display = 'none';
+    setOcrStatus('', '');
+    if (ocrPreviewImg) ocrPreviewImg.src = '';
+    if (lastPreviewUrl) { URL.revokeObjectURL(lastPreviewUrl); lastPreviewUrl = null; }
   });
 
   copyBtn.addEventListener('click', function () {
@@ -381,11 +378,11 @@
   // 이미지 → (전처리) → 워커에서 모델 추론 → LaTeX → 기존 입력창에 넣어
   // 기존 클라이언트 변환 흐름(render)을 그대로 태운다. 서버는 쓰지 않는다.
 
-  var dropzone = document.getElementById('dropzone');
   var imageInput = document.getElementById('imageInput');
   var pickImageBtn = document.getElementById('pickImageBtn');
   var ocrStatus = document.getElementById('ocrStatus');
   var ocrPreviewImg = document.getElementById('ocrPreviewImg');
+  var inputWrap = document.getElementById('inputWrap');
 
   var OCR_SIZE = 384;
   // UniMERNet 전처리 정규화 상수 (FormulaNet 학습 기준)
@@ -600,10 +597,12 @@
   function runOcr(blob) {
     if (!blob) return;
 
+    var ocrRow = document.getElementById('ocrRow');
+    if (ocrRow) ocrRow.style.display = 'flex';
+
     if (lastPreviewUrl) URL.revokeObjectURL(lastPreviewUrl);
     lastPreviewUrl = URL.createObjectURL(blob);
-    ocrPreviewImg.src = lastPreviewUrl;
-    ocrPreviewImg.hidden = false;
+    if (ocrPreviewImg) ocrPreviewImg.src = lastPreviewUrl;
 
     setOcrStatus('AI 모델 준비 중… (최초 1회는 다운로드로 시간이 걸릴 수 있어요)', 'busy');
 
@@ -631,32 +630,34 @@
   }
 
   if (pickImageBtn) {
-    pickImageBtn.addEventListener('click', function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      imageInput.click();
+    pickImageBtn.addEventListener('click', function () {
+      if (imageInput) imageInput.click();
     });
   }
 
-  if (dropzone) {
-    dropzone.addEventListener('click', function (e) {
-      if (e.target === pickImageBtn) return;
-      imageInput.click();
+  if (inputWrap) {
+    inputWrap.addEventListener('dragover', function (e) {
+      var types = e.dataTransfer && e.dataTransfer.types;
+      var hasFiles = types && [].indexOf.call(types, 'Files') !== -1;
+      if (hasFiles) {
+        e.preventDefault();
+        inputWrap.classList.add('dragover');
+      }
     });
-    dropzone.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); imageInput.click(); }
+    inputWrap.addEventListener('dragleave', function (e) {
+      if (!inputWrap.contains(e.relatedTarget)) {
+        inputWrap.classList.remove('dragover');
+      }
     });
-    dropzone.addEventListener('dragover', function (e) {
-      e.preventDefault();
-      dropzone.classList.add('dragover');
-    });
-    dropzone.addEventListener('dragleave', function () { dropzone.classList.remove('dragover'); });
-    dropzone.addEventListener('drop', function (e) {
-      e.preventDefault();
-      dropzone.classList.remove('dragover');
+    inputWrap.addEventListener('drop', function (e) {
       var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-      if (f && /^image\//.test(f.type)) runOcr(f);
-      else setOcrStatus('이미지 파일을 끌어다 놓아 주세요.', 'error');
+      if (f && /^image\//.test(f.type)) {
+        e.preventDefault();
+        inputWrap.classList.remove('dragover');
+        runOcr(f);
+      } else {
+        inputWrap.classList.remove('dragover');
+      }
     });
   }
 

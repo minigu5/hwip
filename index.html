@@ -142,6 +142,7 @@
     .btn.ghost:hover { background: rgba(47,109,246,0.08); }
     .hint { color: var(--muted); font-size: 0.82rem; margin-top: 8px; }
     .hint.copied { color: var(--accent); font-weight: 600; }
+    .preview { margin-top: 14px; }
     .preview {
       width: 100%;
       min-height: 70px;
@@ -234,28 +235,42 @@
     .footer-policy:hover { color: var(--accent); }
     .footer-dot { opacity: 0.5; }
 
-    /* 이미지 OCR */
-    .dropzone {
-      border: 2px dashed var(--border);
-      border-radius: 10px;
-      padding: 22px 16px;
-      text-align: center;
-      transition: border-color 0.15s, background 0.15s;
-      cursor: pointer;
-    }
-    .dropzone:focus-visible { outline: 2px solid var(--accent); }
-    .dropzone:hover, .dropzone.dragover { border-color: var(--accent); background: rgba(47, 109, 246, 0.05); }
-    .dropzone-icon { font-size: 2rem; line-height: 1; }
-    .dropzone-text { margin: 6px 0 4px; font-size: 0.95rem; }
-    .dropzone-sub { margin: 0; color: var(--muted); font-size: 0.8rem; }
-    .ocr-preview-img {
-      max-width: 100%;
-      max-height: 200px;
-      margin-top: 12px;
+    /* 이미지 OCR — 입력창 통합 */
+    .input-actions { display: flex; gap: 6px; align-items: center; }
+    .input-wrap { position: relative; }
+    .input-drag-overlay {
+      position: absolute;
+      inset: 0;
       border-radius: 8px;
-      border: 1px solid var(--border);
+      border: 2px dashed var(--accent);
+      background: rgba(47, 109, 246, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+      color: var(--accent);
+      font-weight: 600;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 2;
     }
-    .ocr-status { margin-top: 10px; font-size: 0.85rem; color: var(--muted); min-height: 1.2em; }
+    .input-wrap.dragover .input-drag-overlay { opacity: 1; }
+    .input-wrap.dragover textarea { border-color: var(--accent); }
+    .ocr-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .ocr-thumb {
+      max-height: 48px;
+      max-width: 110px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .ocr-status { font-size: 0.85rem; color: var(--muted); }
     .ocr-status.busy { color: var(--accent); }
     .ocr-status.error { color: #c0392b; }
     .ocr-progress {
@@ -547,30 +562,22 @@
 
     <div class="panel">
       <div class="label-row">
-        <span class="label">이미지에서 수식 인식 (OCR · 브라우저에서 직접 처리)</span>
-      </div>
-      <div class="dropzone" id="dropzone" tabindex="0" role="button"
-        aria-label="수식 이미지 업로드">
-        <input type="file" id="imageInput" accept="image/*" hidden />
-        <div class="dropzone-inner">
-          <div class="dropzone-icon">🖼️</div>
-          <p class="dropzone-text">수식 이미지를 끌어다 놓거나
-            <button type="button" class="btn ghost" id="pickImageBtn">파일 선택</button></p>
-          <p class="dropzone-sub">캡처 이미지를 붙여넣기(⌘/Ctrl+V)해도 됩니다.
-            첫 인식 때 AI 모델(약 80MB)을 한 번 내려받아 브라우저에 저장하며, 이후에는 바로 동작합니다.
-            이미지는 서버로 전송되지 않고 내 컴퓨터에서만 처리됩니다.</p>
-        </div>
-        <img id="ocrPreviewImg" class="ocr-preview-img" alt="" hidden />
-      </div>
-      <div class="ocr-status" id="ocrStatus" aria-live="polite"></div>
-    </div>
-
-    <div class="panel">
-      <div class="label-row">
         <span class="label">입력 (LaTeX)</span>
-        <button class="btn ghost" id="clearBtn" type="button">지우기</button>
+        <div class="input-actions">
+          <button class="btn ghost" id="pickImageBtn" type="button" title="이미지에서 수식 인식 (OCR · 브라우저 로컬 처리)">🖼️ 이미지 인식</button>
+          <button class="btn ghost" id="clearBtn" type="button">지우기</button>
+        </div>
       </div>
-      <textarea id="input" placeholder="예: $$\frac{2\pi}{24}(t - \phi_1)$$" autofocus></textarea>
+      <input type="file" id="imageInput" accept="image/*" hidden />
+      <div class="input-wrap" id="inputWrap">
+        <textarea id="input" placeholder="예: $$\frac{2\pi}{24}(t - \phi_1)$$" autofocus></textarea>
+        <div class="input-drag-overlay" id="inputDragOverlay" aria-hidden="true">🖼️ 이미지를 놓으면 수식을 인식해요</div>
+      </div>
+      <div class="ocr-row" id="ocrRow" style="display:none">
+        <img id="ocrPreviewImg" class="ocr-thumb" alt="" />
+        <span class="ocr-status" id="ocrStatus" aria-live="polite"></span>
+      </div>
+      <p class="hint" id="inputHint">이미지를 여기 끌어다 놓거나 붙여넣기(⌘/Ctrl+V)하면 OCR로 수식을 자동 인식해요. 첫 인식 시 AI 모델(약 80MB)을 한 번만 내려받습니다.</p>
     </div>
 
     <div class="panel">
@@ -581,13 +588,7 @@
       <div class="output" id="output" aria-live="polite"></div>
       <div class="hint" id="copyHint">변환되면 자동으로 클립보드에 복사됩니다. 한글 수식 편집기에서
         공백은 항 구분용이라 화면에 안 보이고, 백틱(`)은 좁은 간격을 의미합니다.</div>
-    </div>
-
-    <div class="panel">
-      <div class="label-row">
-        <span class="label">미리보기 (입력 수식 렌더링)</span>
-      </div>
-      <div class="preview" id="preview"><span class="placeholder">수식을 입력하면 여기에 렌더링됩니다.</span></div>
+      <div class="preview" id="preview" style="display:none"></div>
     </div>
 
     <footer>
@@ -729,8 +730,8 @@
         <!-- 방안 2: 이미지 캡처 -->
         <div class="solution-panel" data-sol="2" hidden>
           <div class="solution-icon">📷</div>
-          <p class="solution-lead">수식을 <b>이미지로 캡처</b>해 붙여넣으면 OCR이 자동으로 인식해요.</p>
-          <button class="btn solution-cta" id="gotoOcrBtn" type="button">이미지로 인식하기</button>
+          <p class="solution-lead">수식을 <b>이미지로 캡처</b>해 입력창에 붙여넣거나, <b>🖼️ 이미지 인식</b> 버튼으로 파일을 올리면 OCR이 자동으로 인식해요.</p>
+          <button class="btn solution-cta" id="gotoOcrBtn" type="button">이미지 인식 열기</button>
         </div>
 
         <!-- 방안 3: 크롬 확장 프로그램 -->
