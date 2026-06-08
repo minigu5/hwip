@@ -53,7 +53,9 @@ lambda  (t)= lambda  ` _{`0} +A _{1} sin( {2 pi } over {24} (t`-` phi  _{1} ))+A
 
 - **형태**: 브라우저에서 동작하는 단일 웹 페이지, **두 가지 탭**으로 구성.
   - **텍스트 변환 탭**: 입력창의 LaTeX 수식을 변환해 표시·자동 복사. 입력창 우측 **🖼️ 이미지 인식** 버튼·드래그앤드롭·붙여넣기로 이미지를 OCR 인식해 같은 변환 흐름에 태운다. 수식이 있으면 출력 패널 하단에 KaTeX 미리보기가 자동으로 나타난다 (입력 없으면 숨겨짐).
-  - **파일 변환 탭**: HWP/HWPX 파일을 업로드하면 문서 안의 텍스트 LaTeX 수식을 찾아 한컴 수식 개체(`hp:equation`)로 교체한 뒤 새 HWPX 파일로 내보낸다.
+  - **파일 변환 탭**: 두 가지 흐름을 처리한다.
+    - **HWP/HWPX**: 파일을 업로드하면 문서 안의 텍스트 LaTeX 수식을 찾아 한컴 수식 개체(`hp:equation`)로 교체한 뒤 새 HWPX 파일로 내보낸다.
+    - **Markdown → HWPX**: `.md`/`.markdown` 파일을 업로드하거나, 이 탭에서 마크다운 텍스트를 붙여넣기(⌘/Ctrl+V)하면 HWPX로 변환한다. 파일 선택·붙여넣기 시 글꼴/크기 설정 패널과 A4 미리보기(KaTeX 수식 렌더 포함)가 나타나고, 다운로드 버튼으로 `.hwpx`를 내려받는다.
 - **언어**: JavaScript (프레임워크/빌드 도구 없이 순수 HTML+CSS+JS. 의존성 최소화).
 - **배포**: 정적 파일이라 파일을 브라우저로 직접 열거나 GitHub Pages 등 정적 호스팅으로 제공 가능.
 - **구조 원칙**: 변환 로직(파서/변환기)은 UI와 분리된 순수 함수 모듈로 둔다. 테스트와 재사용(CLI 등)이 쉬워진다.
@@ -63,16 +65,19 @@ lambda  (t)= lambda  ` _{`0} +A _{1} sin( {2 pi } over {24} (t`-` phi  _{1} ))+A
 ```
 index.html              메인 UI (탭 2개: 텍스트 변환 / 파일 변환)
 privacy.html            개인정보 처리방침 페이지
-app.js                  UI 이벤트, OCR 흐름, 파일 변환 흐름
+app.js                  UI 이벤트, OCR 흐름, 파일 변환 흐름, 마크다운 붙여넣기 흐름
 sw.js                   Service Worker — 앱 쉘 캐시·오프라인 지원
 api/
   convert.js            Vercel 서버리스 함수 — REST API 엔드포인트 (POST /api/convert)
 src/
   converter.js          LaTeX → 한글 수식 변환 엔진 (순수 함수, window.LatexToHwp)
   hwpx-convert.js       HWPX(ZIP+XML) 파싱·수식 개체 삽입·재압축 (window.HwpxConvert)
+  md-to-hwpx.js         Markdown → HWPX 변환 엔진 (window.MarkdownToHwpx)
   ocr-worker.js         Web Worker — FormulaNet 모델 추론
+templates/
+  blank.hwpx            빈 HWPX 템플릿 — md-to-hwpx.js가 fetch해 기반 문서로 사용
 vendor/
-  jszip.min.js          JSZip v3.10.1 (hwpx-convert.js 의존성, MIT)
+  jszip.min.js          JSZip v3.10.1 (hwpx-convert.js·md-to-hwpx.js 의존성, MIT)
 public/
   favicon.png
 test/
@@ -134,7 +139,9 @@ CONVERSION_RULES.md     LaTeX → 한글 수식 전체 매핑 규칙 (스펙 기
 - **모델 사용법/전처리는 추측 금지**: 동일 모델 저자의 검증된 구현(Texo-web)을 그대로 따랐다. `VisionEncoderDecoderModel.from_pretrained(..., {dtype:'fp32'})` + 1채널 384×384 텐서를 3채널로 복제해 `model.generate`. 전처리(`app.js`의 `preprocessImage`)는 UniMERNet 규약(그레이스케일·색반전·여백크롭·중앙패딩·mean 0.7931/std 0.1738)을 따른다. **이 값/순서를 바꾸면 정확도가 떨어지므로 함부로 수정하지 말 것.**
 - **검증**: 헤드리스 Chrome + matplotlib로 렌더한 수식 PNG로 E2E 인식·변환을 확인. (KaTeX는 헤드리스에서 웹폰트 글리프가 비어 부적합 — 실제 렌더 이미지를 쓸 것.)
 
-## 파일 변환 (HWP / HWPX → 수식 개체 삽입)
+## 파일 변환
+
+### HWP / HWPX → 수식 개체 삽입
 
 HWP/HWPX 파일을 업로드하면 브라우저 안에서 LaTeX 수식을 한컴 수식 개체로 바꾼 새 HWPX 파일을 생성한다.
 
@@ -148,20 +155,41 @@ HWP/HWPX 파일을 업로드하면 브라우저 안에서 LaTeX 수식을 한컴
 
 **HWP 파일** (이진 포맷): 직접 수정 불가. 오픈소스 엔진 [rhwp](https://github.com/edwardkim/rhwp)의 editor iframe(외부 URL, 인터넷 필요)을 배경에서 불러와 `loadFile` → `exportHwpx`로 HWPX 변환 후 위 흐름에 태운다. 출력은 항상 HWPX. HWP가 필요하면 한컴 오피스에서 "다른 이름으로 저장".
 
-### 한글 경고 방지 — xmlns 중복 제거
+#### 한글 경고 방지 — xmlns 중복 제거
 
 브라우저의 `XMLSerializer`는 `createElementNS()` 요소마다 `xmlns:hp="..."` 선언을 인라인으로 중복 삽입한다. 한글 파서가 이를 손상된 구조로 인식해 "복구하였습니다" 경고를 띄울 수 있어, `src/hwpx-convert.js`의 `removeRedundantNsDecls()`가 직렬화 후 첫 번째 선언만 남기고 모두 제거한다 (`processSectionXml`의 직렬화 직후 적용).
+
+### Markdown → HWPX
+
+마크다운 문서를 HWPX로 변환한다. 진입점은 두 가지다.
+
+- **파일 업로드**: `.md`·`.markdown` 파일을 파일 변환 탭에 드래그앤드롭하거나 선택
+- **텍스트 붙여넣기**: 파일 변환 탭이 활성화된 상태에서 ⌘/Ctrl+V — `app.js`의 전역 `paste` 이벤트가 탭 상태를 확인해 마크다운 흐름으로 라우팅
+
+두 경우 모두 글꼴/크기 설정 패널과 A4 미리보기 패널(KaTeX 수식 렌더 포함)이 나타나고, 다운로드 버튼으로 `.hwpx`를 받는다.
+
+**`src/md-to-hwpx.js`** (`window.MarkdownToHwpx`) 동작 순서:
+1. `templates/blank.hwpx`를 `fetch`해 `JSZip`으로 해제 (빈 HWPX 템플릿)
+2. `marked.lexer()`로 마크다운 토큰화 — 수식은 미리 sentinel로 치환해 `_`·`*` 오해 방지
+3. `Contents/header.xml`에 글꼴·크기·강조 변형(굵게/기울임/취소선/인라인코드/헤딩 크기)용 `charPr` 동적 추가
+4. `Contents/section0.xml` 본문 영역을 새 단락 XML로 교체
+5. ZIP 재구성(mimetype 비압축 우선·중복 xmlns 제거) → Blob 반환
+
+지원 요소: 헤딩(H1–H6), 굵게/기울임/취소선/인라인코드, 링크, 인용, 순서 없는·있는 리스트, 체크리스트, 코드 블록(어두운 배경), 표, 수평선, 인라인·블록 수식(`$...$`, `$$...$$`, `\(...\)`, `\[...\]`), HTML 가운데 정렬 태그.
+
+의존성: `window.JSZip`, `window.marked`(CDN marked@12), `window.LatexToHwp`(= `src/converter.js`).
 
 ### 참고한 오픈소스 프로젝트
 - [hwpx-latex-to-equation](https://github.com/fakeminjun7321/hwpx-latex-to-equation) — HWPX ZIP+XML 파싱·수식 개체 삽입 구조. `src/hwpx-convert.js`는 이 프로젝트를 기반으로 통합한 것.
 - [rhwp](https://github.com/edwardkim/rhwp) — Rust+WASM 기반 HWP/HWPX 파서·에디터. HWP 이진 → HWPX 변환에 활용.
+- [markdown_to_hwp](https://github.com/minigu5/markdown_to_hwp) — `src/md-to-hwpx.js`·`templates/blank.hwpx` 출처.
 
 ## 오프라인 지원 (Service Worker)
 
 `sw.js`가 첫 방문에서 앱 쉘(HTML·JS·CSS·`vendor/jszip.min.js`·KaTeX CDN)을 캐시에 담아 두고, 이후 새로고침이나 오프라인에서도 변환 페이지가 그대로 동작하게 한다.
 
 - **전략**: 내비게이션은 network-first → 실패 시 캐시된 `index.html` 폴백. 같은 오리진 정적 자원·KaTeX CDN은 cache-first. HuggingFace(OCR 모델)·rhwp·Vercel insights 등은 캐시하지 않고 통과.
-- **캐시 무효화**: `CACHE_VERSION` 상수를 올리면 사용자 브라우저가 새 셸을 받는다. 앱 쉘 목록(`APP_SHELL`)이나 변환 로직을 고칠 때 함께 올린다.
+- **캐시 무효화**: `CACHE_VERSION` 상수를 올리면 사용자 브라우저가 새 셸을 받는다. 앱 쉘 목록(`APP_SHELL`)이나 변환 로직을 고칠 때 함께 올린다. 현재 APP_SHELL에는 `src/md-to-hwpx.js`, `templates/blank.hwpx`, marked CDN, KaTeX auto-render CDN이 포함된다.
 - **오프라인 배너**: `index.html`이 `navigator.onLine`/`online`/`offline` 이벤트로 상단에 "⚠️ 오프라인" 배너를 슬라이드 표시.
 
 ## REST API
@@ -181,5 +209,6 @@ HWP/HWPX 파일을 업로드하면 브라우저 안에서 LaTeX 수식을 한컴
 - 외부 의존성은 최소로. 가능하면 추가하지 않는다.
 - 커밋·푸시는 사용자가 요청할 때만 한다.
 - `src/converter.js` 수정 시 `chrome-extension/lib/converter.js`도 함께 동기화한다.
-- 앱 쉘 자원(HTML/JS/CSS/벤더) 추가·삭제 시 `sw.js`의 `APP_SHELL`과 `CACHE_VERSION`을 함께 갱신.
+- 앱 쉘 자원(HTML/JS/CSS/벤더/템플릿) 추가·삭제 시 `sw.js`의 `APP_SHELL`과 `CACHE_VERSION`을 함께 갱신.
 - `api/convert.js`는 변환 로직을 직접 구현하지 않고 `src/converter.js`에만 의존한다 — 중복 구현 금지.
+- `src/md-to-hwpx.js`는 `src/converter.js`(`window.LatexToHwp`)에 의존한다. 마크다운 변환 엔진을 수정할 때 이 의존 관계를 깨지 않도록 주의.

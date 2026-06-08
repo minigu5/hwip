@@ -15,7 +15,7 @@
  * 로직을 고칠 때 CACHE_VERSION을 올리면 사용자 브라우저가 새 셸을 받는다.
  */
 
-var CACHE_VERSION = 'v2-2026-06-05';
+var CACHE_VERSION = 'v3-2026-06-08';
 var CACHE_NAME = 'whip-app-shell-' + CACHE_VERSION;
 
 var APP_SHELL = [
@@ -25,11 +25,15 @@ var APP_SHELL = [
   'app.js',
   'src/converter.js',
   'src/hwpx-convert.js',
+  'src/md-to-hwpx.js',
   'src/ocr-worker.js',
   'vendor/jszip.min.js',
+  'templates/blank.hwpx',
   'public/favicon.png',
   'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css',
-  'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js'
+  'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js',
+  'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js',
+  'https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js'
 ];
 
 self.addEventListener('install', function (event) {

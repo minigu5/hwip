@@ -683,6 +683,34 @@
       }
     }
 
+    // 파일 탭이 활성화된 상태에서 텍스트 붙여넣기 → 마크다운으로 처리
+    var fileTabPanel = document.getElementById('tabFile');
+    if (hasText && fileTabPanel && fileTabPanel.classList.contains('active')) {
+      var pastedText = e.clipboardData.getData('text/plain');
+      if (pastedText.trim()) {
+        e.preventDefault();
+        currentMdText = pastedText;
+        currentMdFileName = null;
+        showMdSections(true);
+        applyMdDocStyle();
+        renderMdPreview();
+        if (mdDownloadBtn) {
+          mdDownloadBtn.disabled = false;
+          mdDownloadBtn.textContent = 'HWPX로 다운로드';
+        }
+        clearFileResult();
+        var lineCount = pastedText.split('\n').length;
+        fileResultEl.style.display = 'block';
+        fileResultEl.innerHTML =
+          '<div class="conv-summary">' +
+            '<span class="conv-check">✅</span>' +
+            '<span class="conv-fname">마크다운 붙여넣기</span>' +
+            '<span class="conv-meta">' + lineCount + '줄 · 아래에서 설정·미리보기 후 다운로드하세요</span>' +
+          '</div>';
+      }
+      return;
+    }
+
     // HWP 등 서식 있는 텍스트 복사 시 이미지도 함께 포함되므로,
     // text/plain이 있으면 이미지 OCR을 건너뛴다.
     if (hasText) {
@@ -884,14 +912,357 @@
     });
   }
 
+  // ── Markdown → HWPX 변환 ─────────────────────────────────────────────────
+  var mdFontSelect = document.getElementById('mdFontSelect');
+  var mdFontSizeInput = document.getElementById('mdFontSize');
+  var mdLoadLocalFontsBtn = document.getElementById('mdLoadLocalFontsBtn');
+  var mdPreviewWrap = document.getElementById('mdPreview');
+  var mdPageInfo = document.getElementById('mdPageInfo');
+  var mdTokenCount = document.getElementById('mdTokenCount');
+  var mdDownloadBtn = document.getElementById('mdDownloadBtn');
+  var mdDownloadHint = document.getElementById('mdDownloadHint');
+  var mdDocOptionsPanel = document.getElementById('mdDocOptions');
+  var mdPreviewPanel = document.getElementById('mdPreviewPanel');
+  var mdDownloadPanel = document.getElementById('mdDownloadPanel');
+
+  var MD_DEFAULT_FONTS = [
+    '함초롬바탕', '함초롬돋움', '맑은 고딕', '바탕', '바탕체', '굴림', '굴림체',
+    '돋움', '돋움체', '궁서', '궁서체', 'HY견고딕', 'HY견명조',
+    'Noto Sans KR', 'Noto Serif KR', 'Nanum Gothic', 'Nanum Myeongjo',
+    'Pretendard', 'Apple SD Gothic Neo', 'AppleMyungjo'
+  ];
+
+  var mdSavedFont = '';
+  var mdSavedSize = 10;
+  try {
+    mdSavedFont = localStorage.getItem('mh.font') || '';
+    var _s = parseFloat(localStorage.getItem('mh.size'));
+    if (!isNaN(_s) && _s > 0) mdSavedSize = _s;
+  } catch (e) {}
+
+  function populateMdFontSelect(localFonts) {
+    if (!mdFontSelect) return;
+    var prev = mdFontSelect.value;
+    mdFontSelect.innerHTML = '';
+    function addGroup(label, list) {
+      var g = document.createElement('optgroup');
+      g.label = label;
+      list.forEach(function (f) {
+        var o = document.createElement('option');
+        o.value = f; o.textContent = f;
+        o.style.fontFamily = '"' + f.replace(/"/g, '') + '"';
+        g.appendChild(o);
+      });
+      mdFontSelect.appendChild(g);
+    }
+    addGroup('한글 기본 글꼴', MD_DEFAULT_FONTS);
+    if (localFonts && localFonts.length) {
+      var seen = {};
+      MD_DEFAULT_FONTS.forEach(function (f) { seen[f] = true; });
+      var extras = [];
+      localFonts.forEach(function (f) {
+        if (!seen[f]) { seen[f] = true; extras.push(f); }
+      });
+      extras.sort(function (a, b) { return a.localeCompare(b, 'ko'); });
+      addGroup('내 PC 글꼴 (' + extras.length + ')', extras);
+    }
+    var toSelect = prev || mdSavedFont || '함초롬바탕';
+    var found = Array.from(mdFontSelect.options).some(function (o) {
+      if (o.value === toSelect) { o.selected = true; return true; }
+      return false;
+    });
+    if (!found && mdFontSelect.options.length) mdFontSelect.value = '함초롬바탕';
+  }
+  populateMdFontSelect();
+  if (mdFontSizeInput) mdFontSizeInput.value = String(mdSavedSize);
+
+  function mdCurrentFont() { return (mdFontSelect && mdFontSelect.value) || '함초롬바탕'; }
+  function mdCurrentSize() {
+    var v = parseFloat(mdFontSizeInput && mdFontSizeInput.value);
+    if (isNaN(v) || v < 6) v = 10;
+    if (v > 48) v = 48;
+    return v;
+  }
+
+  function applyMdDocStyle() {
+    if (!mdPreviewWrap) return;
+    var f = mdCurrentFont();
+    var sz = mdCurrentSize();
+    mdPreviewWrap.style.setProperty('--doc-font', '"' + f.replace(/"/g, '') + '", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif');
+    mdPreviewWrap.style.setProperty('--doc-pt', String(sz));
+    try {
+      localStorage.setItem('mh.font', f);
+      localStorage.setItem('mh.size', String(sz));
+    } catch (e) {}
+  }
+
+  if (mdFontSelect) mdFontSelect.addEventListener('change', function () { applyMdDocStyle(); renderMdPreview(); });
+  if (mdFontSizeInput) mdFontSizeInput.addEventListener('input', function () { applyMdDocStyle(); renderMdPreview(); });
+
+  if (mdLoadLocalFontsBtn) {
+    if (!('queryLocalFonts' in window)) {
+      mdLoadLocalFontsBtn.disabled = true;
+      mdLoadLocalFontsBtn.title = '이 브라우저는 Local Font Access API를 지원하지 않습니다';
+    }
+    mdLoadLocalFontsBtn.addEventListener('click', function () {
+      if (!('queryLocalFonts' in window)) {
+        alert('이 브라우저에서는 PC 설치 글꼴을 직접 불러올 수 없습니다. Chrome/Edge에서 HTTPS로 접속한 뒤 다시 시도해 주세요.');
+        return;
+      }
+      var prev = mdLoadLocalFontsBtn.textContent;
+      mdLoadLocalFontsBtn.disabled = true;
+      mdLoadLocalFontsBtn.textContent = '불러오는 중…';
+      window.queryLocalFonts().then(function (fonts) {
+        var familySet = {};
+        fonts.forEach(function (f) { if (f.family) familySet[f.family] = true; });
+        populateMdFontSelect(Object.keys(familySet));
+        applyMdDocStyle();
+        renderMdPreview();
+      }).catch(function (e) {
+        alert('글꼴을 불러오지 못했습니다: ' + e.message);
+      }).then(function () {
+        mdLoadLocalFontsBtn.disabled = false;
+        mdLoadLocalFontsBtn.textContent = prev;
+      });
+    });
+  }
+
+  var currentMdText = null;
+  var currentMdFileName = null;
+
+  // 미리보기용 수식 보호 (marked가 $...$를 깨지 않도록)
+  function mdProtectMath(md) {
+    var phs = [];
+    function add(latex, block) {
+      var i = phs.length;
+      phs.push({ latex: latex, block: block });
+      return 'MDPREVMATHX' + i + 'XEND';
+    }
+    var fences = [];
+    var masked = md.replace(/```[\s\S]*?```|~~~[\s\S]*?~~~/g, function (m) {
+      var i = fences.length;
+      fences.push(m);
+      return 'MDPREVFENCEX' + i + 'XEND';
+    });
+    masked = masked.replace(/\$\$([\s\S]+?)\$\$/g, function (_m, body) { return add(body, true); });
+    masked = masked.replace(/\\\[([\s\S]+?)\\\]/g, function (_m, body) { return add(body, true); });
+    masked = masked.replace(/\\\(([\s\S]+?)\\\)/g, function (_m, body) { return add(body, false); });
+    masked = masked.replace(/(^|[^\\$])\$([^\$\n]+?)\$(?!\d)/g, function (m, pre, body) {
+      return pre + add(body, false);
+    });
+    masked = masked.replace(/MDPREVFENCEX(\d+)XEND/g, function (_m, i) { return fences[+i]; });
+    return { md: masked, phs: phs };
+  }
+
+  function mdRestoreMath(html, phs) {
+    return html.replace(/MDPREVMATHX(\d+)XEND/g, function (_m, i) {
+      var ph = phs[+i];
+      if (!ph) return _m;
+      return ph.block ? ('$$' + ph.latex + '$$') : ('$' + ph.latex + '$');
+    });
+  }
+
+  function renderMdPreview() {
+    if (!mdPreviewWrap || !window.marked) return;
+    var text = currentMdText;
+    if (!text || !text.trim()) {
+      mdPreviewWrap.classList.add('empty');
+      mdPreviewWrap.innerHTML = '<span class="placeholder">마크다운 파일을 올리면 미리보기가 나타납니다.</span>';
+      if (mdTokenCount) mdTokenCount.textContent = '';
+      if (mdPageInfo) mdPageInfo.textContent = '';
+      return;
+    }
+    try {
+      var protectedRes = mdProtectMath(text);
+      var html = window.marked.parse(protectedRes.md, { gfm: true, breaks: false, headerIds: false });
+      html = html.replace(/<script[\s\S]*?<\/script>/gi, '');
+      html = mdRestoreMath(html, protectedRes.phs);
+      html = html.replace(/&#36;/g, '$');
+
+      mdPreviewWrap.classList.remove('empty');
+      mdPreviewWrap.innerHTML = '<div class="doc-page" id="mdDocContent">' + html + '</div>';
+
+      var stage = document.getElementById('mdDocContent');
+      if (window.renderMathInElement && stage) {
+        try {
+          window.renderMathInElement(stage, {
+            delimiters: [
+              { left: '$$', right: '$$', display: true },
+              { left: '$', right: '$', display: false },
+              { left: '\\(', right: '\\)', display: false },
+              { left: '\\[', right: '\\]', display: true }
+            ],
+            throwOnError: false,
+            errorColor: '#c0392b',
+            ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+          });
+        } catch (e) {}
+      }
+
+      var tokens = window.marked.lexer(text, { gfm: true, breaks: false });
+      if (mdTokenCount) mdTokenCount.textContent = tokens.length + '개 블록';
+
+      requestAnimationFrame(function () { mdPaginate(stage); });
+    } catch (e) {
+      mdPreviewWrap.classList.remove('empty');
+      mdPreviewWrap.innerHTML = '<div class="doc-page" style="color:#c0392b">미리보기 오류: ' + escHtml(e.message) + '</div>';
+    }
+  }
+
+  function mdPaginate(firstPage) {
+    if (!firstPage) return;
+    var wrap = firstPage.parentNode;
+    if (!wrap) return;
+
+    function lockPageSize(p) {
+      var w = p.clientWidth;
+      if (!w) return;
+      var targetH = Math.round(w * 297 / 210);
+      p.style.height = targetH + 'px';
+      p.style.minHeight = targetH + 'px';
+      p.style.maxHeight = targetH + 'px';
+    }
+    lockPageSize(firstPage);
+
+    var nodes = Array.from(firstPage.childNodes);
+    firstPage.innerHTML = '';
+    var currentPage = firstPage;
+
+    function exceeds(p) { return p.scrollHeight > p.clientHeight; }
+    function newPage() {
+      var np = document.createElement('div');
+      np.className = 'doc-page';
+      wrap.appendChild(np);
+      lockPageSize(np);
+      return np;
+    }
+
+    var SAFETY_CAP = 500;
+    var pageCount = 1;
+    for (var i = 0; i < nodes.length && pageCount < SAFETY_CAP; i++) {
+      var node = nodes[i];
+      currentPage.appendChild(node);
+      if (exceeds(currentPage)) {
+        currentPage.removeChild(node);
+        if (!currentPage.childNodes.length) {
+          currentPage.appendChild(node);
+          currentPage = newPage();
+          pageCount++;
+        } else {
+          currentPage = newPage();
+          pageCount++;
+          currentPage.appendChild(node);
+        }
+      }
+    }
+
+    var pages = wrap.querySelectorAll('.doc-page');
+    pages.forEach(function (p, i) {
+      var el = document.createElement('div');
+      el.className = 'page-num';
+      el.textContent = '- ' + (i + 1) + ' -';
+      p.appendChild(el);
+    });
+    if (mdPageInfo) mdPageInfo.textContent = pages.length + '쪽';
+  }
+
+  function showMdSections(visible) {
+    [mdDocOptionsPanel, mdPreviewPanel, mdDownloadPanel].forEach(function (el) {
+      if (!el) return;
+      if (visible) el.classList.add('visible');
+      else el.classList.remove('visible');
+    });
+  }
+
+  function runMarkdownConvert(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      currentMdText = String(reader.result || '');
+      currentMdFileName = file.name;
+
+      showMdSections(true);
+      applyMdDocStyle();
+      renderMdPreview();
+
+      if (mdDownloadBtn) {
+        mdDownloadBtn.disabled = false;
+        mdDownloadBtn.textContent = 'HWPX로 다운로드';
+      }
+
+      clearFileResult();
+      fileResultEl.style.display = 'block';
+      fileResultEl.innerHTML =
+        '<div class="conv-summary">' +
+          '<span class="conv-check">✅</span>' +
+          '<span class="conv-fname">' + escHtml(file.name) + ' 불러옴</span>' +
+          '<span class="conv-meta">아래에서 설정·미리보기 후 다운로드하세요</span>' +
+        '</div>';
+    };
+    reader.onerror = function () {
+      clearFileResult();
+      showFileError('파일을 읽지 못했습니다.');
+    };
+    reader.readAsText(file, 'utf-8');
+  }
+
+  if (mdDownloadBtn) {
+    mdDownloadBtn.addEventListener('click', function () {
+      if (!currentMdText || !window.MarkdownToHwpx) return;
+      var prevLabel = mdDownloadBtn.textContent;
+      mdDownloadBtn.disabled = true;
+      mdDownloadBtn.innerHTML = '<span class="conv-spinner"></span> 변환 중…';
+      if (mdDownloadHint) mdDownloadHint.textContent = '';
+
+      window.MarkdownToHwpx.convertMarkdown(currentMdText, {
+        fontFamily: mdCurrentFont(),
+        fontSizePt: mdCurrentSize()
+      }, { templateUrl: 'templates/blank.hwpx' })
+        .then(function (blob) {
+          var name = currentMdFileName
+            ? currentMdFileName.replace(/\.(md|markdown)$/i, '') + '.hwpx'
+            : 'output.hwpx';
+          var file = (typeof File === 'function')
+            ? new File([blob], name, { type: 'application/vnd.hancom.hwpx' })
+            : blob;
+          var url = URL.createObjectURL(file);
+          var a = document.createElement('a');
+          a.href = url; a.download = name; a.rel = 'noopener';
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+          if (mdDownloadHint) mdDownloadHint.textContent = '다운로드 완료: ' + name;
+        })
+        .catch(function (err) {
+          if (mdDownloadHint) { mdDownloadHint.textContent = '변환 실패: ' + err.message; mdDownloadHint.style.color = '#c0392b'; }
+        })
+        .then(function () {
+          mdDownloadBtn.disabled = false;
+          mdDownloadBtn.textContent = prevLabel;
+        });
+    });
+  }
+
   function onFileSelected(file) {
     if (!file) return;
+    var isMd = /\.(md|markdown)$/i.test(file.name);
     var isHwpx = /\.hwpx$/i.test(file.name);
     var isHwp = /\.hwp$/i.test(file.name) && !isHwpx;
+
+    if (isMd) {
+      showMdSections(true);
+      currentMdText = null;
+      runMarkdownConvert(file);
+      return;
+    }
+
+    // HWP/HWPX: MD 섹션 숨기기
+    showMdSections(false);
+    currentMdText = null;
+    currentMdFileName = null;
+
     if (!isHwp && !isHwpx) {
       clearFileResult();
       fileResultEl.style.display = 'block';
-      fileResultEl.innerHTML = '<div class="result-badge err">⚠ HWP(.hwp) 또는 HWPX(.hwpx) 파일만 지원합니다.</div>';
+      fileResultEl.innerHTML = '<div class="conv-summary err"><span class="conv-check">⚠</span><span class="conv-fname">HWP, HWPX, MD 파일만 지원합니다.</span></div>';
       return;
     }
     runFileConvert(file);

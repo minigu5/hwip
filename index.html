@@ -19,6 +19,8 @@
     href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous" />
   <script defer
     src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer
+    src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
   <script>
     window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
   </script>
@@ -316,6 +318,131 @@
     .tab-panel.active { display: block; }
 
     /* ── 파일 변환 ── */
+
+    /* MD 전용 문서 설정/미리보기 패널 */
+    .md-section { display: none; }
+    .md-section.visible { display: block; }
+
+    .doc-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+    }
+    .doc-options label {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.85rem; color: var(--text); font-weight: 600;
+    }
+    .doc-options select, .doc-options input[type="number"] {
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 9px;
+      font-size: 0.88rem;
+      font-family: inherit;
+      max-width: 100%;
+    }
+    .doc-options select { min-width: 160px; }
+    .doc-options input[type="number"] { width: 76px; }
+    .doc-options select:focus,
+    .doc-options input[type="number"]:focus {
+      outline: 2px solid var(--accent);
+      border-color: var(--accent);
+    }
+    .doc-options .btn-loadfont {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 7px;
+      padding: 6px 11px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .doc-options .btn-loadfont:hover {
+      border-color: var(--accent);
+      background: rgba(47,109,246,0.06);
+    }
+    .doc-options .btn-loadfont:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* MD 미리보기: A4 종이 시뮬레이션 */
+    .md-preview-wrap {
+      --doc-font: "함초롬바탕", "Hancom Batang", "맑은 고딕", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      --doc-pt: 10;
+      --doc-fs: calc(var(--doc-pt) * 1.3333px);
+      width: 100%;
+      min-height: 300px;
+      max-height: 60vh;
+      border-radius: 10px;
+      background: #d9dde4;
+      padding: 16px 0;
+      overflow: auto;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 12px;
+    }
+    [data-theme="dark"] .md-preview-wrap { background: #14171c; }
+    .md-preview-wrap.empty { padding: 60px 20px; align-items: center; justify-content: center; }
+    .md-preview-wrap .placeholder { color: var(--muted); font-size: 0.9rem; }
+    .doc-page {
+      width: min(680px, calc(100% - 30px));
+      aspect-ratio: 210 / 297;
+      background: #ffffff;
+      color: #000;
+      box-shadow: 0 2px 14px rgba(0,0,0,0.15);
+      padding: 6.73% 14.29% 8.42%;
+      font-family: var(--doc-font);
+      font-size: var(--doc-fs);
+      line-height: 1.6;
+      overflow: hidden;
+      position: relative;
+    }
+    .doc-page .page-num {
+      position: absolute;
+      bottom: 14px; left: 0; right: 0;
+      text-align: center;
+      font-size: calc(var(--doc-fs) * 0.85);
+      color: #6b7280;
+      font-family: var(--doc-font);
+    }
+    .doc-page h1 { font-size: calc(var(--doc-fs) * 1.8); margin: 0.5em 0 0.15em; }
+    .doc-page h2 { font-size: calc(var(--doc-fs) * 1.55); margin: 0.5em 0 0.15em; }
+    .doc-page h3 { font-size: calc(var(--doc-fs) * 1.3); margin: 0.4em 0 0.1em; }
+    .doc-page h4, .doc-page h5, .doc-page h6 { font-size: calc(var(--doc-fs) * 1.1); margin: 0.3em 0 0.1em; }
+    .doc-page p { margin: 0.15em 0; }
+    .doc-page ul, .doc-page ol { padding-left: 1.6em; margin: 0.2em 0; }
+    .doc-page blockquote {
+      border-left: 3px solid #c8ccd2; margin: 0.25em 0;
+      padding: 2px 12px; color: #595959; font-style: italic;
+    }
+    .doc-page code {
+      background: #f0f0f0; padding: 1px 5px; border-radius: 3px;
+      font-size: 0.9em; font-family: "D2Coding", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    }
+    .doc-page pre {
+      background: #1e1e1e; color: #f8f8f2; padding: 6px 10px; border-radius: 4px;
+      font-size: 0.88em; line-height: 1.4; margin: 0.25em 0;
+      font-family: "D2Coding", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    }
+    .doc-page pre code { background: transparent; padding: 0; font-size: inherit; color: inherit; }
+    .doc-page table { border-collapse: collapse; margin: 0.3em 0; width: 100%; font-size: 0.95em; }
+    .doc-page th, .doc-page td { border: 1px solid #4a5160; padding: 3px 8px; }
+    .doc-page th { background: #f4f5f7; font-weight: 700; }
+    .doc-page .katex-display { margin: 0.7em 0; overflow-x: auto; }
+
+    .dl-btn {
+      display: block; width: 100%; text-align: center; text-decoration: none;
+      background: var(--accent); color: #fff;
+      font-size: 1rem; font-weight: 700;
+      padding: 14px 20px; border-radius: 10px;
+      transition: background 0.15s, transform 0.1s;
+      border: none; cursor: pointer;
+    }
+    .dl-btn:hover { background: var(--accent-hover); }
+    .dl-btn:active { transform: translateY(1px); }
+    .dl-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
     .file-drop {
       border: 2px dashed var(--border);
       border-radius: 10px;
@@ -554,7 +681,7 @@
       <button class="tab-btn active" id="tabTextBtn" role="tab" aria-selected="true"
         aria-controls="tabText" type="button">✏️ 텍스트 변환</button>
       <button class="tab-btn" id="tabFileBtn" role="tab" aria-selected="false"
-        aria-controls="tabFile" type="button">📄 파일 변환 (HWP/HWPX)</button>
+        aria-controls="tabFile" type="button">📄 파일 변환 (HWP/MD)</button>
     </nav>
 
     <!-- ── 탭 1: 텍스트 변환 ── -->
@@ -606,23 +733,59 @@
           <span class="label">HWP / HWPX 파일 업로드</span>
         </div>
         <div class="file-drop" id="fileDrop" tabindex="0" role="button"
-          aria-label="HWP 또는 HWPX 파일 선택">
-          <input type="file" id="fileInput" accept=".hwp,.hwpx" hidden />
+          aria-label="파일 선택">
+          <input type="file" id="fileInput" accept=".hwp,.hwpx,.md,.markdown" hidden />
           <div class="file-drop-icon">📂</div>
-          <p class="file-drop-text">HWP/HWPX 파일을 끌어다 놓거나
+          <p class="file-drop-text">파일을 끌어다 놓거나
             <button type="button" class="btn ghost" id="pickFileBtn">파일 선택</button></p>
-          <p class="file-drop-sub">.hwp · .hwpx 지원 — 변환은 전부 브라우저에서 실행되며 서버로 전송되지 않습니다.</p>
+          <p class="file-drop-sub">.hwp · .hwpx (LaTeX 수식 개체 삽입) · .md · .markdown (마크다운 → HWPX 변환)<br>마크다운 텍스트를 이 탭에서 바로 붙여넣기(⌘/Ctrl+V)해도 됩니다.<br>변환은 전부 브라우저에서 실행되며 서버로 전송되지 않습니다.</p>
         </div>
 
         <div class="file-result" id="fileResult" style="display:none"></div>
       </div>
 
+      <!-- MD 전용: 문서 설정 -->
+      <div class="panel md-section" id="mdDocOptions">
+        <div class="label-row">
+          <span class="label">문서 설정</span>
+          <span class="hint" id="mdTokenCount" style="margin-top:0"></span>
+        </div>
+        <div class="doc-options">
+          <label>글꼴
+            <select id="mdFontSelect"></select>
+          </label>
+          <label>글자 크기
+            <input id="mdFontSize" type="number" min="6" max="48" step="0.5" value="10" />
+            <span style="color: var(--muted); font-weight: 500;">pt</span>
+          </label>
+          <button class="btn-loadfont" id="mdLoadLocalFontsBtn" type="button" title="내 컴퓨터에 설치된 모든 글꼴 불러오기 (Chrome/Edge 지원)">📥 내 PC 글꼴 불러오기</button>
+        </div>
+      </div>
+
+      <!-- MD 전용: 미리보기 -->
+      <div class="panel md-section" id="mdPreviewPanel">
+        <div class="label-row">
+          <span class="label">미리보기 (A4)</span>
+          <span class="hint" id="mdPageInfo" style="margin-top:0"></span>
+        </div>
+        <div class="md-preview-wrap empty" id="mdPreview">
+          <span class="placeholder">마크다운 파일을 올리면 미리보기가 나타납니다.</span>
+        </div>
+      </div>
+
+      <!-- MD 전용: 다운로드 버튼 -->
+      <div class="panel md-section" id="mdDownloadPanel">
+        <button class="dl-btn" id="mdDownloadBtn" type="button" disabled>파일을 먼저 선택하세요</button>
+        <p class="hint" id="mdDownloadHint">변환되면 .hwpx 파일이 내려받아집니다. 한컴오피스 한글에서 열어주세요.</p>
+      </div>
+
       <div class="hwp-notice">
         <b>동작 방식</b><br>
-        HWPX 파일은 ZIP+XML 구조로, 문서 안의 텍스트 LaTeX(<code>$…$</code>, <code>$$…$$</code>,
-        <code>\(…\)</code>, <code>\[…\]</code>)를 찾아 한컴 수식 개체(<code>hp:equation</code>)로
-        교체한 뒤 새 HWPX로 내보냅니다.<br>
-        HWP(이진) 파일은 <b>rhwp</b> 오픈소스 엔진(인터넷 연결 필요)으로 HWPX 변환 후 같은 방식으로 처리합니다.
+        <b>HWP/HWPX:</b> 문서 안의 텍스트 LaTeX(<code>$…$</code>, <code>$$…$$</code>,
+        <code>\(…\)</code>, <code>\[…\]</code>)를 한컴 수식 개체(<code>hp:equation</code>)로
+        교체한 뒤 새 HWPX로 내보냅니다.
+        HWP(이진)은 <b>rhwp</b> 오픈소스 엔진(인터넷 연결 필요)으로 HWPX 변환 후 처리합니다.<br>
+        <b>Markdown:</b> 제목·강조·표·코드·인라인/블록 수식을 포함한 마크다운 문서를 한컴 한글 HWPX 파일로 변환합니다.
         <span id="hwpConvertingNote" style="display:none; color:var(--accent)">
           — rhwp 엔진 로드 중, 잠시 기다려 주세요…</span>
       </div>
@@ -632,6 +795,8 @@
         <a href="https://github.com/fakeminjun7321/hwpx-latex-to-equation" target="_blank" rel="noopener">hwpx-latex-to-equation</a>
         ·
         <a href="https://github.com/edwardkim/rhwp" target="_blank" rel="noopener">rhwp</a>
+        ·
+        <a href="https://github.com/minigu5/markdown_to_hwp" target="_blank" rel="noopener">markdown_to_hwp</a>
       </footer>
 
     </div><!-- /tabFile -->
@@ -751,9 +916,11 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
   <script defer src="vendor/jszip.min.js"></script>
   <script defer src="src/converter.js"></script>
   <script defer src="src/hwpx-convert.js"></script>
+  <script defer src="src/md-to-hwpx.js"></script>
   <script defer src="app.js"></script>
   <script>
     /* 다크 모드 토글: 선택값을 localStorage에 저장. 기본값은 라이트 모드. */
