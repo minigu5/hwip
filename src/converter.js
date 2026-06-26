@@ -194,6 +194,28 @@
     return atom === null ? '' : atom.text;
   }
 
+  // \frac12 처럼 중괄호 없이 두 자리 숫자가 붙은 경우: LaTeX 명세상 각 자리가 별도 인수.
+  // 토크나이저가 숫자를 한 토큰으로 묶으므로 첫 글자만 소비하고 나머지를 토큰에 돌려놓는다.
+  function readArgChar(tokens, pos) {
+    skipSpaces(tokens, pos);
+    var t = peek(tokens, pos);
+    if (!t) return '';
+    if (t.type === 'ctrl' && t.value === '{') {
+      pos.i++;
+      var inner = parseSeq(tokens, pos, null);
+      var c = peek(tokens, pos);
+      if (c && c.type === 'ctrl' && c.value === '}') pos.i++;
+      return inner;
+    }
+    if (t.value.length > 1) {
+      var first = t.value[0];
+      tokens[pos.i] = { type: t.type, value: t.value.slice(1) };
+      return first;
+    }
+    var atom = parseAtom(tokens, pos);
+    return atom === null ? '' : atom.text;
+  }
+
   // { ... } 안의 글자를 공백 없이 그대로 잇는다 (환경 이름 등에 사용).
   function readRawName(tokens, pos) {
     skipSpaces(tokens, pos);
@@ -286,8 +308,8 @@
 
     // 분수
     if (name === 'frac' || name === 'dfrac' || name === 'tfrac' || name === 'cfrac' || name === 'fras') {
-      var a = readArg(tokens, pos);
-      var b = readArg(tokens, pos);
+      var a = readArgChar(tokens, pos);
+      var b = readArgChar(tokens, pos);
       return { text: '{' + a + '} over {' + b + '}', keyword: false };
     }
 
