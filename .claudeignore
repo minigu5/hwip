@@ -1,0 +1,25 @@
+# 빌드/압축 산출물 — 원본이 아니므로 읽을 필요 없음
+vendor/jszip.min.js
+
+# 잠금 파일 — 의존성 정보는 package.json으로 충분
+package-lock.json
+
+# 라이선스/README — CLAUDE.md에 프로젝트 정보가 집약되어 있음
+LICENSE
+README.md
+
+# 바이너리/압축 파일 — 텍스트로 읽어도 의미 없음
+*.pdf
+*.zip
+*.png
+*.jpg
+*.jpeg
+*.ico
+*.woff
+*.woff2
+
+# OS 메타데이터
+.DS_Store
+
+# Git 내부
+.git/

@@ -704,7 +704,7 @@
         <img id="ocrPreviewImg" class="ocr-thumb" alt="" />
         <span class="ocr-status" id="ocrStatus" aria-live="polite"></span>
       </div>
-      <p class="hint" id="inputHint">이미지를 여기 끌어다 놓거나 붙여넣기(⌘/Ctrl+V)하면 OCR로 수식을 자동 인식해요. 첫 인식 시 AI 모델(약 80MB)을 한 번만 내려받습니다.</p>
+      <p class="hint" id="inputHint">이미지를 끌어다 놓거나 붙여넣기(⌘/Ctrl+V)하면 수식을 자동 인식합니다.</p>
     </div>
 
     <div class="panel">
@@ -713,8 +713,7 @@
         <button class="btn" id="copyBtn" type="button">복사</button>
       </div>
       <div class="output" id="output" aria-live="polite"></div>
-      <div class="hint" id="copyHint">변환되면 자동으로 클립보드에 복사됩니다. 한글 수식 편집기에서
-        공백은 항 구분용이라 화면에 안 보이고, 백틱(`)은 좁은 간격을 의미합니다.</div>
+      <div class="hint" id="copyHint">변환되면 자동으로 클립보드에 복사됩니다.</div>
       <div class="preview" id="preview" style="display:none"></div>
     </div>
 
@@ -738,10 +737,11 @@
           <div class="file-drop-icon">📂</div>
           <p class="file-drop-text">파일을 끌어다 놓거나
             <button type="button" class="btn ghost" id="pickFileBtn">파일 선택</button></p>
-          <p class="file-drop-sub">.hwp · .hwpx (LaTeX 수식 개체 삽입) · .md · .markdown (마크다운 → HWPX 변환)<br>마크다운 텍스트를 이 탭에서 바로 붙여넣기(⌘/Ctrl+V)해도 됩니다.<br>변환은 전부 브라우저에서 실행되며 서버로 전송되지 않습니다.</p>
+          <p class="file-drop-sub">.hwp · .hwpx · .md · .markdown<br>붙여넣기(⌘/Ctrl+V)도 가능합니다. 브라우저에서만 처리됩니다.</p>
         </div>
 
         <div class="file-result" id="fileResult" style="display:none"></div>
+        <p class="hint" id="hwpConvertingNote" style="display:none; color:var(--accent)">rhwp 엔진 로드 중, 잠시 기다려 주세요…</p>
       </div>
 
       <!-- MD 전용: 문서 설정 -->
@@ -777,17 +777,6 @@
       <div class="panel md-section" id="mdDownloadPanel">
         <button class="dl-btn" id="mdDownloadBtn" type="button" disabled>파일을 먼저 선택하세요</button>
         <p class="hint" id="mdDownloadHint">변환되면 .hwpx 파일이 내려받아집니다. 한컴오피스 한글에서 열어주세요.</p>
-      </div>
-
-      <div class="hwp-notice">
-        <b>동작 방식</b><br>
-        <b>HWP/HWPX:</b> 문서 안의 텍스트 LaTeX(<code>$…$</code>, <code>$$…$$</code>,
-        <code>\(…\)</code>, <code>\[…\]</code>)를 한컴 수식 개체(<code>hp:equation</code>)로
-        교체한 뒤 새 HWPX로 내보냅니다.
-        HWP(이진)은 <b>rhwp</b> 오픈소스 엔진(인터넷 연결 필요)으로 HWPX 변환 후 처리합니다.<br>
-        <b>Markdown:</b> 제목·강조·표·코드·인라인/블록 수식을 포함한 마크다운 문서를 한컴 한글 HWPX 파일로 변환합니다.
-        <span id="hwpConvertingNote" style="display:none; color:var(--accent)">
-          — rhwp 엔진 로드 중, 잠시 기다려 주세요…</span>
       </div>
 
       <footer>

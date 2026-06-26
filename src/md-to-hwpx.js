@@ -400,6 +400,7 @@
   }
   function escXml(s) {
     return String(s == null ? '' : s)
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '') // XML 1.0 금지 제어 문자 제거
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
@@ -742,11 +743,8 @@
       new RegExp('~~([^~\\n]+?)~~(?=' + CJK_CLASS + ')', 'g'),
       function (_, body) { return '\x01S' + body + '\x01s'; }
     );
-    // 3) `code` + CJK
-    md = md.replace(
-      new RegExp('`([^`\\n]+?)`(?=' + CJK_CLASS + ')', 'g'),
-      function (_, body) { return '\x01C' + body + '\x01c'; }
-    );
+    // 3) `code` + CJK — CommonMark codespan 은 한글 조사가 직접 붙어도 정상 파싱되므로
+    //    여기서 변환하지 않는다. (오히려 인접 codespan 간 backtick 오인식 버그를 유발했음)
     // 4) *em* + CJK — `**` 는 위에서 이미 처리됐으니 단일 `*` 만 잡음
     md = md.replace(
       new RegExp('(^|[^*\\\\])\\*([^*\\n\\s]([^*\\n]*[^*\\n\\s])?)\\*(?=' + CJK_CLASS + ')', 'g'),
@@ -1232,7 +1230,18 @@
     var pre = preprocessMath(String(md || ''), convertLatex);
 
     // 1.5) 한국어 emphasis 보정 — AI 의 "**사과**는" 같은 실수를 살린다
+    // 인라인 코드(`...`)를 먼저 sentinel 로 치환해 fixCjkEmphasis 가 인접한 두 codespan 의
+    // 닫는 backtick 을 다음 codespan 의 여는 backtick 으로 오인식하는 버그를 방지한다.
+    var icodesMask = [];
+    pre.md = pre.md.replace(/`[^`\n]+?`/g, function (m) {
+      var idx = icodesMask.length;
+      icodesMask.push(m);
+      return 'MDHWPICODE' + idx + 'END';
+    });
     pre.md = fixCjkEmphasis(pre.md);
+    pre.md = pre.md.replace(/MDHWPICODE(\d+)END/g, function (_m, i) {
+      return icodesMask[+i];
+    });
 
     // 2) marked.lexer 로 토큰화
     var lexer = (typeof marked.lexer === 'function') ? marked.lexer : marked.Lexer.lex;
