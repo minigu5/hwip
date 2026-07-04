@@ -15,7 +15,7 @@
  * 로직을 고칠 때 CACHE_VERSION을 올리면 사용자 브라우저가 새 셸을 받는다.
  */
 
-var CACHE_VERSION = 'v3-2026-06-08';
+var CACHE_VERSION = 'v3-2026-07-04';
 var CACHE_NAME = 'whip-app-shell-' + CACHE_VERSION;
 
 var APP_SHELL = [
@@ -50,12 +50,22 @@ self.addEventListener('install', function (event) {
 self.addEventListener('activate', function (event) {
   event.waitUntil(
     caches.keys().then(function (keys) {
+      var hadOldCache = keys.some(function (key) {
+        return key.indexOf('whip-app-shell-') === 0 && key !== CACHE_NAME;
+      });
       return Promise.all(keys.map(function (key) {
         if (key.indexOf('whip-app-shell-') === 0 && key !== CACHE_NAME) {
           return caches.delete(key);
         }
-      }));
-    }).then(function () { return self.clients.claim(); })
+      })).then(function () {
+        return self.clients.claim();
+      }).then(function () {
+        if (!hadOldCache) return;
+        return self.clients.matchAll({ type: 'window' }).then(function (clients) {
+          clients.forEach(function (c) { c.postMessage({ type: 'SW_UPDATED' }); });
+        });
+      });
+    })
   );
 });
 

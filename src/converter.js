@@ -178,6 +178,38 @@
     return text;
   }
 
+  // {..} 안에 LaTeX cmd 토큰이 없으면 원문 텍스트 반환, 있으면 null (기존 readArg로 폴백).
+  // \text{liquid}, \mathrm{eq} 등에서 "liquid", "eq" 같은 HWP 텍스트 모드 출력에 쓴다.
+  function tryReadRawText(tokens, pos) {
+    skipSpaces(tokens, pos);
+    var saved = pos.i;
+    var t = peek(tokens, pos);
+    if (!t) return null;
+    if (t.type !== 'ctrl' || t.value !== '{') {
+      if (t.type === 'char' || t.type === 'text') { pos.i++; return t.value; }
+      return null;
+    }
+    pos.i++;
+    var pieces = [];
+    var hasCmd = false;
+    while (pos.i < tokens.length) {
+      var tok = tokens[pos.i];
+      if (tok.type === 'ctrl' && tok.value === '}') { pos.i++; break; }
+      if (tok.type === 'cmd') {
+        if (tok.value === ',' || tok.value === ';' || tok.value === ' ' || tok.value === '!') {
+          pieces.push(' ');
+        } else { hasCmd = true; break; }
+      } else if (tok.type === 'ctrl') {
+        hasCmd = true; break;
+      } else {
+        pieces.push(tok.value);
+      }
+      pos.i++;
+    }
+    if (hasCmd) { pos.i = saved; return null; }
+    return pieces.join('').trim();
+  }
+
   // 인자 하나 읽기: { ... } 그룹이면 내부, 아니면 단일 항.
   function readArg(tokens, pos) {
     skipSpaces(tokens, pos);
@@ -448,6 +480,8 @@
 
     // 로만/볼드/기타 폰트
     if (name === 'mathrm' || name === 'text' || name === 'textrm' || name === 'operatorname') {
+      var rawT = tryReadRawText(tokens, pos);
+      if (rawT !== null) return { text: '"' + rawT + '"', keyword: true };
       return { text: readArg(tokens, pos), keyword: true };
     }
     if (name === 'mathbf' || name === 'boldsymbol' || name === 'bold' || name === 'textbf') {
@@ -461,6 +495,10 @@
         name === 'mathit' || name === 'mathnormal') {
       return { text: readArg(tokens, pos), keyword: true };
     }
+
+    // 구식 선언형 폰트 명령 (\rm, \bf, \it 등) — 인자 없는 토글이므로 무시
+    if (name === 'rm' || name === 'bf' || name === 'it' || name === 'sf' ||
+        name === 'tt' || name === 'sl' || name === 'sc') return null;
 
     // Ignore structural formatting commands in HWP
     if (name === 'hline' || name === 'vline') return null;

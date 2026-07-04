@@ -825,12 +825,42 @@
             result.push({ type: 'inlineMath', script: convertLatex(body) });
             i = endDollar + 1; continue;
           }
+          // 한국어 포함 $..$ — $ 기호 제거, body를 텍스트로 처리
+          // 직후에 \command 패턴이 이어지면 인라인 수식으로 변환
+          if (/[가-힣]/.test(body)) {
+            buf += body;
+            i = endDollar + 1;
+            var remKor = text.slice(i);
+            var cmKor = remKor.match(/^\\[a-zA-Z]{2,}/);
+            if (cmKor) { flushText(); result.push({ type: 'inlineMath', script: convertLatex(cmKor[0]) }); i += cmKor[0].length; }
+            continue;
+          }
+        }
+        // 닫는 $ 없는 경우 — $\command 패턴이면 인라인 수식으로 직접 변환
+        if (endDollar < 0 && text[i + 1] === '\\') {
+          var cmUnc = text.slice(i + 1).match(/^\\[a-zA-Z]{2,}/);
+          if (cmUnc) { flushText(); result.push({ type: 'inlineMath', script: convertLatex(cmUnc[0]) }); i += 1 + cmUnc[0].length; continue; }
         }
       }
       buf += text[i++];
     }
     flushText();
     return result;
+  }
+
+  // 독립 LaTeX 단락 감지 — 구분자($$) 없이 출력된 수식 블록 처리
+  // 한국어 없고, LaTeX 명령 있고, 수식 특유 패턴이 있어야 true
+  function isLikelyUndelimitedMath(text) {
+    var t = (text || '').trim();
+    if (!t || t.length < 3) return false;
+    if (/[가-힣]/.test(t)) return false;                          // 한국어 있으면 제외
+    if (!/\\[a-zA-Z]/.test(t)) return false;                     // LaTeX 명령 필수
+    if (/^`[^`\n]+`$/.test(t)) return false;                     // 인라인 코드 스팬 제외
+    // 문서 구조 명령(수식 아님)
+    if (/^\\(?:text|textbf|textit|textrm|textsc|section|subsection|subsubsection|begin|end|item|cite|ref|label|title|author|chapter|paragraph|newline|hline|vspace|hspace|noindent)\b/.test(t)) return false;
+    // 수식 특유 패턴: 첨자 또는 수식 명령
+    return /[_^]\{|[_^][a-zA-Z0-9]/.test(t) ||
+      /\\(?:frac|sqrt|sum|int|prod|lim|mu|alpha|beta|gamma|delta|epsilon|zeta|eta|theta|iota|kappa|lambda|rho|sigma|tau|upsilon|phi|chi|psi|omega|Gamma|Delta|Theta|Lambda|Xi|Pi|Sigma|Upsilon|Phi|Psi|Omega|partial|nabla|infty|cdot|times|pm|mp|div|leq|geq|neq|approx|equiv|sim|propto|hat|vec|bar|dot|tilde|overline|underline|ln|exp|sin|cos|tan|log)\b/.test(t);
   }
 
   function shouldConvertInlineMath(body) {
@@ -989,11 +1019,17 @@
       }
 
       case 'paragraph': {
+        // 구분자 없는 LaTeX 블록 자동 감지 (Gemini 등이 $$ 없이 수식을 출력하는 경우)
+        var rawPara = (token.text || '').trim();
+        if (isLikelyUndelimitedMath(rawPara)) {
+          return paragraphXml(paraPrMap.center, '0', [
+            { type: 'equation', script: convertLatex(rawPara), charPrId: charPrMap.body }
+          ], idGen);
+        }
         var sub2 = injectInlineMath(token.tokens || [], convertLatex, inlinePHs, inlineSent);
-        // 단락이 인라인 수식만으로 이뤄져 있으면 가운데 정렬 (수식 블록처럼 보이게).
-        var paraId = isOnlyInlineMath(sub2) ? paraPrMap.center : '0';
         var runs2 = inlineTokensToRuns(sub2, charPrMap);
-        return paragraphXml(paraId, '0', runs2, idGen);
+        var paraId2 = isOnlyInlineMath(sub2) ? paraPrMap.center : '0';
+        return paragraphXml(paraId2, '0', runs2, idGen);
       }
 
       case 'blockquote': {
@@ -1134,15 +1170,32 @@
       return 'MDHWPFENCE' + i + 'END';
     });
 
-    // 2) 블록 수식 $$ ... $$, \[ ... \]
+    // 2) 블록 수식 $$ ... $$, \[ ... \], ChatGPT [ \n ... \n? ] 포맷
     masked = masked.replace(/\$\$([\s\S]+?)\$\$/g, function (_m, body) {
       var i = blockPHs.length;
       blockPHs.push(convertLatex(body));
       return '\n\n' + BSENT + i + BSENT + '\n\n';
     });
+    // 2a) 잘못 닫힌 display math: $$...$ (닫는 $가 하나인 경우 — Grok 등)
+    masked = masked.replace(/\$\$([^\n$]{1,300})\$(?!\$)/g, function (_m, body) {
+      var t = body.trim();
+      if (!t || !/\\[a-zA-Z]/.test(t)) return _m;
+      var i = blockPHs.length;
+      blockPHs.push(convertLatex(t));
+      return '\n\n' + BSENT + i + BSENT + '\n\n';
+    });
     masked = masked.replace(/\\\[([\s\S]+?)\\\]/g, function (_m, body) {
       var i = blockPHs.length;
       blockPHs.push(convertLatex(body));
+      return '\n\n' + BSENT + i + BSENT + '\n\n';
+    });
+    // ChatGPT 블록 수식 포맷: [ 다음 줄에 LaTeX, ] 로 닫힘 (줄바꿈 유무 무관)
+    // report-extract.js 에서 변환 실패한 경우의 fallback
+    masked = masked.replace(/(?:^|\n)\[\n([\s\S]*?)\n?\](?=\n|$)/gm, function (_m, body) {
+      var latex = body.trim().replace(/\n+/g, ' ').trim();
+      if (!latex || !/\\[A-Za-z]/.test(latex)) return _m;
+      var i = blockPHs.length;
+      blockPHs.push(convertLatex(latex));
       return '\n\n' + BSENT + i + BSENT + '\n\n';
     });
 
@@ -1159,6 +1212,9 @@
       inlinePHs.push(convertLatex(body));
       return pre + ISENT + i + ISENT;
     });
+
+    // 3.5) 수식 처리 후 남은 고아 $ 정리 — 한글 바로 앞의 $ 는 수식 아님
+    masked = masked.replace(/\$(?=[가-힣])/g, '');
 
     // 4) 코드 펜스 복원
     masked = masked.replace(/MDHWPFENCE(\d+)END/g, function (_m, i) {

@@ -937,6 +937,11 @@
       window.addEventListener('load', function () {
         navigator.serviceWorker.register('sw.js').catch(function () {});
       });
+      navigator.serviceWorker.addEventListener('message', function (event) {
+        if (event.data && event.data.type === 'SW_UPDATED') {
+          window.location.reload();
+        }
+      });
     }
 
     /* 오프라인 안내 배너 — 연결 상태에 따라 표시/숨김 */
