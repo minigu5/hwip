@@ -332,6 +332,7 @@
     .doc-options label {
       display: inline-flex; align-items: center; gap: 6px;
       font-size: 0.85rem; color: var(--text); font-weight: 600;
+      min-width: 3.8em;
     }
     .doc-options select, .doc-options input[type="number"] {
       background: var(--card);
@@ -458,6 +459,19 @@
     .file-drop-icon { font-size: 2rem; line-height: 1; }
     .file-drop-text { margin: 6px 0 4px; font-size: 0.95rem; }
     .file-drop-sub { margin: 0; color: var(--muted); font-size: 0.8rem; }
+    .doc-options label.label-expand { flex: 1; min-width: 0; }
+    .file-name-inline {
+      display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0;
+    }
+    .file-name-inline input {
+      flex: 1; min-width: 0;
+      padding: 5px 8px; border-radius: 6px;
+      border: 1.5px solid var(--border); background: var(--input-bg);
+      color: var(--text); font-size: 0.85rem; outline: none;
+      transition: border-color 0.15s; font-family: inherit;
+    }
+    .file-name-inline input:focus { border-color: var(--accent); }
+    .file-name-ext { font-size: 0.8rem; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
     .file-result { margin-top: 14px; }
     /* 변환 결과 헤더: 체크 + 파일명 + 통계 한 줄 */
     .conv-summary {
@@ -744,13 +758,21 @@
         <p class="hint" id="hwpConvertingNote" style="display:none; color:var(--accent)">rhwp 엔진 로드 중, 잠시 기다려 주세요…</p>
       </div>
 
-      <!-- MD 전용: 문서 설정 -->
-      <div class="panel md-section" id="mdDocOptions">
+      <!-- 문서 설정 (파일명: 공통 / 글꼴·크기: MD 전용) -->
+      <div class="panel" id="mdDocOptions" style="display:none">
         <div class="label-row">
           <span class="label">문서 설정</span>
           <span class="hint" id="mdTokenCount" style="margin-top:0"></span>
         </div>
         <div class="doc-options">
+          <label class="label-expand">파일명
+            <div class="file-name-inline">
+              <input type="text" id="fileNameInput" placeholder="비워두면 자동 감지" maxlength="100" autocomplete="off" spellcheck="false" />
+              <span class="file-name-ext">.hwpx</span>
+            </div>
+          </label>
+        </div>
+        <div class="doc-options" id="mdFontOptions" style="display:none">
           <label>글꼴
             <select id="mdFontSelect"></select>
           </label>

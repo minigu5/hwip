@@ -621,10 +621,76 @@
     return stem + '_hwp_equations' + ext;
   }
 
-  function convertFile(file, deps) {
+  function sanitizeFilename(name) {
+    return (name || '').replace(/[\\/:*?"<>|\t\n\r]/g, '_').replace(/\s+/g, ' ').trim().slice(0, 100) || 'output';
+  }
+
+  // HWPX ZIP 버퍼에서 "제목" 스타일 단락의 첫 텍스트를 추출한다.
+  function extractTitleFromBuf(buf, deps) {
+    var d = resolveDeps(deps);
+    var HH = 'http://www.hancom.co.kr/hwpml/2011/head';
+    return d.JSZip.loadAsync(buf).then(function (zip) {
+      var headerFile = zip.file('Contents/header.xml');
+      if (!headerFile) return null;
+      return headerFile.async('string').then(function (headerXml) {
+        var headerDoc;
+        try {
+          headerDoc = new d.DOMParser().parseFromString(headerXml, 'application/xml');
+        } catch (e) { return null; }
+        var styleEls = headerDoc.getElementsByTagNameNS(HH, 'style');
+        var titleStyleIds = Object.create(null);
+        for (var i = 0; i < styleEls.length; i++) {
+          var s = styleEls[i];
+          if (s.getAttribute('type') !== 'PARA') continue;
+          var sname = s.getAttribute('name') || '';
+          var engName = s.getAttribute('engName') || '';
+          if (sname.indexOf('제목') !== -1 || /^heading/i.test(engName)) {
+            titleStyleIds[s.getAttribute('id')] = true;
+          }
+        }
+        if (!Object.keys(titleStyleIds).length) return null;
+        var sectionNames = findSectionNames(zip);
+        if (!sectionNames.length) return null;
+        return zip.file(sectionNames[0]).async('string').then(function (sectionXml) {
+          var doc;
+          try {
+            doc = new d.DOMParser().parseFromString(sectionXml, 'application/xml');
+          } catch (e) { return null; }
+          var paras = doc.getElementsByTagNameNS(HP_NS, 'p');
+          for (var pi = 0; pi < paras.length; pi++) {
+            var para = paras[pi];
+            var pPrs = para.getElementsByTagNameNS(HP_NS, 'pPr');
+            if (!pPrs.length) continue;
+            var styleIDRef = pPrs[0].getAttribute('styleIDRef');
+            if (!titleStyleIds[styleIDRef]) continue;
+            var tEls = para.getElementsByTagNameNS(HP_NS, 't');
+            var text = '';
+            for (var ti = 0; ti < tEls.length; ti++) text += tEls[ti].textContent;
+            text = text.trim();
+            if (text) return text;
+          }
+          return null;
+        });
+      });
+    }).catch(function () { return null; });
+  }
+
+  function convertFile(file, deps, options) {
     return file.arrayBuffer().then(function (buf) {
-      return convertArrayBuffer(buf, deps).then(function (out) {
-        return { blob: out.blob, stats: out.stats, filename: makeOutputName(file.name) };
+      var customName = options && options.outputName ? String(options.outputName).trim() : '';
+      var convPromise = convertArrayBuffer(buf, deps);
+      var titlePromise = customName
+        ? Promise.resolve(null)
+        : extractTitleFromBuf(buf, deps);
+      return Promise.all([convPromise, titlePromise]).then(function (results) {
+        var out = results[0];
+        var title = results[1];
+        var filename = customName
+          ? sanitizeFilename(customName) + '.hwpx'
+          : title
+            ? sanitizeFilename(title) + '.hwpx'
+            : makeOutputName(file.name);
+        return { blob: out.blob, stats: out.stats, filename: filename, title: title };
       });
     });
   }
@@ -633,6 +699,8 @@
     convertFile: convertFile,
     convertArrayBuffer: convertArrayBuffer,
     makeOutputName: makeOutputName,
+    sanitizeFilename: sanitizeFilename,
+    extractTitle: extractTitleFromBuf,
     // 내부 함수 일부 노출(테스트용)
     _internal: {
       findLatexSpans: findLatexSpans,

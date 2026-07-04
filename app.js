@@ -694,6 +694,11 @@
         showMdSections(true);
         applyMdDocStyle();
         renderMdPreview();
+        showDocSettings(true);
+        if (fileNameInput && !fileNameInput.value.trim()) {
+          var pastedTitle = extractMdTitle(pastedText);
+          if (pastedTitle) fileNameInput.value = pastedTitle;
+        }
         if (mdDownloadBtn) {
           mdDownloadBtn.disabled = false;
           mdDownloadBtn.textContent = 'HWPX로 다운로드';
@@ -762,6 +767,8 @@
   var pickFileBtn = document.getElementById('pickFileBtn');
   var fileResultEl = document.getElementById('fileResult');
   var hwpConvertingNote = document.getElementById('hwpConvertingNote');
+  var fileNameInput = document.getElementById('fileNameInput');
+  var mdFontOptions = document.getElementById('mdFontOptions');
 
   var fileResultUrl = null;
 
@@ -838,13 +845,24 @@
       : convertHwpx(file);
 
     convertPromise
-      .then(function (out) { showFileResult(out.blob, out.stats, out.filename); })
+      .then(function (out) {
+        showFileResult(out.blob, out.stats, out.filename);
+        // 변환 결과의 제목/파일명을 입력창에 반영 (사용자가 직접 입력하지 않은 경우만)
+        if (fileNameInput && !getFileNameInputValue() && out.title) {
+          fileNameInput.value = out.title;
+        }
+      })
       .catch(function (err) { showFileError((err && err.message) ? err.message : String(err)); });
+  }
+
+  function getFileNameInputValue() {
+    return fileNameInput ? fileNameInput.value.trim() : '';
   }
 
   // HWPX 직접 변환 (hwpx-convert.js 사용)
   function convertHwpx(file) {
-    return window.HwpxConvert.convertFile(file);
+    var customName = getFileNameInputValue();
+    return window.HwpxConvert.convertFile(file, null, customName ? { outputName: customName } : undefined);
   }
 
   // HWP 이진 파일: rhwp editor iframe을 숨겨서 HWPX로 변환 후 처리
@@ -903,7 +921,8 @@
                 file.name.replace(/\.hwp$/i, '.hwpx'),
                 { type: 'application/vnd.hancom.hwpx' }
               );
-              return window.HwpxConvert.convertFile(hwpxFile);
+              var customName = getFileNameInputValue();
+              return window.HwpxConvert.convertFile(hwpxFile, null, customName ? { outputName: customName } : undefined);
             })
             .then(resolve)
             .catch(function (err) { cleanup(); reject(err); });
@@ -1167,11 +1186,18 @@
   }
 
   function showMdSections(visible) {
-    [mdDocOptionsPanel, mdPreviewPanel, mdDownloadPanel].forEach(function (el) {
+    // 미리보기·다운로드는 MD 전용
+    [mdPreviewPanel, mdDownloadPanel].forEach(function (el) {
       if (!el) return;
       if (visible) el.classList.add('visible');
       else el.classList.remove('visible');
     });
+    // 글꼴·크기도 MD 전용
+    if (mdFontOptions) mdFontOptions.style.display = visible ? '' : 'none';
+  }
+
+  function showDocSettings(visible) {
+    if (mdDocOptionsPanel) mdDocOptionsPanel.style.display = visible ? '' : 'none';
   }
 
   function runMarkdownConvert(file) {
@@ -1179,6 +1205,12 @@
     reader.onload = function () {
       currentMdText = String(reader.result || '');
       currentMdFileName = file.name;
+
+      // 파일명 입력창이 비어있으면 마크다운 첫 # 제목으로 자동 채우기
+      if (fileNameInput && !fileNameInput.value.trim()) {
+        var mdTitle = extractMdTitle(currentMdText);
+        if (mdTitle) fileNameInput.value = mdTitle;
+      }
 
       showMdSections(true);
       applyMdDocStyle();
@@ -1205,6 +1237,12 @@
     reader.readAsText(file, 'utf-8');
   }
 
+  function extractMdTitle(text) {
+    if (!text) return '';
+    var m = text.match(/^#\s+(.+)/m);
+    return m ? m[1].replace(/[*_`]/g, '').trim() : '';
+  }
+
   if (mdDownloadBtn) {
     mdDownloadBtn.addEventListener('click', function () {
       if (!currentMdText || !window.MarkdownToHwpx) return;
@@ -1218,9 +1256,12 @@
         fontSizePt: mdCurrentSize()
       }, { templateUrl: 'templates/blank.hwpx' })
         .then(function (blob) {
-          var name = currentMdFileName
-            ? currentMdFileName.replace(/\.(md|markdown)$/i, '') + '.hwpx'
-            : 'output.hwpx';
+          var customName = getFileNameInputValue();
+          var stem = customName
+            ? (window.HwpxConvert ? window.HwpxConvert.sanitizeFilename(customName) : customName.replace(/[\\/:*?"<>|]/g, '_').trim())
+            : extractMdTitle(currentMdText)
+              || (currentMdFileName ? currentMdFileName.replace(/\.(md|markdown)$/i, '') : '');
+          var name = (stem || 'output') + '.hwpx';
           var file = (typeof File === 'function')
             ? new File([blob], name, { type: 'application/vnd.hancom.hwpx' })
             : blob;
@@ -1246,6 +1287,10 @@
     var isMd = /\.(md|markdown)$/i.test(file.name);
     var isHwpx = /\.hwpx$/i.test(file.name);
     var isHwp = /\.hwp$/i.test(file.name) && !isHwpx;
+
+    // 파일 선택 시 문서 설정 패널 표시 및 파일명 초기화
+    showDocSettings(true);
+    if (fileNameInput) fileNameInput.value = '';
 
     if (isMd) {
       showMdSections(true);
