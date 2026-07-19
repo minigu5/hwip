@@ -511,7 +511,7 @@
   //
   // 표 단락: 단락 안의 hp:run 자식으로 hp:tbl 를 직접 둔다.
   // 마크다운 표는 header row + body rows 로 모델링되어 있어 단순한 격자 변환.
-  function tableXml(table, idGen, charPrMap, borderFillId) {
+  function tableXml(table, idGen, charPrMap, borderFillId, convertLatex, inlinePHs, inlineSent) {
     var bfId = borderFillId || '2';
     var rows = [];
     if (table.header) {
@@ -542,7 +542,8 @@
       var rowObj = rows[r];
       for (var c = 0; c < colCnt; c++) {
         var cell = rowObj.cells[c] || { tokens: [] };
-        var cellRuns = inlineTokensToRuns(cell.tokens || [], charPrMap);
+        var cellTokens = injectInlineMath(cell.tokens || [], convertLatex, inlinePHs, inlineSent);
+        var cellRuns = inlineTokensToRuns(cellTokens, charPrMap);
         var headerVal = rowObj.header ? '1' : '0';
         var cellPara = paragraphXml('0', '0', cellRuns, idGen);
         cellsXml +=
@@ -1110,7 +1111,7 @@
 
       case 'table': {
         var bfMap = ctx.borderFillMap || {};
-        return tableXml(token, idGen, charPrMap, bfMap.tableDefault);
+        return tableXml(token, idGen, charPrMap, bfMap.tableDefault, convertLatex, inlinePHs, inlineSent);
       }
 
       case 'html': {
@@ -1214,7 +1215,19 @@
     });
 
     // 3.5) 수식 처리 후 남은 고아 $ 정리 — 한글 바로 앞의 $ 는 수식 아님
+    // 단, "$0$이 된다" 처럼 금액성 숫자로 판단해 일부러 sentinel 치환을 건너뛴(shouldConvertInlineMath
+    // 참고) 완전히 닫힌 $...$ 쌍은 보호한다. 안 그러면 닫는 $ 만 stray 로 오인해 지워버려
+    // "$0$이" → "$0이" 처럼 열린 $ 만 남는다.
+    var moneyMasks = [];
+    masked = masked.replace(/\$\d[\d,]*(?:\.\d+)?\$/g, function (m) {
+      var i = moneyMasks.length;
+      moneyMasks.push(m);
+      return 'MDHWPMONEYPLH' + i + 'END';
+    });
     masked = masked.replace(/\$(?=[가-힣])/g, '');
+    masked = masked.replace(/MDHWPMONEYPLH(\d+)END/g, function (_m, i) {
+      return moneyMasks[+i];
+    });
 
     // 4) 코드 펜스 복원
     masked = masked.replace(/MDHWPFENCE(\d+)END/g, function (_m, i) {
