@@ -165,3 +165,16 @@ test('오류 케이스: n in N Rarr n geq 1 특수 띄어쓰기 및 대문자 �
     'n ` IN ` N RARROW n geq 1'
   );
 });
+
+// \xrightarrow[bot]{top} 의 [ 앞에 공백이 있으면 대괄호 인식이 깨져
+// '[' 가 리터럴 텍스트로 새는 버그가 있었다. 공백 유무 모두 통과해야 한다.
+test('xrightarrow: [bot] 앞 공백이 있어도 대괄호를 인식', () => {
+  assert.strictEqual(
+    convert('\\xrightarrow[MnO_2]{\\Delta}'),
+    'REL rarrow {Delta} {M n O _{2}}'
+  );
+  assert.strictEqual(
+    convert('\\xrightarrow [ MnO_2 ] { \\Delta }'),
+    'REL rarrow {Delta} {M n O _{2}}'
+  );
+});

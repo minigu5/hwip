@@ -411,6 +411,7 @@
         name === 'xLeftarrow' || name === 'xleftrightarrow' || name === 'xLeftrightarrow' ||
         name === 'xmapsto') {
       var bot = '';
+      skipSpaces(tokens, pos);
       var c = peek(tokens, pos);
       if (c && c.type === 'char' && c.value === '[') {
         pos.i++;
