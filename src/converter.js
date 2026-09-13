@@ -407,9 +407,9 @@
     }
 
     // xarrow support
-    if (name === 'xrightarrow' || name === 'xleftarrow' || name === 'xRightarrow' || 
+    if (name === 'xrightarrow' || name === 'xleftarrow' || name === 'xRightarrow' ||
         name === 'xLeftarrow' || name === 'xleftrightarrow' || name === 'xLeftrightarrow' ||
-        name === 'xmapsto') {
+        name === 'xmapsto' || name === 'xrightleftharpoons' || name === 'xleftrightharpoons') {
       var bot = '';
       skipSpaces(tokens, pos);
       var c = peek(tokens, pos);
@@ -424,7 +424,7 @@
       var arrowMap = {
         xrightarrow: 'rarrow', xleftarrow: 'larrow', xRightarrow: 'RARROW',
         xLeftarrow: 'LARROW', xleftrightarrow: 'lrarrow', xLeftrightarrow: 'LRARROW',
-        xmapsto: 'mapsto'
+        xmapsto: 'mapsto', xrightleftharpoons: 'EXARROW', xleftrightharpoons: 'EXARROW'
       };
       var hwpArrow = arrowMap[name] || 'rarrow';
       return { text: 'REL ' + hwpArrow + ' {' + top + '} {' + bot + '}', keyword: false };
@@ -507,6 +507,11 @@
     if (name === 'not') return { text: 'not', keyword: true };
     if (name === 'over') return { text: 'over', keyword: true };
     if (name === 'atop') return { text: 'atop', keyword: true };
+
+    // 화학 평형 화살표 (rightleftharpoons 등) — EXARROW 템플릿(빈 위/아래 인자) 사용
+    if (name === 'rightleftharpoons' || name === 'leftrightharpoons') {
+      return { text: 'REL EXARROW {} {}', keyword: false };
+    }
 
     // 함수 / 그리스 / 기호
     if (FUNCTIONS.has(name)) return { text: name, keyword: true };
