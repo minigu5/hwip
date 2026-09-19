@@ -1206,12 +1206,25 @@
       inlinePHs.push(convertLatex(body));
       return ISENT + i + ISENT;
     });
+    // 2.5) 닫히지 않은 통화 $ 보호 — "가격은 $100 이고 공식은 $E=mc^2$" 처럼 짝 없는
+    // 금액 표기($100)가 뒤에 나오는 진짜 수식의 여는 $ 로 잘못 짝지어지는 것을 막는다.
+    // 숫자 뒤에 바로 $·문자·수식 기호($A-Za-z_^{}=<>+-*/|\)가 이어지면(=진짜 수식일 수
+    // 있음) 건드리지 않고, 공백·문장부호 등이 이어지면 통화로 보고 임시 치환한다.
+    var preMoneyMasks = [];
+    masked = masked.replace(/\$(\d[\d,]*(?:\.\d+)?)(?![\dA-Za-z$_^{}=<>+\-*/|\\])/g, function (m) {
+      var i = preMoneyMasks.length;
+      preMoneyMasks.push(m);
+      return 'MDHWPPREMONEYPLH' + i + 'END';
+    });
     // $...$ — 같은 줄, 백슬래시-escape 된 $는 제외, 금액성 숫자 제외
     masked = masked.replace(/(^|[^\\$])\$([^\$\n]+?)\$(?!\d)/g, function (m, pre, body) {
       if (!shouldConvertInlineMath(body)) return m;
       var i = inlinePHs.length;
       inlinePHs.push(convertLatex(body));
       return pre + ISENT + i + ISENT;
+    });
+    masked = masked.replace(/MDHWPPREMONEYPLH(\d+)END/g, function (_m, i) {
+      return preMoneyMasks[+i];
     });
 
     // 3.5) 수식 처리 후 남은 고아 $ 정리 — 한글 바로 앞의 $ 는 수식 아님
