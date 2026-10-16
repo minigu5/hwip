@@ -89,7 +89,7 @@ HWP 또는 HWPX 파일을 업로드하면, 문서 안의 텍스트 LaTeX 수식�
 
 ### 🧩 크롬 확장 프로그램
 
-AI 사이트의 수식에 마우스를 올리면 바로 변환·복사하는 [크롬 확장](https://github.com/minigu5/latex-to-hwp-extension)도 제공합니다(웹스토어 미등록 — 개발자 모드로 설치). 이 확장의 소스 코드는 별도 저장소로 관리됩니다.
+AI 사이트의 수식에 마우스를 올리면 바로 변환·복사하는 크롬 확장도 제공합니다. [크롬 웹스토어](https://chromewebstore.google.com/detail/meahkfhlalnljlgllhmhmfdhpkknfncg)에서 바로 설치할 수 있습니다. 이 확장의 [소스 코드](https://github.com/minigu5/latex-to-hwp-extension)는 별도 저장소로 관리됩니다.
 
 ---
 
