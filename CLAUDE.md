@@ -23,7 +23,7 @@
 
 1. **`/chrome-extension`은 메인 저장소(`hwip`)에 절대 커밋·푸시하지 말 것.** `.gitignore`의 `/chrome-extension/` 규칙은 의도적이다. 로컬 파일은 보존하되, 변경은 별도 저장소(`latex-to-hwp-extension`)로만 푸시한다. 그 폴더엔 독립 `.git`이 없으므로 임시 위치에 `gh repo clone minigu5/latex-to-hwp-extension` → `rsync -a --exclude='.git' --exclude='.DS_Store' chrome-extension/ <clone>/` → clone에서 commit·push.
 2. **로직 동기화**: `src/converter.js`를 수정하면 반드시 `chrome-extension/lib/converter.js`로 복사해 동기화. 동기화 후 각 저장소에 별도 커밋·푸시.
-3. **커밋 정책**: 한컴 공식 명세 PDF(`*.pdf`)는 저작권 보유(한글과컴퓨터)로 커밋 금지 — `.gitignore`로 이미 제외. 커밋 메시지 끝에 `Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>` 추가. 커밋·푸시는 사용자가 요청할 때만 수행한다.
+3. **커밋 정책**: 한컴 공식 명세 PDF(`*.pdf`)는 저작권 보유(한글과컴퓨터)로 커밋 금지 — `.gitignore`로 이미 제외. 커밋·푸시는 사용자가 요청할 때만 수행한다.
 
 ### 실수 복구
 - `git checkout <commit_id> -- <path>` — 특정 파일 복구
