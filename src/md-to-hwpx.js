@@ -507,11 +507,57 @@
       '</hp:equation></hp:run>';
   }
 
+  // 열 폭 — 내용 길이(em 추정)에 비례해 나눈다. 같은 폭으로 쪼개면 12열 표에서
+  // 수식 셀이 줄바꿈되고 짧은 열(시행 번호)은 남는다. 병합 셀(span>1)은 폭 계산에서 제외.
+  function columnWidths(rows, colCnt, totalW, inlinePHs, inlineSent) {
+    var sentRe = inlineSent ? new RegExp(inlineSent + '(\\d+)' + inlineSent, 'g') : null;
+    function textEm(str) {
+      var em = 0;
+      for (var i = 0; i < str.length; i++) {
+        var ch = str.charCodeAt(i);
+        em += (ch >= 0xAC00 && ch <= 0xD7AF) || (ch >= 0x3130 && ch <= 0x318F) || (ch >= 0x4E00 && ch <= 0x9FFF) ? 1 : 0.55;
+      }
+      return em;
+    }
+    function eqEm(script) {
+      var t = String(script || '').replace(/\b[a-z]{3,}\b/g, '·').replace(/[`{}^_" ]/g, '');
+      return textEm(t) + 0.3;
+    }
+    function tokensEm(tokens) {
+      var em = 0;
+      (tokens || []).forEach(function (t) {
+        if (t.tokens && t.tokens.length) { em += tokensEm(t.tokens); return; }
+        var str = String(t.text || '').replace(MCOL_RE, '');
+        if (sentRe) {
+          str = str.replace(sentRe, function (_m, i) { em += eqEm(inlinePHs && inlinePHs[+i]); return ''; });
+        }
+        em += textEm(str);
+      });
+      return em;
+    }
+    var weights = [];
+    for (var c = 0; c < colCnt; c++) weights.push(2);
+    rows.forEach(function (row) {
+      var pos = 0;
+      row.cells.forEach(function (cell) {
+        if ((cell.span || 1) === 1 && pos < colCnt) {
+          weights[pos] = Math.max(weights[pos], tokensEm(cell.tokens) + 1.6);
+        }
+        pos += cell.span || 1;
+      });
+    });
+    var sum = weights.reduce(function (a, b) { return a + b; }, 0);
+    var widths = weights.map(function (w) { return Math.floor(totalW * w / sum); });
+    var used = widths.reduce(function (a, b) { return a + b; }, 0);
+    widths[colCnt - 1] += totalW - used;
+    return widths;
+  }
+
   // ── 표 (hp:tbl) ────────────────────────────────────────────────
   //
   // 표 단락: 단락 안의 hp:run 자식으로 hp:tbl 를 직접 둔다.
   // 마크다운 표는 header row + body rows 로 모델링되어 있어 단순한 격자 변환.
-  function tableXml(table, idGen, charPrMap, borderFillId, convertLatex, inlinePHs, inlineSent) {
+  function tableXml(table, idGen, charPrMap, borderFillId, convertLatex, inlinePHs, inlineSent, centerParaId) {
     var bfId = borderFillId || '2';
     var rows = [];
     if (table.header) {
@@ -528,24 +574,65 @@
     });
     if (!rows.length) return '';
 
-    var colCnt = Math.max.apply(null, rows.map(function (r) { return r.cells.length; }));
+    // \multicolumn 표식 → colSpan (표식은 셀 맨 앞 텍스트 토큰에 남아 있다)
+    rows.forEach(function (row) {
+      row.cells.forEach(function (cell) {
+        cell.span = 1;
+        var first = cell.tokens[0];
+        if (first && first.type === 'text') {
+          var mm = MCOL_RE.exec(first.text || '');
+          if (mm) {
+            cell.span = Math.max(1, parseInt(mm[1], 10));
+            cell.tokens = cell.tokens.slice();
+            cell.tokens[0] = Object.assign({}, first, { text: first.text.replace(MCOL_RE, '') });
+          }
+        }
+      });
+    });
+    function rowWidth(row) {
+      return row.cells.reduce(function (a, c) { return a + c.span; }, 0);
+    }
+    // marked 는 짧은 행을 헤더 열 수까지 빈 셀로 채운다 → 병합으로 넘친 만큼 뒤쪽 빈 셀을 걷어낸다.
+    var headerCols = table.header ? table.header.length : 0;
+    function isBlankCell(cell) {
+      return !(cell.tokens || []).some(function (t) { return (t.raw || t.text || '').trim(); });
+    }
+    if (headerCols) {
+      rows.forEach(function (row) {
+        while (rowWidth(row) > headerCols && row.cells.length > 1 && isBlankCell(row.cells[row.cells.length - 1])) {
+          row.cells.pop();
+        }
+      });
+    }
+    var colCnt = Math.max.apply(null, rows.map(rowWidth));
     var rowCnt = rows.length;
     // 폭(hp:sz width) 은 본문폭 약 42520 단위 — 컬럼당 동일 분배
     var totalW = 42520;
-    var colW = Math.floor(totalW / colCnt);
+    var colWs = columnWidths(rows, colCnt, totalW, inlinePHs, inlineSent);
+    function spanW(from, span) {
+      var w = 0;
+      for (var k = from; k < from + span && k < colCnt; k++) w += colWs[k];
+      return w;
+    }
     var rowH = 1500;
     var totalH = rowH * rowCnt;
 
+    var aligns = table.align || [];
+    var centerPara = centerParaId || '0';
     var rowsXml = '';
     for (var r = 0; r < rows.length; r++) {
       var cellsXml = '';
       var rowObj = rows[r];
-      for (var c = 0; c < colCnt; c++) {
-        var cell = rowObj.cells[c] || { tokens: [] };
+      var cells = rowObj.cells.slice();
+      for (var pad = rowWidth(rowObj); pad < colCnt; pad++) cells.push({ tokens: [], span: 1 });
+      var c = 0;
+      for (var ci = 0; ci < cells.length; ci++) {
+        var cell = cells[ci];
+        var span = cell.span || 1;
         var cellTokens = injectInlineMath(cell.tokens || [], convertLatex, inlinePHs, inlineSent);
         var cellRuns = inlineTokensToRuns(cellTokens, charPrMap);
         var headerVal = rowObj.header ? '1' : '0';
-        var cellPara = paragraphXml('0', '0', cellRuns, idGen);
+        var cellPara = paragraphXml(span > 1 || aligns[c] === 'center' ? centerPara : '0', '0', cellRuns, idGen);
         cellsXml +=
           '<hp:tc name="" header="' + headerVal + '" hasMargin="0" protect="0" editable="0" dirty="0" borderFillIDRef="' + bfId + '">' +
             '<hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="CENTER"' +
@@ -554,10 +641,11 @@
               cellPara +
             '</hp:subList>' +
             '<hp:cellAddr colAddr="' + c + '" rowAddr="' + r + '"/>' +
-            '<hp:cellSpan colSpan="1" rowSpan="1"/>' +
-            '<hp:cellSz width="' + colW + '" height="' + rowH + '"/>' +
+            '<hp:cellSpan colSpan="' + span + '" rowSpan="1"/>' +
+            '<hp:cellSz width="' + spanW(c, span) + '" height="' + rowH + '"/>' +
             '<hp:cellMargin left="510" right="510" top="141" bottom="141"/>' +
           '</hp:tc>';
+        c += span;
       }
       rowsXml += '<hp:tr>' + cellsXml + '</hp:tr>';
     }
@@ -735,10 +823,21 @@
 
   function fixCjkEmphasis(md) {
     // 1) **bold** + CJK
-    md = md.replace(
-      new RegExp('\\*\\*([^*\\n]+?)\\*\\*(?=' + CJK_CLASS + ')', 'g'),
-      function (_, body) { return '\x01B' + body + '\x01b'; }
-    );
+    //    `**` 는 줄 안에서 순서대로 (열기, 닫기) 짝지은 뒤 닫는 쪽 뒤에 CJK 가 올 때만 바꾼다.
+    //    정규식 하나로 훑으면 `**가**:  … **나**다` 에서 앞 쌍의 닫는 `**` 를 다음 쌍의 여는 것으로 오인한다.
+    var cjkHead = new RegExp('^' + CJK_CLASS);
+    md = md.replace(/^.*\*\*.*$/gm, function (line) {
+      var parts = line.split('**');
+      var out = parts[0];
+      for (var k = 1; k < parts.length; k += 2) {
+        if (k + 1 >= parts.length) { out += '**' + parts[k]; break; }   // 짝 없는 마지막 여는 **
+        var body = parts[k];
+        var after = parts[k + 1];
+        if (body && cjkHead.test(after)) out += '\x01B' + body + '\x01b' + after;
+        else out += '**' + body + '**' + after;
+      }
+      return out;
+    });
     // 2) ~~strike~~ + CJK
     md = md.replace(
       new RegExp('~~([^~\\n]+?)~~(?=' + CJK_CLASS + ')', 'g'),
@@ -869,6 +968,7 @@
     if (!v) return false;
     if (/^\d[\d,]*(?:\.\d+)?$/.test(v)) return false;          // 금액성 숫자
     if (/\\[A-Za-z]+|[_^{}=<>+\-*\/|]/.test(v)) return true;
+    if (/\\[%,;:!]/.test(v)) return true;                       // `1.03\%` 처럼 이스케이프 기호가 든 수치
     if (/[A-Za-z]\d|\d[A-Za-z]/.test(v)) return true;
     if (/^[A-Za-z]{1,3}$/.test(v)) return true;
     if (/^[A-Za-z]{1,3}['′’]+$/.test(v)) return true;
@@ -1111,7 +1211,7 @@
 
       case 'table': {
         var bfMap = ctx.borderFillMap || {};
-        return tableXml(token, idGen, charPrMap, bfMap.tableDefault, convertLatex, inlinePHs, inlineSent);
+        return tableXml(token, idGen, charPrMap, bfMap.tableDefault, convertLatex, inlinePHs, inlineSent, paraPrMap.center);
       }
 
       case 'html': {
@@ -1147,6 +1247,32 @@
           { type: 'text', text: fallback, charPrId: charPrMap.body }
         ], idGen);
     }
+  }
+
+  // ── 표 셀 병합: LaTeX 식 \multicolumn{n}{c|}{내용} ─────────────────
+  //
+  // 서식 인자의 `|` 가 마크다운 셀 구분자로 읽혀 셀이 쪼개진다. lexer 전에
+  // `\multicolumn{n}{서식}{내용}` 을 MDHWPMCOL<n>END내용 으로 바꿔 두고,
+  // tableXml 이 셀 맨 앞의 표식을 보고 colSpan 으로 푼다.
+  var MCOL_RE = /MDHWPMCOL(\d+)END/;
+  function maskMulticolumn(md) {
+    return md.replace(/^.*\\multicolumn.*$/gm, function (line) {
+      var re = /\\multicolumn\s*\{(\d+)\}\s*\{[^{}]*\}\s*\{/;
+      var m;
+      while ((m = re.exec(line)) !== null) {
+        var bodyStart = m.index + m[0].length;
+        var depth = 1, j = bodyStart;
+        while (j < line.length && depth > 0) {
+          if (line[j] === '{') depth++;
+          else if (line[j] === '}') depth--;
+          j++;
+        }
+        var bodyEnd = depth === 0 ? j - 1 : line.length;
+        line = line.slice(0, m.index) + 'MDHWPMCOL' + m[1] + 'END' +
+               line.slice(bodyStart, bodyEnd) + line.slice(depth === 0 ? j : bodyEnd);
+      }
+      return line;
+    });
   }
 
   // ── 마크다운 수식 ($$ ... $$, $...$, \[...\], \(...\)) 사전 처리 ───
@@ -1211,7 +1337,15 @@
     // 숫자 뒤에 바로 $·문자·수식 기호($A-Za-z_^{}=<>+-*/|\)가 이어지면(=진짜 수식일 수
     // 있음) 건드리지 않고, 공백·문장부호 등이 이어지면 통화로 보고 임시 치환한다.
     var preMoneyMasks = [];
-    masked = masked.replace(/\$(\d[\d,]*(?:\.\d+)?)(?![\dA-Za-z$_^{}=<>+\-*/|\\])/g, function (m) {
+    masked = masked.replace(/\$(\d[\d,]*(?:\.\d+)?)(?![\dA-Za-z$_^{}=<>+\-*/|\\])/g, function (m, _num, offset, whole) {
+      // 같은 줄의 다음 $ 까지가 한글 없는 진짜 수식이면(`$9.0167 \times 10^{10}$`) 통화가 아니다.
+      var eol = whole.indexOf('\n', offset);
+      var line = whole.slice(offset + 1, eol < 0 ? whole.length : eol);
+      var close = line.indexOf('$');
+      if (close > 0) {
+        var inner = line.slice(0, close);
+        if (!/[가-힣]/.test(inner) && shouldConvertInlineMath(inner)) return m;
+      }
       var i = preMoneyMasks.length;
       preMoneyMasks.push(m);
       return 'MDHWPPREMONEYPLH' + i + 'END';
@@ -1310,6 +1444,7 @@
 
     // 1) 수식(블록+인라인) 추출 → 토큰화 안 거치도록 sentinel 치환
     var pre = preprocessMath(String(md || ''), convertLatex);
+    pre.md = maskMulticolumn(pre.md);
 
     // 1.5) 한국어 emphasis 보정 — AI 의 "**사과**는" 같은 실수를 살린다
     // 인라인 코드(`...`)를 먼저 sentinel 로 치환해 fixCjkEmphasis 가 인접한 두 codespan 의
@@ -1327,7 +1462,11 @@
 
     // 2) marked.lexer 로 토큰화
     var lexer = (typeof marked.lexer === 'function') ? marked.lexer : marked.Lexer.lex;
-    var tokens = lexer(pre.md, { gfm: true, breaks: false });
+    // GFM 은 `~text~`(물결 1개)도 취소선으로 본다 → "시행 1~3, 4~13" 의 ~ 가 사라진다.
+    // 취소선은 `~~text~~` 만 인정하도록 del 토크나이저를 덮어쓴다.
+    var tokOpts = lexOptions(marked);
+    function lex(text) { return lexer(text, tokOpts); }
+    var tokens = lex(pre.md);
 
     return loadTemplate(JSZipLib, templateUrl).then(function (zip) {
       // 3) header.xml 확장
@@ -1373,7 +1512,7 @@
                   { type: 'equation', script: piece.script, charPrId: charPrMap.body }
                 ], idGen);
               } else {
-                var sub = marked.lexer(piece.text, { gfm: true, breaks: false });
+                var sub = lex(piece.text);
                 bodyParagraphs += tokensToParagraphsXml(sub, charPrMap, idGen, convertLatex, convCtx);
               }
             }
@@ -1431,9 +1570,34 @@
     return stem + '.hwpx';
   }
 
+  // 미리보기(app.js)가 변환 엔진과 같은 전처리를 쓰도록 노출한다.
+  function lexOptions(marked) {
+    var opts = { gfm: true, breaks: false };
+    if (marked && typeof marked.Tokenizer === 'function') {
+      var tok = new marked.Tokenizer();
+      var origDel = tok.del;
+      tok.del = function (src) {
+        if (/^~(?!~)/.test(src)) return undefined;
+        return origDel.call(this, src);
+      };
+      opts.tokenizer = tok;
+    }
+    return opts;
+  }
+  function fixCjkEmphasisHtml(md) {
+    return fixCjkEmphasis(md)
+      .replace(/\x01B/g, '<strong>').replace(/\x01b/g, '</strong>')
+      .replace(/\x01S/g, '<del>').replace(/\x01s/g, '</del>')
+      .replace(/\x01I/g, '<em>').replace(/\x01i/g, '</em>');
+  }
+
   var api = {
     convertMarkdown: convertMarkdown,
-    makeOutputName: makeOutputName
+    makeOutputName: makeOutputName,
+    lexOptions: lexOptions,
+    fixCjkEmphasisHtml: fixCjkEmphasisHtml,
+    maskMulticolumn: maskMulticolumn,
+    MCOL_SOURCE: MCOL_RE.source
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

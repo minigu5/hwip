@@ -1081,6 +1081,34 @@
     });
   }
 
+  // \multicolumn 표식(MDHWPMCOL<n>END) → colspan, 병합으로 넘친 뒤쪽 빈 셀 제거, 열 많은 표는 글자 축소
+  function mdApplyTableSpans(stage) {
+    if (!stage || !window.MarkdownToHwpx || !window.MarkdownToHwpx.MCOL_SOURCE) return;
+    var re = new RegExp(window.MarkdownToHwpx.MCOL_SOURCE);
+    stage.querySelectorAll('table').forEach(function (tbl) {
+      var rows = Array.from(tbl.querySelectorAll('tr'));
+      if (!rows.length) return;
+      var headCols = rows[0].children.length;
+      if (headCols >= 8) tbl.classList.add('wide');
+      rows.forEach(function (tr) {
+        Array.from(tr.children).forEach(function (cell) {
+          var m = re.exec(cell.innerHTML);
+          if (!m) return;
+          cell.innerHTML = cell.innerHTML.replace(re, '');
+          cell.colSpan = Math.max(1, parseInt(m[1], 10));
+          cell.style.textAlign = 'center';
+        });
+        function width() {
+          return Array.from(tr.children).reduce(function (a, c) { return a + (c.colSpan || 1); }, 0);
+        }
+        while (width() > headCols && tr.children.length > 1 &&
+               !tr.lastElementChild.textContent.trim()) {
+          tr.removeChild(tr.lastElementChild);
+        }
+      });
+    });
+  }
+
   function renderMdPreview() {
     if (!mdPreviewWrap || !window.marked) return;
     var text = currentMdText;
@@ -1093,7 +1121,16 @@
     }
     try {
       var protectedRes = mdProtectMath(text);
-      var html = window.marked.parse(protectedRes.md, { gfm: true, breaks: false, headerIds: false });
+      // 변환 엔진(md-to-hwpx.js)과 같은 전처리 — `~` 단일 취소선 금지, 한글 조사 앞 `**`, \multicolumn
+      var mdb = protectedRes.md;
+      var parseOpts = { gfm: true, breaks: false };
+      var MH = window.MarkdownToHwpx;
+      if (MH && MH.lexOptions) {
+        mdb = MH.fixCjkEmphasisHtml(MH.maskMulticolumn(mdb));
+        parseOpts = MH.lexOptions(window.marked);
+      }
+      parseOpts.headerIds = false;
+      var html = window.marked.parse(mdb, parseOpts);
       html = html.replace(/<script[\s\S]*?<\/script>/gi, '');
       html = mdRestoreMath(html, protectedRes.phs);
       html = html.replace(/&#36;/g, '$');
@@ -1102,6 +1139,7 @@
       mdPreviewWrap.innerHTML = '<div class="doc-page" id="mdDocContent">' + html + '</div>';
 
       var stage = document.getElementById('mdDocContent');
+      mdApplyTableSpans(stage);
       if (window.renderMathInElement && stage) {
         try {
           window.renderMathInElement(stage, {
@@ -1168,8 +1206,14 @@
           currentPage = newPage();
           pageCount++;
         } else {
+          // 쪽 끝에 제목만 남지 않도록 직전 제목들은 다음 쪽으로 같이 넘긴다
+          var carry = [];
+          while (currentPage.children.length > 1 && /^H[1-6]$/.test(currentPage.lastElementChild.nodeName)) {
+            carry.unshift(currentPage.removeChild(currentPage.lastElementChild));
+          }
           currentPage = newPage();
           pageCount++;
+          carry.forEach(function (h) { currentPage.appendChild(h); });
           currentPage.appendChild(node);
         }
       }
