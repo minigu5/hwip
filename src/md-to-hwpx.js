@@ -979,7 +979,9 @@
   function shouldConvertInlineMath(body) {
     var v = body.trim();
     if (!v) return false;
-    if (/^\d[\d,]*(?:\.\d+)?$/.test(v)) return false;          // 금액성 숫자
+    // 숫자만 든 `$1$`, `$-1$`, `$0$` 는 AI 가 쓴 진짜 수식이다. 안쪽에 공백 패딩이 없을 때만 수식으로 본다
+    // (`$5 and $10` 처럼 짝 없는 통화 표기는 body 에 문자가 끼어 여기 오지 않는다).
+    if (/^-?\d[\d,]*(?:\.\d+)?$/.test(v)) return v === body;
     if (/\\[A-Za-z]+|[_^{}=<>+\-*\/|]/.test(v)) return true;
     if (/\\[%,;:!]/.test(v)) return true;                       // `1.03\%` 처럼 이스케이프 기호가 든 수치
     if (/[A-Za-z]\d|\d[A-Za-z]/.test(v)) return true;
@@ -1318,7 +1320,8 @@
     });
 
     // 2) 블록 수식 $$ ... $$, \[ ... \], ChatGPT [ \n ... \n? ] 포맷
-    masked = masked.replace(/\$\$([\s\S]+?)\$\$/g, function (_m, body) {
+    // 빈 줄은 건너뛰지 못하게 해(LaTeX display math 엔 빈 줄이 없다) 짝 없는 $$ 하나가 문서 전체를 삼키지 않게 한다
+    masked = masked.replace(/\$\$((?:(?!\n[ \t]*\n)[\s\S])+?)\$\$/g, function (_m, body) {
       var i = blockPHs.length;
       blockPHs.push(convertLatex(body));
       return '\n\n' + BSENT + i + BSENT + '\n\n';

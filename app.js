@@ -1063,7 +1063,7 @@
       fences.push(m);
       return 'MDPREVFENCEX' + i + 'XEND';
     });
-    masked = masked.replace(/\$\$([\s\S]+?)\$\$/g, function (_m, body) { return add(body, true); });
+    masked = masked.replace(/\$\$((?:(?!\n[ \t]*\n)[\s\S])+?)\$\$/g, function (_m, body) { return add(body, true); });
     masked = masked.replace(/\\\[([\s\S]+?)\\\]/g, function (_m, body) { return add(body, true); });
     masked = masked.replace(/\\\(([\s\S]+?)\\\)/g, function (_m, body) { return add(body, false); });
     masked = masked.replace(/(^|[^\\$])\$([^\$\n]+?)\$(?!\d)/g, function (m, pre, body) {
