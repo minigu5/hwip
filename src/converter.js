@@ -46,7 +46,7 @@
     coprod: 'COPROD',
     oplus: 'oplus', ominus: 'ominus', otimes: 'otimes', odot: 'odot', oslash: 'oslash',
     vee: 'vee', lor: 'vee', wedge: 'wedge', land: 'wedge', circ: 'circ', bullet: 'bullet',
-    ast: 'ast', star: 'star', infty: 'inf', partial: 'partial', forall: 'forall',
+    ast: 'ast', star: 'star', infty: 'inf', partial: 'partial', forall: 'FORALL',
     exists: 'exist', therefore: 'therefore', because: 'because',
     diamond: 'diamond', triangledown: 'TRIANGLED',
     degree: 'DEG', AA: 'ANGSTROM',
@@ -70,7 +70,11 @@
     Longleftarrow: 'LARROW', Longrightarrow: 'RARROW', Longleftrightarrow: 'LRARROW',
     // Shorthand (common in AI outputs)
     larr: 'larrow', rarr: 'rarrow', uarr: 'uparrow', darr: 'downarrow', harr: 'lrarrow',
-    Larr: 'LARROW', Rarr: 'RARROW', Uarr: 'UPARROW', Darr: 'DOWNARROW', Harr: 'LRARROW'
+    Larr: 'LARROW', Rarr: 'RARROW', Uarr: 'UPARROW', Darr: 'DOWNARROW', Harr: 'LRARROW',
+    // 논리 함의 (amsmath) — \Rightarrow 등과 같은 화살표
+    implies: 'RARROW', impliedby: 'LARROW', iff: 'LRARROW',
+    // 증명 종료 기호·정의 등호 — 한글 수식 명세에 키워드가 없어 유니코드 글자 그대로 쓴다
+    blacksquare: '■', square: '□', Box: '□', qed: '■', coloneqq: ':='
   };
 
   // 글자 장식 (accent) → 한글 명령
@@ -207,7 +211,9 @@
       pos.i++;
     }
     if (hasCmd) { pos.i = saved; return null; }
-    return pieces.join('').trim();
+    // 앞뒤 공백은 의도된 간격(`\text{ s.t. }`)이므로 살린다. 따옴표 안이라 한글도 공백을 유지한다.
+    var joined = pieces.join('').replace(/ {2,}/g, ' ');
+    return joined.trim() ? joined : '';
   }
 
   // 인자 하나 읽기: { ... } 그룹이면 내부, 아니면 단일 항.
@@ -316,6 +322,11 @@
 
     if (t.type === 'char') {
       pos.i++;
+      // `:=` 는 하나의 기호로 — 사이에 좁은 공백이 끼면 `: =` 로 벌어져 보인다
+      if (t.value === ':' && tokens[pos.i] && tokens[pos.i].type === 'char' && tokens[pos.i].value === '=') {
+        pos.i++;
+        return { text: ':=', keyword: false };
+      }
       if (WRAP_OPS.has(t.value)) return { text: '`' + t.value + '`', keyword: false };
       return { text: t.value, keyword: false };
     }

@@ -178,3 +178,14 @@ test('xrightarrow: [bot] 앞 공백이 있어도 대괄호를 인식', () => {
     'REL rarrow {Delta} {M n O _{2}}'
   );
 });
+
+test('논리 함의·양화사: \\implies → RARROW, \\forall → FORALL (명세 표기)', () => {
+  assert.strictEqual(convert('\\implies'), 'RARROW');
+  assert.strictEqual(convert('x \\iff y'), 'x LRARROW y');
+  assert.strictEqual(convert('\\forall x'), 'FORALL x');
+});
+
+test('\\text{ s.t. } 앞뒤 공백 유지, := 는 한 기호', () => {
+  assert.strictEqual(convert('a \\text{ s.t. } b'), 'a " s.t. " b');
+  assert.strictEqual(convert('N := \\max(a,b)'), 'N := max (a , b)');
+});

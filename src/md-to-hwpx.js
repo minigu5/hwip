@@ -450,6 +450,19 @@
   // 새 단락은 paraPrIDRef/styleIDRef 와 안에 들어갈 runs 배열을 받는다.
   // runs[i] = { type:'text', text, charPrId } | { type:'equation', script, charPrId } | { type:'lineBreak', charPrId }
   function paragraphXml(paraPrIDRef, styleIDRef, runs, idGen) {
+    // 단락 안 줄바꿈(마크다운 두 칸 공백 + 개행, <br>)은 HWPX 의 인라인 line break 명세가 불확실해
+    // 같은 서식의 별도 단락으로 나눈다. (그냥 버리면 줄이 한 줄로 붙는다)
+    if (runs && runs.some(function (r) { return r.type === 'lineBreak'; })) {
+      var segs = [[]];
+      runs.forEach(function (r) {
+        if (r.type === 'lineBreak') segs.push([]);
+        else segs[segs.length - 1].push(r);
+      });
+      while (segs.length > 1 && !segs[segs.length - 1].length) segs.pop();   // 끝의 빈 줄 제거
+      return segs.map(function (seg) {
+        return paragraphXml(paraPrIDRef, styleIDRef, seg, idGen);
+      }).join('');
+    }
     var inner = '';
     if (!runs || !runs.length) {
       inner = '<hp:run charPrIDRef="0"><hp:t/></hp:run>';
@@ -1011,6 +1024,8 @@
     if (!tokens || !tokens.length) return tokens;
     var t = tokens[0];
     if (t.type === 'text' && typeof t.text === 'string') {
+      // "1. `코드`" 처럼 번호만 담긴 첫 텍스트 토큰은 통째로 버린다 (뒤에 \S 가 없어 정규식이 못 잡는다)
+      if (tokens.length > 1 && fn(t.text + '\u0001') === '\u0001') return tokens.slice(1);
       var stripped = fn(t.text);
       if (stripped !== t.text) {
         tokens = tokens.slice();
@@ -1141,8 +1156,13 @@
               if (r.charPrId === charPrMap.body) r.charPrId = charPrMap.quote;
               return r;
             });
-            rs.unshift({ type: 'text', text: '❯ ', charPrId: charPrMap.quote });
-            return paragraphXml('0', '0', rs, idGen);
+            var marker = { type: 'text', text: '❯ ', charPrId: charPrMap.quote };
+            var withMarks = [marker];
+            rs.forEach(function (r) {
+              withMarks.push(r);
+              if (r.type === 'lineBreak') withMarks.push(marker);   // 줄마다 인용 표시
+            });
+            return paragraphXml('0', '0', withMarks, idGen);
           }
           return tokenToXml(c, charPrMap, idGen, convertLatex, ctx);
         }).join('');
