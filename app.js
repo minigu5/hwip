@@ -391,10 +391,10 @@
     output.appendChild(frag);
   }
 
-  // 공백 기호(`, ~) 강조 체크박스 — 선택값은 브라우저에 기억한다.
+  // 공백 기호(`, ~) 강조 체크박스 — 기본은 꺼짐, 선택값은 브라우저에 기억한다.
   var spaceToggle = document.getElementById('spaceToggle');
   if (spaceToggle) {
-    try { spaceToggle.checked = localStorage.getItem('showSpaces') !== 'false'; } catch (e) {}
+    try { spaceToggle.checked = localStorage.getItem('showSpaces') === 'true'; } catch (e) {}
     output.classList.toggle('show-spaces', spaceToggle.checked);
     spaceToggle.addEventListener('change', function () {
       output.classList.toggle('show-spaces', spaceToggle.checked);
