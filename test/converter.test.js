@@ -189,3 +189,11 @@ test('\\text{ s.t. } 앞뒤 공백 유지, := 는 한 기호', () => {
   assert.strictEqual(convert('a \\text{ s.t. } b'), 'a " s.t. " b');
   assert.strictEqual(convert('N := \\max(a,b)'), 'N := max (a , b)');
 });
+
+test('\\\\[8pt] 행간 지정은 버리고 줄바꿈 # 만 남김', () => {
+  assert.strictEqual(
+    convert('\\[\\begin{aligned} a &= b \\\\[8pt] &= c \\end{aligned}\\]'),
+    'a & `=` b # & `=` c'
+  );
+  assert.strictEqual(convert('a \\\\ [a,b]'), 'a # [ a , b ]');
+});

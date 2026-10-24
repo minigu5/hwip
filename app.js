@@ -298,20 +298,50 @@
     var body = latex.trim();
     body = body.replace(/\\fras(?=[^a-zA-Z]|$)/g, '\\frac');
     body = body.replace(/\\overset\s*{\s*!\s*}\s*{\s*`?=`?\s*}/g, '\\neq');
-    body = stripDelimiters(body);
+    // `\[A\] \[B\]` 처럼 수식 블록이 여러 개면 블록별로 따로 렌더한다.
+    // 통째로 넘기면 가운데 남은 `\]`·`\[` 때문에 KaTeX 가 렌더 오류를 낸다.
+    var blocks = splitMathBlocks(body);
+    if (!blocks.length) blocks = [stripDelimiters(body)];
+    blocks = blocks.filter(function (b) { return b; });
 
-    if (!body) { preview.style.display = 'none'; return; }
+    if (!blocks.length) { preview.style.display = 'none'; return; }
 
     preview.style.display = 'flex';
     if (typeof katex === 'undefined') {
       preview.innerHTML = '<span class="placeholder">렌더러 로딩 중…</span>';
       return;
     }
-    try {
-      katex.render(body, preview, { displayMode: true, throwOnError: false });
-    } catch (e) {
-      preview.innerHTML = '<span class="render-error">렌더 오류: ' + (e.message || e) + '</span>';
+    preview.innerHTML = '';
+    blocks.forEach(function (b) {
+      var el = document.createElement('div');
+      el.className = 'preview-block';
+      try {
+        katex.render(b, el, { displayMode: true, throwOnError: false });
+      } catch (e) {
+        el.innerHTML = '<span class="render-error">렌더 오류: ' + (e.message || e) + '</span>';
+      }
+      preview.appendChild(el);
+    });
+  }
+
+  // `$$…$$`, `\[…\]`, `\(…\)` 수식 블록 본문만 뽑는다. `\\[8pt]` 처럼
+  // 백슬래시로 이스케이프된 문자는 두 글자씩 건너뛰어 구분자로 오인하지 않는다.
+  function splitMathBlocks(s) {
+    var out = [], start = -1, close = null, i = 0;
+    while (i < s.length) {
+      var c = s[i], n = s[i + 1];
+      if (close === null) {
+        if (c === '$' && n === '$') { close = '$$'; start = i + 2; i += 2; continue; }
+        if (c === '\\' && (n === '[' || n === '(')) {
+          close = n === '[' ? '\\]' : '\\)'; start = i + 2; i += 2; continue;
+        }
+        i += c === '\\' ? 2 : 1;
+      } else {
+        if (s.substr(i, 2) === close) { out.push(s.slice(start, i).trim()); close = null; i += 2; continue; }
+        i += c === '\\' ? 2 : 1;
+      }
     }
+    return out;
   }
 
   function render() {

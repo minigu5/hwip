@@ -344,7 +344,23 @@
 
   function convertCmd(name, tokens, pos) {
     // 줄바꿈
-    if (name === '\\') return { text: '#', keyword: false };
+    if (name === '\\') {
+      // `\\[8pt]` 같은 행간 지정은 한글 수식에 대응이 없으므로 버린다.
+      var save = pos.i;
+      skipSpaces(tokens, pos);
+      var o = peek(tokens, pos);
+      if (o && o.type === 'char' && o.value === '[') {
+        var j = pos.i + 1;
+        while (j < tokens.length && !(tokens[j].type === 'char' && tokens[j].value === ']')) j++;
+        var dim = tokens.slice(pos.i + 1, j).map(function (tk) { return tk.value; }).join('');
+        // 길이 단위(`8pt`, `-1.5ex`, `2mm` 등)일 때만 — `\\ [a,b]` 같은 본문 대괄호는 보존
+        if (j < tokens.length && /^\s*-?[\d.]+\s*[a-z]{2}\s*$/.test(dim)) pos.i = j + 1;
+        else pos.i = save;
+      } else {
+        pos.i = save;
+      }
+      return { text: '#', keyword: false };
+    }
 
     // 공백 명령
     if (SPACING.hasOwnProperty(name)) return { text: SPACING[name], keyword: false };
@@ -564,12 +580,11 @@
     // 전역적으로 모든 구분자 제거 (텍스트 중간에 섞인 경우 대응)
     s = s.replace(/\$\$/g, '');
     s = s.replace(/\$/g, '');
-    s = s.replace(/\\\[/g, '');
-    s = s.replace(/\\\]/g, '');
-    s = s.replace(/\\\( /g, ''); // 뒤에 공백이 있을 수 있음
-    s = s.replace(/\\\) /g, '');
-    s = s.replace(/\\\(/g, '');
-    s = s.replace(/\\\)/g, '');
+    // \[ \] \( \) 는 앞의 백슬래시가 짝수 개일 때만 구분자다.
+    // `\\[8pt]`(줄바꿈 + 행간)의 `\[` 를 구분자로 오인해 지우면 `8pt]` 가 샌다.
+    s = s.replace(/(\\*)\\([\[\]()]) ?/g, function (m, bs) {
+      return bs.length % 2 ? m : bs;
+    });
     return s.trim();
   }
 
