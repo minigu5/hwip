@@ -38,6 +38,7 @@
       --ink: #0f1b3d;
       --ink-2: #5b6b8c;
       --line: #dce6fb;
+      --line-strong: #b5c6ec;
       --blue: #2f6df6;
       --accent: #2150d8;
       --btn: #2150d8;
@@ -47,6 +48,7 @@
       --amber-tint: #fdebd3;
       --danger: #c0392b;
       --scrim: rgba(15, 27, 61, 0.42);
+      --glow: 0 12px 32px rgba(33, 80, 216, 0.14);
       --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
     }
     [data-theme="dark"] {
@@ -57,6 +59,7 @@
       --ink: #e8edfa;
       --ink-2: #9aa8c7;
       --line: #24315a;
+      --line-strong: #3b4c80;
       --blue: #5b9bff;
       --accent: #8db1ff;
       --accent-tint: #1b2850;
@@ -64,6 +67,7 @@
       --amber-tint: rgba(247, 185, 85, 0.16);
       --danger: #ff8a7a;
       --scrim: rgba(3, 6, 16, 0.6);
+      --glow: 0 12px 32px rgba(0, 0, 0, 0.35);
     }
     * { box-sizing: border-box; }
     body {
@@ -177,10 +181,13 @@
       resize: vertical;
       border: 0; outline: none;
       padding: 6px 20px 14px;
-      font-family: var(--mono); font-size: 15px; line-height: 1.8;
+      font-family: var(--mono); font-size: 14px; line-height: 1.8;
       color: var(--ink); background: transparent;
     }
-    .input-panel:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px var(--accent-tint); }
+    /* 입력은 한 단계 낮춰 보이게 하고, 주인공은 아래 한글 수식 카드다 */
+    .input-panel { background: var(--out-bg); }
+    .input-panel .label { color: var(--ink-2); }
+    .input-panel:focus-within { border-color: var(--line-strong); }
     .input-drag-overlay {
       position: absolute; inset: 0 12px;
       border-radius: 10px;
@@ -211,13 +218,18 @@
     }
 
     /* ── 출력 (한글 수식) ── */
-    .output-panel { background: var(--out-bg); }
-    .output-title { display: inline-flex; align-items: center; gap: 8px; }
-    .output-title::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--blue); }
+    .output-panel {
+      background: var(--sheet);
+      border: 2px solid var(--blue);
+      box-shadow: var(--glow);
+    }
+    .output-title { display: inline-flex; align-items: center; gap: 8px; font-size: 16px; }
+    .output-title::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--blue); }
+    .output-panel #copyBtn { min-height: 40px; padding: 0 18px; font-size: 15px; }
     .output {
-      min-height: 96px;
-      padding: 8px 20px 16px;
-      font-family: var(--mono); font-size: 15px; line-height: 1.8;
+      min-height: 110px;
+      padding: 10px 20px 18px;
+      font-family: var(--mono); font-size: 17px; line-height: 1.75;
       white-space: pre-wrap; overflow-wrap: anywhere;
     }
     .output .tk-kw { color: var(--accent); font-weight: 600; }
