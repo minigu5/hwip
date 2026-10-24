@@ -391,20 +391,14 @@
     output.appendChild(frag);
   }
 
-  // 공백 기호(`, ~) 강조 토글 — 선택값은 브라우저에 기억한다.
+  // 공백 기호(`, ~) 강조 체크박스 — 선택값은 브라우저에 기억한다.
   var spaceToggle = document.getElementById('spaceToggle');
   if (spaceToggle) {
-    var showSpaces = true;
-    try { showSpaces = localStorage.getItem('showSpaces') !== 'false'; } catch (e) {}
-    var applySpaces = function () {
-      output.classList.toggle('show-spaces', showSpaces);
-      spaceToggle.setAttribute('aria-pressed', showSpaces ? 'true' : 'false');
-    };
-    applySpaces();
-    spaceToggle.addEventListener('click', function () {
-      showSpaces = !showSpaces;
-      applySpaces();
-      try { localStorage.setItem('showSpaces', showSpaces ? 'true' : 'false'); } catch (e) {}
+    try { spaceToggle.checked = localStorage.getItem('showSpaces') !== 'false'; } catch (e) {}
+    output.classList.toggle('show-spaces', spaceToggle.checked);
+    spaceToggle.addEventListener('change', function () {
+      output.classList.toggle('show-spaces', spaceToggle.checked);
+      try { localStorage.setItem('showSpaces', spaceToggle.checked ? 'true' : 'false'); } catch (e) {}
     });
   }
 

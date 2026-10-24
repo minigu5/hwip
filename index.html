@@ -48,7 +48,6 @@
       --amber-tint: #fdebd3;
       --danger: #c0392b;
       --scrim: rgba(15, 27, 61, 0.42);
-      --glow: 0 12px 32px rgba(33, 80, 216, 0.14);
       --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
     }
     [data-theme="dark"] {
@@ -67,7 +66,6 @@
       --amber-tint: rgba(247, 185, 85, 0.16);
       --danger: #ff8a7a;
       --scrim: rgba(3, 6, 16, 0.6);
-      --glow: 0 12px 32px rgba(0, 0, 0, 0.35);
     }
     * { box-sizing: border-box; }
     body {
@@ -166,11 +164,7 @@
       gap: 8px; padding: 12px 12px 4px 20px;
     }
     .label { font-weight: 700; font-size: 14px; }
-    .panel-foot {
-      margin: 0; padding: 12px 20px 14px;
-      font-size: 13px; color: var(--ink-2);
-      border-top: 1px dashed var(--line);
-    }
+    .panel-foot { margin: 0; padding: 0 20px 14px; font-size: 13px; color: var(--ink-2); }
     .hint { color: var(--ink-2); font-size: 13px; margin: 8px 0 0; }
 
     /* ── 입력 ── */
@@ -210,25 +204,13 @@
     }
     .ocr-progress > i { display: block; height: 100%; width: 0%; background: var(--blue); transition: width 0.2s; }
 
-    .flow-arrow { display: flex; justify-content: center; margin: -22px 0 -6px; position: relative; z-index: 1; }
-    .flow-arrow span {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 40px; height: 40px; border-radius: 50%;
-      background: var(--sheet); border: 1px solid var(--line); color: var(--blue);
-    }
-
-    /* ── 출력 (한글 수식) ── */
-    .output-panel {
-      background: var(--sheet);
-      border: 2px solid var(--blue);
-      box-shadow: var(--glow);
-    }
-    .output-title { display: inline-flex; align-items: center; gap: 8px; font-size: 16px; }
-    .output-title::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--blue); }
+    /* ── 출력 (한글 수식) ── 장식 없이 바탕색·글자 크기 차이만으로 입력보다 앞에 둔다 */
+    .output-panel { background: var(--sheet); border-color: var(--line-strong); }
+    .output-title { font-size: 16px; }
     .output-panel #copyBtn { min-height: 40px; padding: 0 18px; font-size: 15px; }
     .output {
       min-height: 110px;
-      padding: 10px 20px 18px;
+      padding: 10px 20px 12px;
       font-family: var(--mono); font-size: 17px; line-height: 1.75;
       white-space: pre-wrap; overflow-wrap: anywhere;
     }
@@ -246,30 +228,13 @@
       display: block; margin-bottom: 8px;
       font-weight: 700; user-select: none;
     }
-    .toggle {
-      display: inline-flex; align-items: center; gap: 8px;
+    .space-check {
+      display: inline-flex; align-items: center; gap: 6px;
       min-height: 36px; padding: 0 10px;
-      border: 0; border-radius: 8px; background: transparent;
-      color: var(--ink-2); font-size: 14px; font-weight: 600; cursor: pointer;
+      font-size: 14px; color: var(--ink-2); cursor: pointer;
     }
-    .toggle:hover { background: var(--accent-tint); }
-    .toggle .sw { width: 30px; height: 18px; border-radius: 999px; background: var(--line); position: relative; flex-shrink: 0; transition: background 0.15s; }
-    .toggle .sw::after {
-      content: ""; position: absolute; top: 2px; left: 2px;
-      width: 14px; height: 14px; border-radius: 50%; background: #fff;
-      box-shadow: 0 1px 2px rgba(15, 27, 61, 0.25); transition: transform 0.15s;
-    }
-    .toggle[aria-pressed="true"] .sw { background: var(--amber); }
-    .toggle[aria-pressed="true"] .sw::after { transform: translateX(12px); }
-    .legend-row {
-      display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px;
-      padding: 12px 20px 14px; border-top: 1px dashed var(--line);
-    }
-    .legend { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
-    .legend code { font-family: var(--mono); font-size: 13px; }
-    .legend .kw-chip { color: var(--accent); font-weight: 600; }
-    .legend .sp-chip { display: inline-block; min-width: 13px; text-align: center; border-radius: 4px; background: var(--amber-tint); color: var(--amber); font-weight: 600; }
-    #copyHint { margin: 0; margin-right: auto; font-size: 13px; color: var(--ink-2); }
+    .space-check input { margin: 0; accent-color: var(--amber); }
+    #copyHint { margin: 0; padding: 0 20px 14px; font-size: 13px; color: var(--ink-2); }
     #copyHint.copied { color: var(--accent); font-weight: 700; }
     #copyHint.copied::before { content: "✓ "; }
 
@@ -647,27 +612,16 @@
         <p class="panel-foot" id="inputHint">수식 이미지를 끌어다 놓거나 붙여넣어도 인식합니다. 이미지는 내 브라우저 밖으로 나가지 않습니다.</p>
       </div>
 
-      <div class="flow-arrow" aria-hidden="true">
-        <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg></span>
-      </div>
-
       <div class="panel output-panel">
         <div class="label-row">
           <span class="label output-title">한글 수식</span>
           <div class="input-actions">
-            <button class="toggle" id="spaceToggle" type="button" aria-pressed="true">
-              <span class="sw" aria-hidden="true"></span>
-              공백 기호 강조</button>
+            <label class="space-check"><input type="checkbox" id="spaceToggle" checked /> 공백 기호 강조</label>
             <button class="btn" id="copyBtn" type="button">복사</button>
           </div>
         </div>
         <div class="output show-spaces" id="output" aria-live="polite"></div>
-        <div class="legend-row">
-          <p id="copyHint">변환되면 자동으로 클립보드에 복사됩니다.</p>
-          <span class="legend"><code class="kw-chip">over</code>구조 명령</span>
-          <span class="legend"><code class="sp-chip">`</code>좁은 공백</span>
-          <span class="legend"><code>_{ }</code>첨자 묶음</span>
-        </div>
+        <p id="copyHint">변환되면 자동으로 클립보드에 복사됩니다.</p>
       </div>
 
       <div class="panel preview-panel" id="previewPanel" hidden>
