@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5B9BFF"/>
+      <stop offset="0.55" stop-color="#2F6DF6"/>
+      <stop offset="1" stop-color="#2150D8"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E4EEFF"/>
+      <stop offset="1" stop-color="#B7CEFF"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="30" fill="url(#bg)"/>
+  <!-- 문서 -->
+  <path d="M40 18H76L102 44V104Q102 112 94 112H40Q32 112 32 104V26Q32 18 40 18Z" fill="#FFFFFF"/>
+  <path d="M76 18V37Q76 44 83 44H102Z" fill="url(#fold)"/>
+  <!-- 수식 Σ -->
+  <g fill="none" stroke="#2F6DF6" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M83 58H54L70 79L54 100H83"/>
+    <path d="M83 58V65M83 100V93" stroke-width="7"/>
+  </g>
+</svg>

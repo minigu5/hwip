@@ -52,7 +52,7 @@ lambda  (t)= lambda  ` _{`0} +A _{1} sin( {2 pi } over {24} (t`-` phi  _{1} ))+A
 ## 사용 형태 / 기술 스택
 
 - **형태**: 브라우저에서 동작하는 단일 웹 페이지, **두 가지 탭**으로 구성.
-  - **텍스트 변환 탭**: 입력창의 LaTeX 수식을 변환해 표시·자동 복사. 입력창 우측 **🖼️ 이미지 인식** 버튼·드래그앤드롭·붙여넣기로 이미지를 OCR 인식해 같은 변환 흐름에 태운다. 수식이 있으면 출력 패널 하단에 KaTeX 미리보기가 자동으로 나타난다 (입력 없으면 숨겨짐).
+  - **수식 변환 탭**(`#tabText`): 입력창의 LaTeX 수식을 변환해 표시·자동 복사. 입력 카드 → 출력 카드 → 미리보기 카드의 상하 배치. 입력창 우측 **이미지에서 인식** 버튼·드래그앤드롭·붙여넣기로 이미지를 OCR 인식해 같은 변환 흐름에 태운다. 출력은 `setHwpOutput()`이 토큰별 span으로 그려 구조 명령(`over`, `LEFT`…)·첨자 묶음·공백 기호(`` ` ``, `~`)를 구분해 보여 주며("공백 기호 강조" 토글, localStorage `showSpaces`), `textContent`는 원문 그대로라 복사에 영향이 없다. 수식이 있으면 KaTeX 미리보기 카드(`#previewPanel`)가 나타난다 (입력 없으면 숨겨짐).
   - **파일 변환 탭**: 두 가지 흐름을 처리한다.
     - **HWP/HWPX**: 파일을 업로드하면 문서 안의 텍스트 LaTeX 수식을 찾아 한컴 수식 개체(`hp:equation`)로 교체한 뒤 새 HWPX 파일로 내보낸다.
     - **Markdown → HWPX**: `.md`/`.markdown` 파일을 업로드하거나, 이 탭에서 마크다운 텍스트를 붙여넣기(⌘/Ctrl+V)하면 HWPX로 변환한다. 파일 선택·붙여넣기 시 글꼴/크기 설정 패널과 A4 미리보기(KaTeX 수식 렌더 포함)가 나타나고, 다운로드 버튼으로 `.hwpx`를 내려받는다.
@@ -80,6 +80,7 @@ vendor/
   jszip.min.js          JSZip v3.10.1 (hwpx-convert.js·md-to-hwpx.js 의존성, MIT)
 public/
   favicon.png
+  logo.svg              헤더 로고 — chrome-extension/store/icon.svg와 동일해야 함
 test/
   converter.test.js     변환 엔진 골든 테스트
 CONVERSION_RULES.md     LaTeX → 한글 수식 전체 매핑 규칙 (스펙 기반)
@@ -205,6 +206,7 @@ HWP/HWPX 파일을 업로드하면 브라우저 안에서 LaTeX 수식을 한컴
 
 ## 개발 방침
 
+- **디자인은 크롬 확장 브랜드를 따른다.** 로고는 `chrome-extension/store/icon.svg`와 동일, 색 토큰(`#2F6DF6`·`#2150D8`·네이비 `#0F1B3D`·`#5B6B8C`·`#DCE6FB`)과 Pretendard 글꼴은 `chrome-extension/store/src/common.css` 기준. 크롬 확장 안내는 헤더 우측 버튼 하나만 두고 광고 톤 문구는 쓰지 않는다.
 - 변환 로직은 순수 함수로 작성하고 골든 테스트 케이스 모음을 함께 유지한다.
 - 외부 의존성은 최소로. 가능하면 추가하지 않는다.
 - 커밋·푸시는 사용자가 요청할 때만 한다.

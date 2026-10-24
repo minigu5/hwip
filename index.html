@@ -16,6 +16,8 @@
     })();
   </script>
   <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous" />
   <script defer
     src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
@@ -27,137 +29,247 @@
   <script defer src="/_vercel/insights/script.js"></script>
   <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
   <style>
+    /* 브랜드 토큰은 크롬 확장(chrome-extension/store/src/common.css)과 맞춘다. */
     :root {
-      --bg: #f7f8fa;
-      --card: #ffffff;
-      --border: #e2e5ea;
-      --accent: #2f6df6;
-      --accent-hover: #2257d4;
-      --text: #1f2430;
-      --muted: #707888;
-      --code-bg: #f3f4f7;
+      --ground: #f5f8ff;
+      --sheet: #ffffff;
+      --out-bg: #f7f9ff;
+      --desk: #e3eaf8;
+      --ink: #0f1b3d;
+      --ink-2: #5b6b8c;
+      --line: #dce6fb;
+      --blue: #2f6df6;
+      --accent: #2150d8;
+      --btn: #2150d8;
+      --btn-hover: #1b45bf;
+      --accent-tint: #e8efff;
+      --amber: #a04a00;
+      --amber-tint: #fdebd3;
+      --danger: #c0392b;
+      --scrim: rgba(15, 27, 61, 0.42);
+      --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
     }
     [data-theme="dark"] {
-      --bg: #181b20;
-      --card: #21252c;
-      --border: #333a45;
-      --accent: #4d82f7;
-      --accent-hover: #6a99f9;
-      --text: #e3e6eb;
-      --muted: #9097a3;
-      --code-bg: #2a2f37;
+      --ground: #0b1229;
+      --sheet: #121b36;
+      --out-bg: #0f1730;
+      --desk: #070d20;
+      --ink: #e8edfa;
+      --ink-2: #9aa8c7;
+      --line: #24315a;
+      --blue: #5b9bff;
+      --accent: #8db1ff;
+      --accent-tint: #1b2850;
+      --amber: #f7b955;
+      --amber-tint: rgba(247, 185, 85, 0.16);
+      --danger: #ff8a7a;
+      --scrim: rgba(3, 6, 16, 0.6);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo",
-        "Malgun Gothic", sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+        "Malgun Gothic", "Noto Sans KR", sans-serif;
+      background: var(--ground);
+      color: var(--ink);
       line-height: 1.6;
+      word-break: keep-all;
+      -webkit-font-smoothing: antialiased;
       transition: background 0.2s, color 0.2s;
     }
-    .wrap { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; position: relative; }
-    header h1 { font-size: 1.6rem; margin: 0 0 6px; padding-right: 56px; }
-    header p { color: var(--muted); margin: 0 0 16px; font-size: 0.95rem; }
-    .header-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 26px; }
+    button, input, select, textarea { font-family: inherit; }
+    :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+    a { color: var(--accent); }
+
+    .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px 40px; }
+    .wrap.wide { max-width: 1120px; }
+
+    /* ── 헤더 ── */
+    .site-header {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 20px 0;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); }
+    .brand img { display: block; width: 36px; height: 36px; }
+    .brand-name { font-size: 20px; font-weight: 800; color: var(--blue); }
+    .brand-sub { font-size: 14px; font-weight: 500; color: var(--ink-2); }
+    .header-actions { display: flex; align-items: center; gap: 4px; }
     .ext-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      text-decoration: none;
-      color: var(--text);
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 9px 15px;
-      font-size: 0.88rem;
-      font-weight: 600;
-      transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
-    }
-    .ext-btn:hover {
-      border-color: var(--accent);
-      box-shadow: 0 3px 12px rgba(47, 109, 246, 0.16);
-      transform: translateY(-1px);
-    }
-    .ext-btn .ext-ico { font-size: 1.1rem; line-height: 1; }
-    .ext-btn .ext-arrow { color: var(--muted); font-size: 0.8rem; }
-    .panel {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 18px;
-      margin-bottom: 18px;
-    }
-    .label-row {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 10px;
-    }
-    .label { font-weight: 600; font-size: 0.95rem; }
-    textarea {
-      width: 100%;
-      min-height: 130px;
-      resize: vertical;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 14px;
-      font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
-      font-size: 0.95rem;
-      color: var(--text);
-      background: var(--card);
-    }
-    textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
-    .output {
-      width: 100%;
-      min-height: 130px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 14px;
-      background: var(--code-bg);
-      font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
-      font-size: 0.95rem;
-      white-space: pre-wrap;
-      word-break: break-all;
-      overflow-wrap: anywhere;
-    }
-    .output.fallback-mode::before {
-      content: attr(data-warning);
-      display: block;
-      color: #d35400;
-      margin-bottom: 8px;
-      font-weight: 600;
-      user-select: none;
-    }
-    .btn {
-      border: none;
-      background: var(--accent);
-      color: #fff;
-      font-size: 0.9rem;
-      font-weight: 600;
-      padding: 7px 16px;
-      border-radius: 8px;
-      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+      min-height: 36px; padding: 0 12px; margin-left: 4px;
+      border-radius: 8px; background: var(--accent-tint); color: var(--accent);
+      font-size: 14px; font-weight: 700; text-decoration: none;
       transition: background 0.15s;
     }
-    .btn:hover { background: var(--accent-hover); }
-    .btn.ghost { background: transparent; color: var(--accent); padding: 7px 10px; }
-    .btn.ghost:hover { background: rgba(47,109,246,0.08); }
-    .hint { color: var(--muted); font-size: 0.82rem; margin-top: 8px; }
-    .hint.copied { color: var(--accent); font-weight: 600; }
-    .preview { margin-top: 14px; }
-    .preview {
-      width: 100%;
-      min-height: 70px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 16px 14px;
-      background: var(--card);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-wrap: wrap;
-      font-size: 1.15rem;
+    .ext-btn:hover { background: var(--line); }
+    .theme-toggle { width: 40px; justify-content: center; padding: 0; }
+    .theme-toggle .ico-sun { display: none; }
+    [data-theme="dark"] .theme-toggle .ico-sun { display: block; }
+    [data-theme="dark"] .theme-toggle .ico-moon { display: none; }
+    @media (max-width: 640px) { .header-actions .hide-sm { display: none; } }
+
+    .hero { padding: 28px 0 24px; }
+    .hero[hidden] { display: none; }
+    .hero h1 { margin: 0 0 10px; font-size: 36px; line-height: 1.22; font-weight: 800; letter-spacing: -0.025em; }
+    .hero p { margin: 0; max-width: 640px; font-size: 17px; line-height: 1.6; font-weight: 500; color: var(--ink-2); }
+    @media (max-width: 560px) { .hero h1 { font-size: 28px; } .hero p { font-size: 16px; } }
+
+    /* ── 버튼 ── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      min-height: 36px; padding: 0 14px;
+      border: 0; border-radius: 8px;
+      background: var(--btn); color: #fff;
+      font-size: 14px; font-weight: 700;
+      cursor: pointer; text-decoration: none;
+      transition: background 0.15s;
     }
+    .btn:hover { background: var(--btn-hover); color: #fff; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn.ghost { background: transparent; color: var(--ink-2); font-weight: 600; padding: 0 10px; }
+    .btn.ghost:hover:enabled, a.btn.ghost:hover { background: var(--accent-tint); color: var(--accent); }
+
+    /* ── 탭 ── */
+    .tab-nav {
+      display: inline-flex; flex-wrap: wrap; gap: 4px;
+      padding: 4px; border-radius: 12px; background: var(--line);
+      margin-bottom: 16px;
+    }
+    .tab-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      min-height: 40px; padding: 0 16px;
+      border: 0; border-radius: 9px; background: none;
+      font-size: 15px; font-weight: 700; color: var(--ink-2);
+      cursor: pointer; transition: background 0.15s, color 0.15s;
+    }
+    .tab-btn:hover { color: var(--ink); }
+    .tab-btn.active { background: var(--sheet); color: var(--accent); box-shadow: 0 1px 3px rgba(33, 80, 216, 0.14); }
+    .tab-btn .tab-sub { font-size: 13px; font-weight: 500; color: var(--ink-2); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── 카드 ── */
+    .panel {
+      background: var(--sheet);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      margin-bottom: 16px;
+    }
+    .panel[hidden] { display: none; }
+    .panel-pad { padding: 16px; }
+    .label-row {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+      gap: 8px; padding: 12px 12px 4px 20px;
+    }
+    .label { font-weight: 700; font-size: 14px; }
+    .panel-foot {
+      margin: 0; padding: 12px 20px 14px;
+      font-size: 13px; color: var(--ink-2);
+      border-top: 1px dashed var(--line);
+    }
+    .hint { color: var(--ink-2); font-size: 13px; margin: 8px 0 0; }
+
+    /* ── 입력 ── */
+    .input-actions { display: flex; gap: 2px; align-items: center; }
+    .input-wrap { position: relative; }
+    textarea#input {
+      display: block; width: 100%; min-height: 120px; margin: 0;
+      resize: vertical;
+      border: 0; outline: none;
+      padding: 6px 20px 14px;
+      font-family: var(--mono); font-size: 15px; line-height: 1.8;
+      color: var(--ink); background: transparent;
+    }
+    .input-panel:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px var(--accent-tint); }
+    .input-drag-overlay {
+      position: absolute; inset: 0 12px;
+      border-radius: 10px;
+      border: 2px dashed var(--blue);
+      background: var(--accent-tint);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; color: var(--accent); font-weight: 700;
+      pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 2;
+    }
+    .input-wrap.dragover .input-drag-overlay { opacity: 1; }
+    .ocr-row { display: flex; align-items: center; gap: 10px; padding: 0 20px 12px; }
+    .ocr-thumb { max-height: 48px; max-width: 110px; border-radius: 6px; border: 1px solid var(--line); flex-shrink: 0; }
+    .ocr-status { font-size: 14px; color: var(--ink-2); }
+    .ocr-status.busy { color: var(--accent); }
+    .ocr-status.error { color: var(--danger); }
+    .ocr-progress {
+      display: inline-block; height: 6px; width: 160px; max-width: 50%;
+      background: var(--line); border-radius: 3px; vertical-align: middle;
+      overflow: hidden; margin-left: 8px;
+    }
+    .ocr-progress > i { display: block; height: 100%; width: 0%; background: var(--blue); transition: width 0.2s; }
+
+    .flow-arrow { display: flex; justify-content: center; margin: -22px 0 -6px; position: relative; z-index: 1; }
+    .flow-arrow span {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--sheet); border: 1px solid var(--line); color: var(--blue);
+    }
+
+    /* ── 출력 (한글 수식) ── */
+    .output-panel { background: var(--out-bg); }
+    .output-title { display: inline-flex; align-items: center; gap: 8px; }
+    .output-title::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--blue); }
+    .output {
+      min-height: 96px;
+      padding: 8px 20px 16px;
+      font-family: var(--mono); font-size: 15px; line-height: 1.8;
+      white-space: pre-wrap; overflow-wrap: anywhere;
+    }
+    .output .tk-kw { color: var(--accent); font-weight: 600; }
+    .output .tk-greek { font-style: italic; }
+    .output .tk-mute { color: var(--ink-2); }
+    .output .sp { color: var(--ink-2); }
+    .output.show-spaces .sp {
+      display: inline-block; min-width: 13px; text-align: center;
+      border-radius: 4px; background: var(--amber-tint); color: var(--amber); font-weight: 600;
+    }
+    .output.fallback-mode { color: var(--amber); }
+    .output.fallback-mode::before {
+      content: attr(data-warning);
+      display: block; margin-bottom: 8px;
+      font-weight: 700; user-select: none;
+    }
+    .toggle {
+      display: inline-flex; align-items: center; gap: 8px;
+      min-height: 36px; padding: 0 10px;
+      border: 0; border-radius: 8px; background: transparent;
+      color: var(--ink-2); font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .toggle:hover { background: var(--accent-tint); }
+    .toggle .sw { width: 30px; height: 18px; border-radius: 999px; background: var(--line); position: relative; flex-shrink: 0; transition: background 0.15s; }
+    .toggle .sw::after {
+      content: ""; position: absolute; top: 2px; left: 2px;
+      width: 14px; height: 14px; border-radius: 50%; background: #fff;
+      box-shadow: 0 1px 2px rgba(15, 27, 61, 0.25); transition: transform 0.15s;
+    }
+    .toggle[aria-pressed="true"] .sw { background: var(--amber); }
+    .toggle[aria-pressed="true"] .sw::after { transform: translateX(12px); }
+    .legend-row {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px;
+      padding: 12px 20px 14px; border-top: 1px dashed var(--line);
+    }
+    .legend { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
+    .legend code { font-family: var(--mono); font-size: 13px; }
+    .legend .kw-chip { color: var(--accent); font-weight: 600; }
+    .legend .sp-chip { display: inline-block; min-width: 13px; text-align: center; border-radius: 4px; background: var(--amber-tint); color: var(--amber); font-weight: 600; }
+    #copyHint { margin: 0; margin-right: auto; font-size: 13px; color: var(--ink-2); }
+    #copyHint.copied { color: var(--accent); font-weight: 700; }
+    #copyHint.copied::before { content: "✓ "; }
+
+    /* ── 미리보기 ── */
+    .preview-panel { padding: 14px 20px 22px; }
+    .preview {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 60px; padding-top: 10px;
+      font-size: 1.15rem; color: var(--ink);
+      overflow-x: auto;
+    }
+    .preview .katex-display { margin: 0.4em 0; }
     .preview .katex-display,
     .preview .katex {
       max-width: 100%;
@@ -166,296 +278,109 @@
       overflow-wrap: break-word !important;
     }
     .preview .preview-block { width: 100%; max-width: 100%; overflow-x: auto; }
-    .preview .placeholder { color: var(--muted); font-size: 0.9rem; }
-    .preview .render-error { color: #c0392b; font-size: 0.85rem; font-family: monospace; }
-    footer { color: var(--muted); font-size: 0.82rem; text-align: center; margin-top: 28px; }
-    footer a { color: var(--accent); text-decoration: none; }
+    .preview .placeholder { color: var(--ink-2); font-size: 0.9rem; }
+    .preview .render-error { color: var(--danger); font-size: 0.85rem; font-family: var(--mono); }
 
-    /* 사이트 푸터 — wrap 바깥의 풀-width 바 */
-    .site-footer {
-      margin-top: 64px;
-      border-top: 1px solid var(--border);
-      background: var(--card);
-    }
-    .site-footer-inner {
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 22px 20px 18px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 36px;
-    }
-    @media (max-width: 560px) {
-      .site-footer-inner { grid-template-columns: 1fr; gap: 22px; }
-    }
-    .footer-col { min-width: 0; }
-    .footer-title {
-      margin: 0 0 10px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--text);
-      letter-spacing: 0.01em;
-    }
-    .footer-item {
-      margin: 0 0 6px;
-      font-size: 0.8rem;
-      color: var(--muted);
-      line-height: 1.55;
-    }
-    .footer-item:last-child { margin-bottom: 0; }
-    .footer-item a {
-      color: var(--text);
-      text-decoration: none;
-      transition: color 0.15s;
-    }
-    .footer-item a:hover { color: var(--accent); }
-    .footer-key {
-      color: var(--text);
-      font-weight: 600;
-      margin-right: 6px;
-    }
-    .site-footer-bottom {
-      background: var(--card);
-      border-top: 1px solid var(--border);
-    }
-    .site-footer-bottom-inner {
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      font-size: 0.76rem;
-      color: var(--muted);
-      flex-wrap: wrap;
-    }
-    .footer-policy {
-      color: var(--muted);
-      text-decoration: none;
-      transition: color 0.15s;
-    }
-    .footer-policy:hover { color: var(--accent); }
-    .footer-dot { opacity: 0.5; }
-
-    /* 이미지 OCR — 입력창 통합 */
-    .input-actions { display: flex; gap: 6px; align-items: center; }
-    .input-wrap { position: relative; }
-    .input-drag-overlay {
-      position: absolute;
-      inset: 0;
-      border-radius: 8px;
-      border: 2px dashed var(--accent);
-      background: rgba(47, 109, 246, 0.08);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.95rem;
-      color: var(--accent);
-      font-weight: 600;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.15s;
-      z-index: 2;
-    }
-    .input-wrap.dragover .input-drag-overlay { opacity: 1; }
-    .input-wrap.dragover textarea { border-color: var(--accent); }
-    .ocr-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 8px;
-    }
-    .ocr-thumb {
-      max-height: 48px;
-      max-width: 110px;
-      border-radius: 5px;
-      border: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-    .ocr-status { font-size: 0.85rem; color: var(--muted); }
-    .ocr-status.busy { color: var(--accent); }
-    .ocr-status.error { color: #c0392b; }
-    .ocr-progress {
-      display: inline-block;
-      height: 6px;
-      width: 160px;
-      max-width: 50%;
-      background: var(--border);
-      border-radius: 3px;
-      vertical-align: middle;
-      overflow: hidden;
-      margin-left: 8px;
-    }
-    .ocr-progress > i { display: block; height: 100%; width: 0%; background: var(--accent); transition: width 0.2s; }
-
-    /* ── 탭 ── */
-    .tab-nav {
-      display: flex;
-      gap: 4px;
-      background: var(--code-bg);
-      padding: 4px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-    }
-    .tab-btn {
-      flex: 1;
-      border: none;
-      background: none;
-      cursor: pointer;
-      padding: 10px 16px;
-      border-radius: 9px;
-      font-size: 0.92rem;
-      font-weight: 600;
-      color: var(--muted);
-      transition: background 0.15s, color 0.15s, box-shadow 0.15s;
-    }
-    .tab-btn.active {
-      background: var(--card);
-      color: var(--accent);
-      box-shadow: 0 1px 5px rgba(0,0,0,0.10);
-    }
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
-
-    /* ── 파일 변환 ── */
-
-    /* MD 전용 문서 설정/미리보기 패널 */
+    /* ── 문서 변환 ── */
+    .file-layout { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+    .file-side { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+    .file-side > .panel { margin-bottom: 0; }
+    .file-main { flex: 999 1 560px; min-width: 0; margin-bottom: 0; overflow: hidden; }
     .md-section { display: none; }
     .md-section.visible { display: block; }
 
-    .doc-options {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-      align-items: center;
-    }
-    .doc-options label {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 0.85rem; color: var(--text); font-weight: 600;
-      min-width: 3.8em;
-    }
-    .doc-options select, .doc-options input[type="number"] {
-      background: var(--card);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 7px;
-      padding: 6px 9px;
-      font-size: 0.88rem;
-      font-family: inherit;
-      max-width: 100%;
-    }
-    .doc-options select { min-width: 160px; }
-    .doc-options input[type="number"] { width: 76px; }
-    .doc-options select:focus,
-    .doc-options input[type="number"]:focus {
-      outline: 2px solid var(--accent);
-      border-color: var(--accent);
-    }
-    .doc-options .btn-loadfont {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text);
-      border-radius: 7px;
-      padding: 6px 11px;
-      font-size: 0.82rem;
-      font-weight: 600;
+    .file-drop {
+      border: 2px dashed var(--line);
+      border-radius: 12px;
+      padding: 28px 16px;
+      text-align: center;
       cursor: pointer;
       transition: border-color 0.15s, background 0.15s;
     }
-    .doc-options .btn-loadfont:hover {
-      border-color: var(--accent);
-      background: rgba(47,109,246,0.06);
-    }
-    .doc-options .btn-loadfont:disabled { opacity: 0.5; cursor: not-allowed; }
+    .file-drop:hover, .file-drop.dragover { border-color: var(--blue); background: var(--accent-tint); }
+    .file-drop-icon { color: var(--blue); line-height: 0; }
+    .file-drop-text { margin: 8px 0 4px; font-size: 15px; font-weight: 600; }
+    .file-drop-sub { margin: 0; color: var(--ink-2); font-size: 13px; }
+    .file-drop.compact { padding: 8px 12px; text-align: left; }
+    .file-drop.compact .file-drop-icon, .file-drop.compact .file-drop-sub { display: none; }
+    .file-drop.compact .file-drop-text { margin: 0; font-size: 14px; font-weight: 500; color: var(--ink-2); }
 
-    /* 문서 설정 그리드 — 파일명·글꼴 열 왼쪽 정렬 통일 */
-    .doc-options-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+    .file-result { margin-top: 14px; }
+    .file-card { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .file-card:last-child { margin-bottom: 0; }
+    .file-ext {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 40px; height: 48px; border-radius: 6px; flex-shrink: 0;
+      background: var(--accent-tint); color: var(--accent);
+      font-family: var(--mono); font-size: 11px; font-weight: 700;
     }
-    .doc-opt-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .doc-opt-label {
-      font-size: 0.85rem; color: var(--text); font-weight: 600;
-      width: 3.4em; flex-shrink: 0;
-    }
-    .doc-opt-font-controls {
-      display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
-    }
-    .doc-opt-size-label {
-      display: inline-flex; align-items: center; gap: 5px;
-      font-size: 0.85rem; color: var(--text); font-weight: 600;
-    }
-    .doc-opt-row select, .doc-opt-row input[type="number"],
-    .doc-opt-font-controls select, .doc-opt-font-controls input[type="number"] {
-      background: var(--card);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 7px;
-      padding: 6px 9px;
-      font-size: 0.88rem;
-      font-family: inherit;
-      max-width: 100%;
-    }
-    .doc-opt-font-controls select { min-width: 160px; }
-    .doc-opt-font-controls input[type="number"] { width: 76px; }
-    .doc-opt-font-controls select:focus,
-    .doc-opt-font-controls input[type="number"]:focus {
-      outline: 2px solid var(--accent);
-      border-color: var(--accent);
-    }
-    .doc-opt-font-controls .btn-loadfont {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text);
-      border-radius: 7px;
-      padding: 6px 11px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
-    }
-    .doc-opt-font-controls .btn-loadfont:hover {
-      border-color: var(--accent);
-      background: rgba(47,109,246,0.06);
-    }
-    .doc-opt-font-controls .btn-loadfont:disabled { opacity: 0.5; cursor: not-allowed; }
+    .file-card.warn .file-ext { background: var(--amber-tint); color: var(--amber); }
+    .file-card.err .file-ext { background: var(--amber-tint); color: var(--danger); }
+    .file-card-body { flex: 1; min-width: 0; }
+    .file-card-name { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-card-meta { font-size: 13px; color: var(--ink-2); }
+    .file-card.err .file-card-name { color: var(--danger); white-space: normal; }
+    .hwp-note { margin: 10px 0 0; font-size: 13px; color: var(--accent); }
 
-    /* MD 미리보기: A4 종이 시뮬레이션 */
+    .doc-options-grid { display: flex; flex-direction: column; gap: 14px; padding: 4px 16px 16px; }
+    .field-group { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .field-label { font-size: 13px; color: var(--ink-2); }
+    .field-row { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+    .field {
+      min-height: 40px; padding: 0 12px;
+      border: 1px solid var(--line); border-radius: 8px;
+      background: var(--sheet); color: var(--ink);
+      font-size: 14px; max-width: 100%;
+    }
+    .field:focus { outline: 2px solid var(--blue); outline-offset: -1px; }
+    .file-name-inline { display: flex; align-items: center; gap: 8px; }
+    .file-name-inline .field { flex: 1; min-width: 0; }
+    .file-name-ext { font-size: 14px; color: var(--ink-2); white-space: nowrap; }
+    #mdFontSelect { min-width: 160px; }
+    #mdFontSize { width: 96px; }
+    .btn-loadfont { align-self: flex-start; margin-left: -10px; }
+
+    .dl-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; min-height: 52px;
+      border: 0; border-radius: 12px;
+      background: var(--btn); color: #fff;
+      font-size: 16px; font-weight: 700; text-decoration: none;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .dl-btn:hover { background: var(--btn-hover); color: #fff; }
+    .dl-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .download-panel { background: none; border: 0; }
+    .download-panel .hint { line-height: 1.6; }
+
     .md-preview-wrap {
       --doc-font: "함초롬바탕", "Hancom Batang", "맑은 고딕", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
       --doc-pt: 10;
       --doc-fs: calc(var(--doc-pt) * 1.3333px);
       width: 100%;
       min-height: 300px;
-      max-height: 60vh;
-      border-radius: 10px;
-      background: #d9dde4;
-      padding: 16px 0;
+      max-height: 72vh;
+      background: var(--desk);
+      padding: 24px 0;
       overflow: auto;
       display: flex; flex-direction: column; align-items: center;
-      gap: 12px;
+      gap: 16px;
     }
-    [data-theme="dark"] .md-preview-wrap { background: #14171c; }
     .md-preview-wrap.empty { padding: 60px 20px; align-items: center; justify-content: center; }
-    .md-preview-wrap .placeholder { color: var(--muted); font-size: 0.9rem; }
+    .md-preview-wrap .placeholder { color: var(--ink-2); font-size: 0.9rem; }
     .doc-page {
-      width: min(680px, calc(100% - 30px));
+      width: min(680px, calc(100% - 32px));
       aspect-ratio: 210 / 297;
       background: #ffffff;
       color: #000;
-      box-shadow: 0 2px 14px rgba(0,0,0,0.15);
+      box-shadow: 0 1px 3px rgba(10, 13, 19, 0.18), 0 8px 24px rgba(10, 13, 19, 0.1);
       padding: 6.73% 14.29% 8.42%;
       font-family: var(--doc-font);
       font-size: var(--doc-fs);
       line-height: 1.6;
       overflow: hidden;
       position: relative;
+      word-break: normal;
     }
     .doc-page .page-num {
       position: absolute;
@@ -492,77 +417,6 @@
     .doc-page table.wide th, .doc-page table.wide td { padding: 2px 3px; overflow-wrap: anywhere; }
     .doc-page .katex-display { margin: 0.7em 0; overflow-x: auto; }
 
-    .dl-btn {
-      display: block; width: 100%; text-align: center; text-decoration: none;
-      background: var(--accent); color: #fff;
-      font-size: 1rem; font-weight: 700;
-      padding: 14px 20px; border-radius: 10px;
-      transition: background 0.15s, transform 0.1s;
-      border: none; cursor: pointer;
-    }
-    .dl-btn:hover { background: var(--accent-hover); }
-    .dl-btn:active { transform: translateY(1px); }
-    .dl-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
-    .file-drop {
-      border: 2px dashed var(--border);
-      border-radius: 10px;
-      padding: 28px 16px;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
-    }
-    .file-drop:hover, .file-drop.dragover {
-      border-color: var(--accent);
-      background: rgba(47,109,246,0.05);
-    }
-    .file-drop-icon { font-size: 2rem; line-height: 1; }
-    .file-drop-text { margin: 6px 0 4px; font-size: 0.95rem; }
-    .file-drop-sub { margin: 0; color: var(--muted); font-size: 0.8rem; }
-    .doc-options label.label-expand { flex: 1; min-width: 0; }
-    .file-name-inline {
-      display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0;
-    }
-    .file-name-inline input {
-      flex: 1; min-width: 0;
-      padding: 5px 8px; border-radius: 6px;
-      border: 1.5px solid var(--border); background: var(--input-bg);
-      color: var(--text); font-size: 0.85rem; outline: none;
-      transition: border-color 0.15s; font-family: inherit;
-    }
-    .file-name-inline input:focus { border-color: var(--accent); }
-    .file-name-ext { font-size: 0.8rem; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
-    .file-result { margin-top: 14px; }
-    /* 변환 결과 헤더: 체크 + 파일명 + 통계 한 줄 */
-    .conv-summary {
-      display: flex; align-items: center; gap: 9px;
-      padding: 11px 14px; border-radius: 9px; margin-bottom: 12px;
-      background: #e7f6ee; border: 1px solid #b2dfc7;
-    }
-    [data-theme="dark"] .conv-summary { background: #14301f; border-color: #1e5035; }
-    .conv-summary.no-eq { background: #fdf3df; border-color: #f0d08a; }
-    [data-theme="dark"] .conv-summary.no-eq { background: #2e2510; border-color: #5a4510; }
-    .conv-summary.err { background: #fdecea; border-color: #f5b8b4; }
-    [data-theme="dark"] .conv-summary.err { background: #331a18; border-color: #5a2820; }
-    .conv-check { font-size: 1.05rem; flex-shrink: 0; line-height: 1; }
-    .conv-fname { font-size: 0.88rem; font-weight: 600; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .conv-meta { font-size: 0.78rem; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
-    .dl-btn {
-      display: block; width: 100%; text-align: center; text-decoration: none;
-      background: var(--accent); color: #fff;
-      font-size: 1rem; font-weight: 700;
-      padding: 14px 20px; border-radius: 10px;
-      transition: background 0.15s, transform 0.1s;
-    }
-    .dl-btn:hover { background: var(--accent-hover); }
-    .dl-btn:active { transform: translateY(1px); }
-    .hwp-notice {
-      margin-top: 12px; padding: 12px 14px;
-      background: rgba(47,109,246,0.07);
-      border: 1px solid rgba(47,109,246,0.18);
-      border-radius: 9px; font-size: 0.83rem; color: var(--muted); line-height: 1.6;
-    }
-    .hwp-notice b { color: var(--text); }
     .conv-spinner {
       width: 14px; height: 14px;
       border: 2px solid currentColor; border-right-color: transparent;
@@ -571,141 +425,123 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ── 푸터 ── */
+    .site-footer {
+      display: flex; flex-wrap: wrap; gap: 8px 20px;
+      margin-top: 28px; font-size: 13px; color: var(--ink-2);
+    }
+    .site-footer a { color: var(--ink-2); text-decoration: none; }
+    .site-footer a:hover { color: var(--accent); }
+    .site-footer [hidden] { display: none; }
+    .site-footer .copy { margin-left: auto; }
+
     /* ── 경고·해결방안 모달 ── */
     .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.45);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 20px;
-      opacity: 0;
-      visibility: hidden;
+      position: fixed; inset: 0;
+      background: var(--scrim);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000; padding: 24px;
+      opacity: 0; visibility: hidden;
       transition: opacity 0.2s, visibility 0.2s;
     }
     .modal-overlay.show { opacity: 1; visibility: visible; }
     .modal-content {
       position: relative;
-      background: var(--card);
-      padding: 26px 24px 22px;
-      border-radius: 16px;
-      max-width: 460px;
-      width: 100%;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
-      text-align: center;
-      transform: translateY(12px) scale(0.97);
+      width: 100%; max-width: 480px;
+      max-height: calc(100vh - 48px); overflow-y: auto;
+      background: var(--sheet);
+      border-radius: 20px;
+      box-shadow: 0 24px 60px rgba(15, 27, 61, 0.28);
+      transform: translateY(12px) scale(0.98);
       transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .modal-overlay.show .modal-content { transform: none; }
-    .modal-step { animation: modalStepIn 0.28s ease; }
+    .modal-step { padding: 28px 28px 20px; animation: modalStepIn 0.25s ease; }
+    .modal-step[hidden] { display: none; }
     @keyframes modalStepIn {
-      from { opacity: 0; transform: translateX(10px); }
+      from { opacity: 0; transform: translateX(8px); }
       to   { opacity: 1; transform: none; }
     }
-    .modal-icon { font-size: 2.6rem; line-height: 1; margin-bottom: 10px; }
-    .modal-title { font-size: 1.2rem; font-weight: 800; margin: 0 0 10px; color: var(--text); }
-    .modal-title .warn-accent { color: #e8590c; }
-    .modal-desc { font-size: 0.92rem; color: var(--muted); margin: 0 0 22px; line-height: 1.6; word-break: keep-all; }
-    .modal-desc b { color: var(--text); }
-    .modal-actions { display: flex; flex-direction: column; gap: 10px; }
-    .modal-primary-btn { width: 100%; padding: 12px; font-size: 0.98rem; }
-    .modal-dismiss-btn { width: 100%; padding: 9px; }
-    .modal-dismiss-btn:disabled { color: var(--muted); cursor: not-allowed; opacity: 0.6; }
+    .modal-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 44px; height: 44px; border-radius: 12px;
+      background: var(--amber-tint); color: var(--amber);
+    }
+    .modal-icon.code { font-family: var(--mono); font-size: 16px; font-weight: 700; }
+    .modal-title { margin: 16px 0 8px; font-size: 21px; line-height: 1.35; font-weight: 800; letter-spacing: -0.015em; }
+    .modal-title.no-icon { margin-top: 0; margin-bottom: 6px; }
+    .modal-desc { margin: 0; font-size: 15px; line-height: 1.65; color: var(--ink-2); }
+    .modal-actions {
+      display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px;
+      margin-top: 24px;
+    }
+    .modal-actions.divided { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+    .modal-actions .btn { min-height: 44px; padding: 0 18px; font-size: 15px; border-radius: 10px; }
+    .modal-actions .btn.ghost { padding: 0 16px; }
 
-    /* 모달 — 해결 방안 단계 */
-    .solutions-title { margin-top: 6px; }
+    .compare {
+      margin-top: 18px;
+      border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+    }
+    .compare-row { display: flex; align-items: center; gap: 14px; padding: 12px 16px; }
+    .compare-row + .compare-row { border-top: 1px solid var(--line); }
+    .compare-row.bad { background: var(--out-bg); }
+    .compare-key { width: 84px; flex-shrink: 0; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+    .compare-row.bad code { font-family: var(--mono); font-size: 15px; color: var(--amber); font-weight: 500; }
+    .compare .katex { font-size: 1.25em; color: var(--ink); }
+
     .solution-tabs {
-      display: flex; gap: 5px; margin: 16px 0 18px;
-      background: var(--code-bg); padding: 4px; border-radius: 11px;
+      display: flex; gap: 4px; padding: 4px; margin: 18px 0;
+      border-radius: 12px; background: var(--line);
     }
     .solution-tab {
       flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-      border: none; background: none; cursor: pointer;
-      padding: 9px 4px; border-radius: 8px;
-      font-size: 0.84rem; font-weight: 700; color: var(--muted);
-      transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+      min-height: 40px; padding: 0 6px;
+      border: 0; border-radius: 9px; background: none;
+      font-size: 14px; font-weight: 700; color: var(--ink-2);
+      cursor: pointer; transition: background 0.15s, color 0.15s;
     }
-    .solution-tab .sol-num {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 18px; height: 18px; border-radius: 50%;
-      background: var(--border); color: var(--text);
-      font-size: 0.72rem; font-weight: 800;
-      transition: background 0.15s, color 0.15s;
-    }
-    .solution-tab.active { background: var(--card); color: var(--accent); box-shadow: 0 1px 5px rgba(0, 0, 0, 0.12); }
-    .solution-tab.active .sol-num { background: var(--accent); color: #fff; }
-    .solution-panel { text-align: center; }
+    .solution-tab:hover { color: var(--ink); }
+    .solution-tab.active { background: var(--sheet); color: var(--accent); box-shadow: 0 1px 3px rgba(33, 80, 216, 0.14); }
+    @media (max-width: 440px) { .solution-tab svg { display: none; } }
+    .solution-panel { min-height: 176px; }
     .solution-panel[hidden] { display: none; }
-    .solution-icon { font-size: 2rem; margin-bottom: 8px; line-height: 1; }
-    .solution-lead { font-size: 0.95rem; color: var(--text); margin: 0 0 8px; line-height: 1.55; word-break: keep-all; }
-    .solution-lead b { color: var(--accent); }
-    .solution-sub { font-size: 0.82rem; color: var(--muted); margin: 0 0 16px; line-height: 1.55; word-break: keep-all; }
-    .solution-cta { display: inline-block; text-decoration: none; padding: 10px 22px; }
-    .prompt-box {
-      margin: 0;
-      padding: 14px;
-      background: rgba(47, 109, 246, 0.08);
-      border: 2px dashed var(--accent);
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 12px; text-align: left;
+    .solution-lead { margin: 0 0 12px; font-size: 15px; line-height: 1.6; }
+    .prompt-box { border: 1px solid var(--line); border-radius: 12px; background: var(--out-bg); }
+    .prompt-text { margin: 0; padding: 14px 16px 6px; font-size: 15px; line-height: 1.65; font-weight: 500; }
+    .prompt-text code { font-family: var(--mono); font-size: 14px; }
+    .prompt-actions { display: flex; justify-content: flex-end; padding: 6px 8px 8px; }
+    .kbd-box {
+      display: flex; flex-direction: column; gap: 10px;
+      padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px;
+      background: var(--out-bg); font-size: 14px; color: var(--ink-2);
     }
-    .prompt-text {
-      color: var(--accent);
-      font-size: 0.95rem; font-weight: 600;
-      line-height: 1.5; word-break: keep-all;
+    .kbd-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .kbd-row > b { width: 52px; font-weight: 600; }
+    kbd {
+      display: inline-flex; align-items: center; min-height: 24px; padding: 0 7px;
+      border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px;
+      background: var(--sheet); font-family: inherit; font-size: 13px; font-weight: 600; color: var(--ink);
     }
-    .prompt-copy-btn { flex-shrink: 0; padding: 6px 12px; font-size: 0.85rem; }
-    .solutions-footer { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 18px; }
-    .modal-close-btn { width: 100%; padding: 11px; }
+    .solution-cta { margin-top: 14px; }
+    .ext-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      min-height: 40px; padding: 0 14px; border-radius: 10px;
+      background: var(--accent-tint); color: var(--accent);
+      font-size: 14px; font-weight: 700; text-decoration: none;
+    }
+    .ext-link:hover { background: var(--line); }
 
-    /* 다크 모드 토글 (레이아웃 우측 상단) — h1 첫 줄과 수직 중앙 정렬 */
-    .theme-toggle {
-      position: absolute;
-      top: 32px;
-      right: 20px;
-      /* h1 첫 줄 line-box(=font-size × line-height)와 동일한 높이를 갖도록 해서
-         flex로 트랙(24px)을 수직 중앙에 두면 h1 텍스트 중심과 정확히 맞춰진다. */
-      height: calc(1.6rem * 1.6);
-      display: flex;
-      align-items: center;
-      z-index: 900;
-      border: none;
-      background: none;
-      padding: 0;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
+    /* $$ 없음 모달: 닫을 수 있을 때까지 남은 2초를 줄어드는 막대로 보여 준다 */
+    .drain { height: 3px; background: var(--amber); transform-origin: left; transform: scaleX(0); }
+    .drain.run { animation: drain 2s linear forwards; }
+    @keyframes drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .modal-step { animation: none; }
+      .modal-content { transition: none; }
+      .drain.run { animation: none; }
     }
-    .theme-toggle .track {
-      display: block;
-      width: 46px;
-      height: 24px;
-      border-radius: 999px;
-      background: var(--border);
-      position: relative;
-      transition: background 0.2s;
-    }
-    .theme-toggle .thumb {
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: #fff;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      line-height: 1;
-      transition: transform 0.2s;
-    }
-    .theme-toggle:focus-visible .track { outline: 2px solid var(--accent); outline-offset: 2px; }
-    [data-theme="dark"] .theme-toggle .track { background: var(--accent); }
-    [data-theme="dark"] .theme-toggle .thumb { transform: translateX(22px); }
 
     /* 오프라인 안내 배너 — 인터넷 연결이 끊겼을 때만 표시 */
     .offline-banner {
@@ -730,244 +566,286 @@
 </head>
 <body>
   <div class="offline-banner" id="offlineBanner" role="status" aria-live="polite">
-    <span aria-hidden="true">⚠️</span> 오프라인
+    오프라인 상태입니다. 변환은 계속 쓸 수 있어요.
   </div>
-  <div class="wrap">
-    <button class="theme-toggle" id="themeToggle" type="button" role="switch"
-      aria-checked="false" aria-label="다크 모드 전환" title="다크 모드 전환">
-      <span class="track"><span class="thumb" aria-hidden="true">☀️</span></span>
-    </button>
-    <header>
-      <h1>휩 - LaTeX → 한글(HWP) 수식 변환기</h1>
-      <p>AI가 만든 Markdown LaTeX 수식을 한컴오피스 한글 수식 편집기 문법으로 변환합니다.
-        결과를 복사해 한글 수식 편집기에 붙여넣으세요.</p>
+  <div class="wrap" id="pageWrap">
+    <header class="site-header">
+      <a class="brand" href="./">
+        <img src="public/logo.svg" alt="" width="36" height="36" />
+        <span class="brand-name">휩</span>
+        <span class="brand-sub">AI to 한글(HWP)</span>
+      </a>
       <div class="header-actions">
+        <a class="btn ghost hide-sm" href="https://github.com/minigu5/hwip" target="_blank" rel="noopener">GitHub</a>
+        <button class="btn ghost theme-toggle" id="themeToggle" type="button"
+          aria-pressed="false" aria-label="다크 모드 전환" title="다크 모드 전환">
+          <svg class="ico-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+          <svg class="ico-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
         <a class="ext-btn" href="https://chromewebstore.google.com/detail/%ED%9C%A9-latex-%E2%86%92-%ED%95%9C%EA%B8%80hwp-%EC%88%98%EC%8B%9D-%EB%B3%B5%EC%82%AC/meahkfhlalnljlgllhmhmfdhpkknfncg"
           target="_blank" rel="noopener">
-          <span class="ext-ico" aria-hidden="true">🧩</span>
-          크롬 확장 프로그램으로 더 정확하게
-          <span class="ext-arrow" aria-hidden="true">↗</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h3a2 2 0 0 1 2 2v1h3a2 2 0 0 1 2 2v3h-1a2 2 0 1 0 0 4h1v3a2 2 0 0 1-2 2h-3v-1a2 2 0 1 0-4 0v1H6a2 2 0 0 1-2-2v-3h1a2 2 0 1 0 0-4H4V8a2 2 0 0 1 2-2h3V5"/></svg>
+          크롬 확장 설치
         </a>
       </div>
     </header>
 
-    <nav class="tab-nav" role="tablist">
+    <section class="hero" id="heroText">
+      <h1>AI가 쓴 수식, 한글에 그대로</h1>
+      <p>ChatGPT·Claude가 출력한 LaTeX를 한글 수식 편집기 문법으로 바꿉니다. 변환 결과는 바로 클립보드에 복사됩니다.</p>
+    </section>
+    <section class="hero" id="heroFile" hidden>
+      <h1>문서 속 수식도 한글 수식 개체로</h1>
+      <p>HWP·HWPX 파일의 텍스트 수식을 수식 개체로 교체하거나, 마크다운 문서를 HWPX로 만듭니다. 파일은 내 브라우저에서만 처리됩니다.</p>
+    </section>
+
+    <nav class="tab-nav" role="tablist" aria-label="변환 종류">
       <button class="tab-btn active" id="tabTextBtn" role="tab" aria-selected="true"
-        aria-controls="tabText" type="button">✏️ 텍스트 변환</button>
+        aria-controls="tabText" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 5H7l6 7-6 7h10"/></svg>
+        수식 변환</button>
       <button class="tab-btn" id="tabFileBtn" role="tab" aria-selected="false"
-        aria-controls="tabFile" type="button">📄 파일 변환 (HWP/MD)</button>
+        aria-controls="tabFile" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
+        문서 변환 <span class="tab-sub">HWP·MD</span></button>
     </nav>
 
-    <!-- ── 탭 1: 텍스트 변환 ── -->
+    <!-- ── 탭 1: 수식 변환 ── -->
     <div class="tab-panel active" id="tabText" role="tabpanel">
 
-    <div class="panel">
-      <div class="label-row">
-        <span class="label">입력 (LaTeX)</span>
-        <div class="input-actions">
-          <button class="btn ghost" id="pickImageBtn" type="button" title="이미지에서 수식 인식 (OCR · 브라우저 로컬 처리)">🖼️ 이미지 인식</button>
-          <button class="btn ghost" id="clearBtn" type="button">지우기</button>
+      <div class="panel input-panel">
+        <div class="label-row">
+          <label class="label" for="input">LaTeX</label>
+          <div class="input-actions">
+            <button class="btn ghost" id="pickImageBtn" type="button" title="이미지에서 수식 인식 (브라우저 안에서 처리)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-9 9"/></svg>
+              이미지에서 인식</button>
+            <button class="btn ghost" id="clearBtn" type="button">지우기</button>
+          </div>
+        </div>
+        <input type="file" id="imageInput" accept="image/*" hidden />
+        <div class="input-wrap" id="inputWrap">
+          <textarea id="input" spellcheck="false" placeholder="예: $$\frac{2\pi}{24}(t - \phi_1)$$" autofocus></textarea>
+          <div class="input-drag-overlay" id="inputDragOverlay" aria-hidden="true">이미지를 놓으면 수식을 인식합니다</div>
+        </div>
+        <div class="ocr-row" id="ocrRow" style="display:none">
+          <img id="ocrPreviewImg" class="ocr-thumb" alt="" />
+          <span class="ocr-status" id="ocrStatus" aria-live="polite"></span>
+        </div>
+        <p class="panel-foot" id="inputHint">수식 이미지를 끌어다 놓거나 붙여넣어도 인식합니다. 이미지는 내 브라우저 밖으로 나가지 않습니다.</p>
+      </div>
+
+      <div class="flow-arrow" aria-hidden="true">
+        <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg></span>
+      </div>
+
+      <div class="panel output-panel">
+        <div class="label-row">
+          <span class="label output-title">한글 수식</span>
+          <div class="input-actions">
+            <button class="toggle" id="spaceToggle" type="button" aria-pressed="true">
+              <span class="sw" aria-hidden="true"></span>
+              공백 기호 강조</button>
+            <button class="btn" id="copyBtn" type="button">복사</button>
+          </div>
+        </div>
+        <div class="output show-spaces" id="output" aria-live="polite"></div>
+        <div class="legend-row">
+          <p id="copyHint">변환되면 자동으로 클립보드에 복사됩니다.</p>
+          <span class="legend"><code class="kw-chip">over</code>구조 명령</span>
+          <span class="legend"><code class="sp-chip">`</code>좁은 공백</span>
+          <span class="legend"><code>_{ }</code>첨자 묶음</span>
         </div>
       </div>
-      <input type="file" id="imageInput" accept="image/*" hidden />
-      <div class="input-wrap" id="inputWrap">
-        <textarea id="input" placeholder="예: $$\frac{2\pi}{24}(t - \phi_1)$$" autofocus></textarea>
-        <div class="input-drag-overlay" id="inputDragOverlay" aria-hidden="true">🖼️ 이미지를 놓으면 수식을 인식해요</div>
-      </div>
-      <div class="ocr-row" id="ocrRow" style="display:none">
-        <img id="ocrPreviewImg" class="ocr-thumb" alt="" />
-        <span class="ocr-status" id="ocrStatus" aria-live="polite"></span>
-      </div>
-      <p class="hint" id="inputHint">이미지를 끌어다 놓거나 붙여넣기(⌘/Ctrl+V)하면 수식을 자동 인식합니다.</p>
-    </div>
 
-    <div class="panel">
-      <div class="label-row">
-        <span class="label">출력 (한글 수식)</span>
-        <button class="btn" id="copyBtn" type="button">복사</button>
+      <div class="panel preview-panel" id="previewPanel" hidden>
+        <span class="label">미리보기</span>
+        <div class="preview" id="preview"></div>
       </div>
-      <div class="output" id="output" aria-live="polite"></div>
-      <div class="hint" id="copyHint">변환되면 자동으로 클립보드에 복사됩니다.</div>
-      <div class="preview" id="preview" style="display:none"></div>
-    </div>
-
-    <footer>
-      변환 규칙은 한컴 공식 명세(한글 문서 파일 형식 - 수식, rev 1.2)를 참고했습니다 ·
-      <a href="https://github.com/minigu5/latex-to-hwp" target="_blank" rel="noopener">GitHub</a>
-    </footer>
 
     </div><!-- /tabText -->
 
-    <!-- ── 탭 2: 파일 변환 ── -->
+    <!-- ── 탭 2: 문서 변환 ── -->
     <div class="tab-panel" id="tabFile" role="tabpanel">
+      <div class="file-layout">
+        <div class="file-side">
 
-      <div class="panel">
-        <div class="label-row">
-          <span class="label">HWP / HWPX 파일 업로드</span>
-        </div>
-        <div class="file-drop" id="fileDrop" tabindex="0" role="button"
-          aria-label="파일 선택">
-          <input type="file" id="fileInput" accept=".hwp,.hwpx,.md,.markdown" hidden />
-          <div class="file-drop-icon">📂</div>
-          <p class="file-drop-text">파일을 끌어다 놓거나
-            <button type="button" class="btn ghost" id="pickFileBtn">파일 선택</button></p>
-          <p class="file-drop-sub">.hwp · .hwpx · .md · .markdown<br>붙여넣기(⌘/Ctrl+V)도 가능합니다. 브라우저에서만 처리됩니다.</p>
-        </div>
-
-        <div class="file-result" id="fileResult" style="display:none"></div>
-        <p class="hint" id="hwpConvertingNote" style="display:none; color:var(--accent)">rhwp 엔진 로드 중, 잠시 기다려 주세요…</p>
-      </div>
-
-      <!-- 문서 설정 (파일명: 공통 / 글꼴·크기: MD 전용) -->
-      <div class="panel" id="mdDocOptions" style="display:none">
-        <div class="label-row">
-          <span class="label">문서 설정</span>
-          <span class="hint" id="mdTokenCount" style="margin-top:0"></span>
-        </div>
-        <div class="doc-options-grid">
-          <label class="doc-opt-row">
-            <span class="doc-opt-label">파일명</span>
-            <div class="file-name-inline">
-              <input type="text" id="fileNameInput" placeholder="비워두면 자동 감지" maxlength="100" autocomplete="off" spellcheck="false" />
-              <span class="file-name-ext">.hwpx</span>
+          <div class="panel panel-pad">
+            <div class="file-drop" id="fileDrop" tabindex="0" role="button" aria-label="파일 선택">
+              <input type="file" id="fileInput" accept=".hwp,.hwpx,.md,.markdown" hidden />
+              <div class="file-drop-icon" aria-hidden="true">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 17v-6M9.5 13.5L12 11l2.5 2.5"/></svg>
+              </div>
+              <p class="file-drop-text">파일을 끌어다 놓거나
+                <button type="button" class="btn ghost" id="pickFileBtn">파일 선택</button></p>
+              <p class="file-drop-sub">HWP, HWPX, 마크다운(.md) 파일을 지원합니다.<br>마크다운 텍스트는 이 탭에서 붙여넣어도 됩니다(⌘/Ctrl+V).</p>
             </div>
-          </label>
-          <div class="doc-opt-row doc-opt-font-row" id="mdFontOptions" style="display:none">
-            <span class="doc-opt-label">글꼴</span>
-            <div class="doc-opt-font-controls">
-              <select id="mdFontSelect"></select>
-              <label class="doc-opt-size-label">글자 크기
-                <input id="mdFontSize" type="number" min="6" max="48" step="0.5" value="10" />
-                <span style="color: var(--muted); font-weight: 500;">pt</span>
-              </label>
-              <button class="btn-loadfont" id="mdLoadLocalFontsBtn" type="button" title="내 컴퓨터에 설치된 모든 글꼴 불러오기 (Chrome/Edge 지원)">📥 내 PC 글꼴 불러오기</button>
+            <div class="file-result" id="fileResult" style="display:none"></div>
+            <p class="hwp-note" id="hwpConvertingNote" style="display:none">rhwp 엔진을 불러오는 중입니다…</p>
+          </div>
+
+          <!-- 문서 설정 (파일명: 공통 / 글꼴·크기: MD 전용) -->
+          <div class="panel" id="mdDocOptions" style="display:none">
+            <div class="label-row">
+              <span class="label">문서 설정</span>
+              <span class="hint" id="mdTokenCount" style="margin:0 8px 0 0"></span>
             </div>
+            <div class="doc-options-grid">
+              <div class="field-group">
+                <label class="field-label" for="fileNameInput">파일 이름</label>
+                <div class="file-name-inline">
+                  <input class="field" type="text" id="fileNameInput" placeholder="비워두면 자동으로 정합니다" maxlength="100" autocomplete="off" spellcheck="false" />
+                  <span class="file-name-ext">.hwpx</span>
+                </div>
+              </div>
+              <div class="field-group" id="mdFontOptions" style="display:none">
+                <div class="field-row">
+                  <div class="field-group" style="flex: 1">
+                    <label class="field-label" for="mdFontSelect">본문 글꼴</label>
+                    <select class="field" id="mdFontSelect"></select>
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="mdFontSize">크기 (pt)</label>
+                    <input class="field" id="mdFontSize" type="number" min="6" max="48" step="0.5" value="10" />
+                  </div>
+                </div>
+                <button class="btn ghost btn-loadfont" id="mdLoadLocalFontsBtn" type="button" title="내 컴퓨터에 설치된 모든 글꼴 불러오기 (Chrome/Edge 지원)">내 PC에 설치된 글꼴 불러오기</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- MD 전용: 다운로드 버튼 -->
+          <div class="panel download-panel md-section" id="mdDownloadPanel">
+            <button class="dl-btn" id="mdDownloadBtn" type="button" disabled>파일을 먼저 선택하세요</button>
+            <p class="hint" id="mdDownloadHint">한컴오피스 한글에서 열 수 있습니다. HWP 파일이 필요하면 한글에서 다른 이름으로 저장하세요.</p>
+          </div>
+
+        </div>
+
+        <!-- MD 전용: 미리보기 -->
+        <div class="panel file-main md-section" id="mdPreviewPanel">
+          <div class="label-row" style="padding-bottom: 12px">
+            <span class="label">미리보기</span>
+            <span class="hint" id="mdPageInfo" style="margin:0 8px 0 0"></span>
+          </div>
+          <div class="md-preview-wrap empty" id="mdPreview">
+            <span class="placeholder">마크다운 파일을 올리면 미리보기가 나타납니다.</span>
           </div>
         </div>
       </div>
-
-      <!-- MD 전용: 미리보기 -->
-      <div class="panel md-section" id="mdPreviewPanel">
-        <div class="label-row">
-          <span class="label">미리보기 (A4)</span>
-          <span class="hint" id="mdPageInfo" style="margin-top:0"></span>
-        </div>
-        <div class="md-preview-wrap empty" id="mdPreview">
-          <span class="placeholder">마크다운 파일을 올리면 미리보기가 나타납니다.</span>
-        </div>
-      </div>
-
-      <!-- MD 전용: 다운로드 버튼 -->
-      <div class="panel md-section" id="mdDownloadPanel">
-        <button class="dl-btn" id="mdDownloadBtn" type="button" disabled>파일을 먼저 선택하세요</button>
-        <p class="hint" id="mdDownloadHint">변환되면 .hwpx 파일이 내려받아집니다. 한컴오피스 한글에서 열어주세요.</p>
-      </div>
-
-      <footer>
-        다음 프로젝트들을 참고했습니다 ·
-        <a href="https://github.com/fakeminjun7321/hwpx-latex-to-equation" target="_blank" rel="noopener">hwpx-latex-to-equation</a>
-        ·
-        <a href="https://github.com/edwardkim/rhwp" target="_blank" rel="noopener">rhwp</a>
-        ·
-        <a href="https://github.com/minigu5/markdown_to_hwp" target="_blank" rel="noopener">markdown_to_hwp</a>
-      </footer>
-
     </div><!-- /tabFile -->
 
+    <footer class="site-footer">
+      <span id="footerText">변환 규칙은 한컴 공식 명세(수식 rev 1.2)를 따릅니다.</span>
+      <span id="footerFile" hidden>참고한 프로젝트:
+        <a href="https://github.com/fakeminjun7321/hwpx-latex-to-equation" target="_blank" rel="noopener">hwpx-latex-to-equation</a>,
+        <a href="https://github.com/edwardkim/rhwp" target="_blank" rel="noopener">rhwp</a>,
+        <a href="https://github.com/minigu5/markdown_to_hwp" target="_blank" rel="noopener">markdown_to_hwp</a></span>
+      <a href="https://github.com/minigu5/hwip" target="_blank" rel="noopener">GitHub</a>
+      <a href="privacy.html">개인정보처리방침</a>
+      <span class="copy">© 2026 휩</span>
+    </footer>
   </div>
-
-  <footer class="site-footer">
-    <div class="site-footer-bottom">
-      <div class="site-footer-bottom-inner">
-        <a href="privacy.html" class="footer-policy">개인정보처리방침</a>
-        <span class="footer-dot">·</span>
-        <span>© 2026 휩 — LaTeX to HWP Converter. All rights reserved.</span>
-      </div>
-    </div>
-  </footer>
 
   <!-- $$ 없는 LaTeX 감지 경고 모달 -->
   <div class="modal-overlay" id="noDelimiterModal">
-    <div class="modal-content">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="noDelimTitle">
+      <div class="drain" id="noDelimDrain" aria-hidden="true"></div>
       <div class="modal-step">
-        <div class="modal-icon">⚠️</div>
-        <h2 class="modal-title"><span class="warn-accent">$$가 없는 LaTeX</span>가 감지됐어요</h2>
-        <p class="modal-desc">
-          AI가 <b>$$</b> 기호 없이 LaTeX 수식을 작성했어요.<br>
-          일단 강제로 변환했지만 정확도가 떨어질 수 있어요.<br>
-          아래 프롬프트로 AI에게 <b>$$로 감싸서 다시 요청하세요</b>.
-        </p>
-        <div class="prompt-box" style="margin-bottom: 16px;">
-          <strong class="prompt-text" id="noDelimPromptText">LaTeX 수식은 $$ 기호로 감싸서 다시 작성해줘. 예시 : $$\nabla \cdot \mathbf{u} = 0$$</strong>
-          <button class="btn prompt-copy-btn" id="noDelimPromptCopyBtn" type="button">복사</button>
+        <span class="modal-icon code" aria-hidden="true">$$</span>
+        <h2 class="modal-title" id="noDelimTitle">$$ 없이 쓴 LaTeX를 찾았어요</h2>
+        <p class="modal-desc">AI가 수식을 $$ 기호로 감싸지 않았습니다. 변환은 해 두었지만 정확하지 않을 수 있어요. 아래 문장을 AI에게 보내 다시 받아 보세요.</p>
+        <div class="prompt-box" style="margin-top: 16px">
+          <p class="prompt-text" id="noDelimPromptText">LaTeX 수식은 $$ 기호로 감싸서 다시 작성해줘. 예시 : <code>$$\nabla \cdot \mathbf{u} = 0$$</code></p>
+          <div class="prompt-actions">
+            <button class="btn" id="noDelimPromptCopyBtn" type="button">문장 복사</button>
+          </div>
         </div>
-        <div class="modal-actions">
-          <button class="btn ghost modal-dismiss-btn" id="noDelimDismissBtn" type="button">강제 변환 결과 사용</button>
+        <div class="modal-actions divided">
+          <button class="btn ghost" id="noDelimDismissBtn" type="button">변환 결과 그대로 쓰기</button>
         </div>
       </div>
     </div>
   </div>
 
   <div class="modal-overlay" id="warningModal">
-    <div class="modal-content">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="warnTitle">
 
       <!-- 1단계: 경고 -->
       <div class="modal-step" id="modalStepWarn">
-        <div class="modal-icon">⚠️</div>
-        <h2 class="modal-title"><span class="warn-accent">렌더링된 수식</span>이 감지됐어요</h2>
-        <p class="modal-desc">
-          화면에 보이는 수식을 그대로 복사하면 <b>위·아래 첨자 정보가 사라져</b>
-          제대로 변환되지 않아요.<br>올바르게 입력하는 방법을 알려드릴게요.
-        </p>
+        <span class="modal-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L2.4 17.6A2 2 0 0 0 4.1 20.6h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4.5M12 17h.01"/></svg>
+        </span>
+        <h2 class="modal-title" id="warnTitle">화면에 보이는 수식이 붙여넣어졌어요</h2>
+        <p class="modal-desc">AI 채팅 화면의 수식을 그대로 복사하면 위·아래 첨자 정보가 사라져 제대로 변환되지 않습니다.</p>
+        <div class="compare">
+          <div class="compare-row bad">
+            <span class="compare-key">붙여넣은 내용</span>
+            <code>x2+y2=r2</code>
+          </div>
+          <div class="compare-row">
+            <span class="compare-key">원래 수식</span>
+            <span id="warnExampleMath">x² + y² = r²</span>
+          </div>
+        </div>
         <div class="modal-actions">
-          <button class="btn modal-primary-btn" id="showSolutionsBtn" type="button">해결 방안 보기</button>
-          <button class="btn ghost modal-dismiss-btn" id="modalDismissBtn" type="button">그냥 닫기</button>
+          <button class="btn ghost" id="modalDismissBtn" type="button">그냥 닫기</button>
+          <button class="btn" id="showSolutionsBtn" type="button">해결 방법 보기</button>
         </div>
       </div>
 
       <!-- 2단계: 해결 방안 -->
       <div class="modal-step" id="modalStepSolutions" hidden>
-        <h2 class="modal-title solutions-title">3가지 해결 방법</h2>
+        <h2 class="modal-title no-icon">이렇게 해결할 수 있어요</h2>
+        <p class="modal-desc">편한 방법을 하나 고르세요.</p>
 
-        <div class="solution-tabs" role="tablist">
+        <div class="solution-tabs" role="tablist" aria-label="해결 방법">
           <button class="solution-tab active" data-sol="1" type="button" role="tab" aria-selected="true">
-            <span class="sol-num">1</span>프롬프트
-          </button>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>
+            AI에 다시 요청</button>
           <button class="solution-tab" data-sol="2" type="button" role="tab" aria-selected="false">
-            <span class="sol-num">2</span>이미지 캡처
-          </button>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-9 9"/></svg>
+            이미지로 인식</button>
           <button class="solution-tab" data-sol="3" type="button" role="tab" aria-selected="false">
-            <span class="sol-num">3</span>크롬 확장
-          </button>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h3a2 2 0 0 1 2 2v1h3a2 2 0 0 1 2 2v3h-1a2 2 0 1 0 0 4h1v3a2 2 0 0 1-2 2h-3v-1a2 2 0 1 0-4 0v1H6a2 2 0 0 1-2-2v-3h1a2 2 0 1 0 0-4H4V8a2 2 0 0 1 2-2h3V5"/></svg>
+            크롬 확장</button>
         </div>
 
-        <!-- 방안 1: 프롬프트 입력 -->
-        <div class="solution-panel" data-sol="1">
-          <p class="solution-lead">AI에게 아래 문구를 보내 <b>순수 LaTeX 코드</b>로 다시 받으세요.</p>
+        <!-- 방안 1: AI에 다시 요청 -->
+        <div class="solution-panel" data-sol="1" role="tabpanel">
+          <p class="solution-lead">AI에게 아래 문장을 보내면 수식을 LaTeX 코드로 다시 받을 수 있습니다.</p>
           <div class="prompt-box">
-            <strong class="prompt-text">답변에서 수식은 렌더링 하지 말고 순수 LaTeX 코드로 작성해 줘.<br>복사 가능하도록 latex 코드 블록을 사용해 줘.</strong>
-            <button class="btn prompt-copy-btn" id="promptCopyBtn" type="button">복사</button>
+            <p class="prompt-text">답변에서 수식은 렌더링 하지 말고 순수 LaTeX 코드로 작성해 줘. 복사 가능하도록 latex 코드 블록을 사용해 줘.</p>
+            <div class="prompt-actions">
+              <button class="btn" id="promptCopyBtn" type="button">문장 복사</button>
+            </div>
           </div>
         </div>
 
-        <!-- 방안 2: 이미지 캡처 -->
-        <div class="solution-panel" data-sol="2" hidden>
-          <div class="solution-icon">📷</div>
-          <p class="solution-lead">수식을 <b>이미지로 캡처</b>해 입력창에 붙여넣거나, <b>🖼️ 이미지 인식</b> 버튼으로 파일을 올리면 OCR이 자동으로 인식해요.</p>
-          <button class="btn solution-cta" id="gotoOcrBtn" type="button">이미지 인식 열기</button>
+        <!-- 방안 2: 이미지로 인식 -->
+        <div class="solution-panel" data-sol="2" role="tabpanel" hidden>
+          <p class="solution-lead">수식 부분을 캡처해 입력창에 붙여넣으면 브라우저에서 바로 인식합니다. 이미지는 서버로 보내지 않습니다.</p>
+          <div class="kbd-box">
+            <div class="kbd-row"><b>캡처</b><kbd>⌘ ⇧ 4</kbd><span>또는</span><kbd>Win ⇧ S</kbd></div>
+            <div class="kbd-row"><b>붙여넣기</b><kbd>⌘ V</kbd><span>또는</span><kbd>Ctrl V</kbd></div>
+          </div>
+          <div class="solution-cta">
+            <button class="btn" id="gotoOcrBtn" type="button">이미지 파일 올리기</button>
+          </div>
         </div>
 
         <!-- 방안 3: 크롬 확장 프로그램 -->
-        <div class="solution-panel" data-sol="3" hidden>
-          <div class="solution-icon">🧩</div>
-          <p class="solution-lead"><b>크롬 확장 프로그램</b>을 설치하면 AI 답변의 수식을 한 번에 변환할 수 있어요.</p>
-          <p class="solution-sub">크롬 웹스토어에서 한 번에 설치할 수 있어요.</p>
-          <a class="btn solution-cta" href="https://chromewebstore.google.com/detail/%ED%9C%A9-latex-%E2%86%92-%ED%95%9C%EA%B8%80hwp-%EC%88%98%EC%8B%9D-%EB%B3%B5%EC%82%AC/meahkfhlalnljlgllhmhmfdhpkknfncg"
-            target="_blank" rel="noopener">크롬 웹스토어에서 설치 ↗</a>
+        <div class="solution-panel" data-sol="3" role="tabpanel" hidden>
+          <p class="solution-lead">확장을 설치하면 ChatGPT·Claude·Gemini 답변의 수식을 한 번에 한글 수식으로 복사할 수 있습니다. 이 페이지를 거치지 않아도 됩니다.</p>
+          <a class="ext-link" href="https://chromewebstore.google.com/detail/%ED%9C%A9-latex-%E2%86%92-%ED%95%9C%EA%B8%80hwp-%EC%88%98%EC%8B%9D-%EB%B3%B5%EC%82%AC/meahkfhlalnljlgllhmhmfdhpkknfncg"
+            target="_blank" rel="noopener">
+            크롬 웹스토어에서 보기
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+          </a>
         </div>
 
-        <div class="solutions-footer">
-          <button class="btn modal-close-btn" id="modalDoneBtn" type="button">닫기</button>
+        <div class="modal-actions divided">
+          <button class="btn ghost" id="modalDoneBtn" type="button">닫기</button>
         </div>
       </div>
 
@@ -984,11 +862,9 @@
     /* 다크 모드 토글: 선택값을 localStorage에 저장. 기본값은 라이트 모드. */
     (function () {
       var btn = document.getElementById('themeToggle');
-      var thumb = btn.querySelector('.thumb');
       function apply(dark) {
         document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-        btn.setAttribute('aria-checked', dark ? 'true' : 'false');
-        thumb.textContent = dark ? '🌙' : '☀️';
+        btn.setAttribute('aria-pressed', dark ? 'true' : 'false');
       }
       var dark = false;
       try { dark = localStorage.getItem('theme') === 'dark'; } catch (e) {}

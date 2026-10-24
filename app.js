@@ -48,26 +48,47 @@
     noDelimModal.classList.remove('show');
   }
 
+  // 버튼을 secondsLeft초 동안 잠그고 "n초 후 닫을 수 있어요"를 보여 준 뒤 base 문구로 푼다.
+  function lockButtonFor(btn, base, secondsLeft, prevTimer, onUnlock) {
+    clearInterval(prevTimer);
+    btn.disabled = true;
+    btn.textContent = secondsLeft + '초 후 닫을 수 있어요';
+    var timer = setInterval(function () {
+      secondsLeft--;
+      if (secondsLeft > 0) {
+        btn.textContent = secondsLeft + '초 후 닫을 수 있어요';
+      } else {
+        clearInterval(timer);
+        btn.disabled = false;
+        btn.textContent = base;
+        if (onUnlock) onUnlock();
+      }
+    }, 1000);
+    return timer;
+  }
+
+  // 복사 성공 시 버튼 문구를 잠깐 "복사됨"으로 바꾼다 (연타해도 원래 문구를 잃지 않게 dataset에 보관).
+  function flashCopied(btn) {
+    if (!btn.dataset.label) btn.dataset.label = btn.textContent;
+    btn.textContent = '복사됨';
+    clearTimeout(btn._copiedTimer);
+    btn._copiedTimer = setTimeout(function () { btn.textContent = btn.dataset.label; }, 1200);
+  }
+
   function showNoDelimiterModal() {
     noDelimCanClose = false;
     noDelimModal.classList.add('show');
 
-    var secondsLeft = 2;
-    var base = '강제 변환 결과 사용';
-    noDelimDismissBtn.disabled = true;
-    noDelimDismissBtn.textContent = base + ' (' + secondsLeft + ')';
-    clearInterval(noDelimDismissTimer);
-    noDelimDismissTimer = setInterval(function () {
-      secondsLeft--;
-      if (secondsLeft > 0) {
-        noDelimDismissBtn.textContent = base + ' (' + secondsLeft + ')';
-      } else {
-        clearInterval(noDelimDismissTimer);
-        noDelimDismissBtn.disabled = false;
-        noDelimDismissBtn.textContent = base;
-        noDelimCanClose = true;
-      }
-    }, 1000);
+    // 남은 시간을 줄어드는 막대로도 보여 준다 (클래스를 뗐다 붙여 애니메이션 재시작)
+    var drain = document.getElementById('noDelimDrain');
+    if (drain) {
+      drain.classList.remove('run');
+      void drain.offsetWidth;
+      drain.classList.add('run');
+    }
+    noDelimDismissTimer = lockButtonFor(noDelimDismissBtn, '변환 결과 그대로 쓰기', 2, noDelimDismissTimer, function () {
+      noDelimCanClose = true;
+    });
   }
 
   function showModalStep(step) {
@@ -90,24 +111,22 @@
   function showWarningModal() {
     showModalStep('warn');
     selectSolution('1');
+    renderWarnExample();
     modal.classList.add('show');
 
     // 경고를 읽도록 '그냥 닫기'만 2초간 비활성화 (해결 방안 보기는 즉시 가능)
-    var secondsLeft = 2;
-    modalDismissBtn.disabled = true;
-    var base = '그냥 닫기';
-    modalDismissBtn.textContent = base + ' (' + secondsLeft + ')';
-    clearInterval(modalDismissTimer);
-    modalDismissTimer = setInterval(function () {
-      secondsLeft--;
-      if (secondsLeft > 0) {
-        modalDismissBtn.textContent = base + ' (' + secondsLeft + ')';
-      } else {
-        clearInterval(modalDismissTimer);
-        modalDismissBtn.disabled = false;
-        modalDismissBtn.textContent = base;
-      }
-    }, 1000);
+    modalDismissTimer = lockButtonFor(modalDismissBtn, '그냥 닫기', 2, modalDismissTimer);
+  }
+
+  // 경고 모달의 "원래 수식" 예시를 KaTeX로 그린다 (로딩 전이면 유니코드 문구 그대로 둔다)
+  var warnExampleRendered = false;
+  function renderWarnExample() {
+    var el = document.getElementById('warnExampleMath');
+    if (warnExampleRendered || !el || typeof katex === 'undefined') return;
+    try {
+      katex.render('x^2+y^2=r^2', el, { throwOnError: false });
+      warnExampleRendered = true;
+    } catch (e) { /* 예시는 장식이므로 실패해도 문구를 남긴다 */ }
   }
 
   showSolutionsBtn.addEventListener('click', function () { showModalStep('solutions'); });
@@ -121,11 +140,7 @@
 
   if (noDelimPromptCopyBtn) {
     noDelimPromptCopyBtn.addEventListener('click', function () {
-      copyText(NO_DELIM_PROMPT, function () {
-        var original = noDelimPromptCopyBtn.textContent;
-        noDelimPromptCopyBtn.textContent = '복사됨!';
-        setTimeout(function () { noDelimPromptCopyBtn.textContent = original; }, 1200);
-      });
+      copyText(NO_DELIM_PROMPT, function () { flashCopied(noDelimPromptCopyBtn); });
     });
   }
 
@@ -149,9 +164,7 @@
   if (promptCopyBtn) {
     promptCopyBtn.addEventListener('click', function () {
       copyText("답변에서 수식은 렌더링 하지 말고 순수 LaTeX 코드로 작성해 줘.\n복사 가능하도록 latex 코드 블록을 사용해 줘.", function () {
-        var original = promptCopyBtn.textContent;
-        promptCopyBtn.textContent = '복사됨!';
-        setTimeout(function () { promptCopyBtn.textContent = original; }, 1200);
+        flashCopied(promptCopyBtn);
       });
     });
   }
@@ -292,8 +305,13 @@
     }
   }
 
+  var previewPanel = document.getElementById('previewPanel');
+  function setPreviewVisible(visible) {
+    if (previewPanel) previewPanel.hidden = !visible;
+  }
+
   function renderPreview(latex) {
-    if (!latex) { preview.style.display = 'none'; return; }
+    if (!latex) { setPreviewVisible(false); return; }
 
     var body = latex.trim();
     body = body.replace(/\\fras(?=[^a-zA-Z]|$)/g, '\\frac');
@@ -304,9 +322,9 @@
     if (!blocks.length) blocks = [stripDelimiters(body)];
     blocks = blocks.filter(function (b) { return b; });
 
-    if (!blocks.length) { preview.style.display = 'none'; return; }
+    if (!blocks.length) { setPreviewVisible(false); return; }
 
-    preview.style.display = 'flex';
+    setPreviewVisible(true);
     if (typeof katex === 'undefined') {
       preview.innerHTML = '<span class="placeholder">렌더러 로딩 중…</span>';
       return;
@@ -344,6 +362,52 @@
     return out;
   }
 
+  // 한글 수식 출력을 토큰별 span으로 그린다. 구조 명령(over, LEFT…)·첨자 묶음·
+  // 좁은 공백(`)·일반 공백(~)을 구분해 보여 주며, textContent는 원문 그대로라 복사에 영향이 없다.
+  var HWP_KEYWORDS = {
+    over: 1, atop: 1, sqrt: 1, root: 1, of: 1, LEFT: 1, RIGHT: 1, sum: 1, prod: 1, int: 1, dint: 1, tint: 1,
+    oint: 1, lim: 1, matrix: 1, pmatrix: 1, bmatrix: 1, dmatrix: 1, cases: 1, pile: 1, lpile: 1, rpile: 1,
+    rm: 1, it: 1, bold: 1, hat: 1, bar: 1, vec: 1, dot: 1, ddot: 1, tilde: 1, under: 1, overline: 1, underline: 1
+  };
+  var HWP_GREEK = /^(alpha|beta|gamma|delta|epsilon|varepsilon|zeta|eta|theta|vartheta|iota|kappa|lambda|mu|nu|xi|omicron|pi|varpi|rho|varrho|sigma|varsigma|tau|upsilon|phi|varphi|chi|psi|omega|Gamma|Delta|Theta|Lambda|Xi|Pi|Sigma|Upsilon|Phi|Psi|Omega)$/;
+
+  function setHwpOutput(text) {
+    output.textContent = '';
+    if (!text) return;
+    var frag = document.createDocumentFragment();
+    text.split(/(`|~|[{}_^]|\s+|[A-Za-z]+)/).forEach(function (s) {
+      if (!s) return;
+      var cls = null;
+      if (s === '`' || s === '~') cls = 'sp';
+      else if (s === '{' || s === '}' || s === '_' || s === '^') cls = 'tk-mute';
+      else if (HWP_KEYWORDS[s]) cls = 'tk-kw';
+      else if (HWP_GREEK.test(s)) cls = 'tk-greek';
+      if (!cls) { frag.appendChild(document.createTextNode(s)); return; }
+      var span = document.createElement('span');
+      span.className = cls;
+      span.textContent = s;
+      frag.appendChild(span);
+    });
+    output.appendChild(frag);
+  }
+
+  // 공백 기호(`, ~) 강조 토글 — 선택값은 브라우저에 기억한다.
+  var spaceToggle = document.getElementById('spaceToggle');
+  if (spaceToggle) {
+    var showSpaces = true;
+    try { showSpaces = localStorage.getItem('showSpaces') !== 'false'; } catch (e) {}
+    var applySpaces = function () {
+      output.classList.toggle('show-spaces', showSpaces);
+      spaceToggle.setAttribute('aria-pressed', showSpaces ? 'true' : 'false');
+    };
+    applySpaces();
+    spaceToggle.addEventListener('click', function () {
+      showSpaces = !showSpaces;
+      applySpaces();
+      try { localStorage.setItem('showSpaces', showSpaces ? 'true' : 'false'); } catch (e) {}
+    });
+  }
+
   function render() {
     var val = input.value;
     var isRendered = isLikelyRenderedMath(val);
@@ -356,16 +420,14 @@
       var fallback = fallbackConvert(val);
       output.textContent = fallback.text;
       output.setAttribute('data-warning', "/* " + fallback.source + " 복구 (불완전 - 위/아래 첨자 수동 수정 필요) */");
-      output.classList.add('fallback-mode');
-      output.style.color = "#d35400"; // Orange color to indicate warning/fallback
+      output.classList.add('fallback-mode'); // 주황 글씨로 불완전 복구임을 표시
       renderPreview(val);
       clearTimeout(autoCopyTimer);
     } else {
-      output.style.color = "";
       output.removeAttribute('data-warning');
       output.classList.remove('fallback-mode');
       var result = window.LatexToHwp.convert(val);
-      output.textContent = result;
+      setHwpOutput(result);
       renderPreview(val);
 
       if (isUndelimited && isPasting) {
@@ -376,7 +438,7 @@
       clearTimeout(autoCopyTimer);
       if (result) {
         autoCopyTimer = setTimeout(function () {
-          copyText(result, function () { flashHint('자동 복사됨 ✓'); });
+          copyText(result, function () { flashHint('클립보드에 복사됨'); });
         }, 450);
       }
     }
@@ -397,11 +459,7 @@
   });
 
   copyBtn.addEventListener('click', function () {
-    copyText(output.textContent, function () {
-      var original = copyBtn.textContent;
-      copyBtn.textContent = '복사됨!';
-      setTimeout(function () { copyBtn.textContent = original; }, 1200);
-    });
+    copyText(output.textContent, function () { flashCopied(copyBtn); });
   });
 
   // ── 이미지 OCR (브라우저 로컬 · FormulaNet via transformers.js) ───────
@@ -731,17 +789,11 @@
         }
         if (mdDownloadBtn) {
           mdDownloadBtn.disabled = false;
-          mdDownloadBtn.textContent = 'HWPX로 다운로드';
+          mdDownloadBtn.textContent = 'HWPX 내려받기';
         }
         clearFileResult();
         var lineCount = pastedText.split('\n').length;
-        fileResultEl.style.display = 'block';
-        fileResultEl.innerHTML =
-          '<div class="conv-summary">' +
-            '<span class="conv-check">✅</span>' +
-            '<span class="conv-fname">마크다운 붙여넣기</span>' +
-            '<span class="conv-meta">' + lineCount + '줄 · 아래에서 설정·미리보기 후 다운로드하세요</span>' +
-          '</div>';
+        showFileCard(fileCardHtml('MD', '붙여넣은 마크다운', lineCount + '줄을 불러왔습니다. 설정과 미리보기를 확인한 뒤 내려받으세요', ''), true);
       }
       return;
     }
@@ -786,6 +838,13 @@
     tabFileBtn.setAttribute('aria-selected', isFile ? 'true' : 'false');
     tabTextPanel.classList.toggle('active', !isFile);
     tabFilePanel.classList.toggle('active', isFile);
+    // 문서 변환은 설정·미리보기 2열이라 페이지 폭을 넓히고, 제목·푸터 문구를 탭에 맞춘다
+    var pageWrap = document.getElementById('pageWrap');
+    if (pageWrap) pageWrap.classList.toggle('wide', isFile);
+    [['heroText', !isFile], ['heroFile', isFile], ['footerText', !isFile], ['footerFile', isFile]].forEach(function (p) {
+      var el = document.getElementById(p[0]);
+      if (el) el.hidden = !p[1];
+    });
   }
 
   if (tabTextBtn) tabTextBtn.addEventListener('click', function () { activateTab('text'); });
@@ -814,10 +873,30 @@
     fileResultEl.style.display = 'none';
   }
 
-  function showFileError(msg) {
+  // 불러온 파일 카드: 확장자 배지 + 파일명 + 한 줄 설명. kind = '' | 'warn' | 'err'
+  function fileCardHtml(ext, name, meta, kind) {
+    return '<div class="file-card' + (kind ? ' ' + kind : '') + '">' +
+      '<span class="file-ext">' + ext + '</span>' +
+      '<div class="file-card-body">' +
+        '<div class="file-card-name">' + escHtml(name) + '</div>' +
+        (meta ? '<div class="file-card-meta">' + escHtml(meta) + '</div>' : '') +
+      '</div></div>';
+  }
+
+  function extBadge(filename) {
+    var m = /\.([a-z0-9]+)$/i.exec(filename || '');
+    return m ? escHtml(m[1].toUpperCase().slice(0, 5)) : 'FILE';
+  }
+
+  // 결과 카드를 보여 주고, 파일이 올라간 뒤에는 드롭 영역을 한 줄로 줄인다
+  function showFileCard(html, compactDrop) {
+    fileResultEl.innerHTML = html;
     fileResultEl.style.display = 'block';
-    fileResultEl.innerHTML =
-      '<div class="conv-summary err"><span class="conv-check">⚠</span><span class="conv-fname">' + escHtml(msg) + '</span></div>';
+    if (fileDrop) fileDrop.classList.toggle('compact', !!compactDrop);
+  }
+
+  function showFileError(msg) {
+    showFileCard(fileCardHtml('!', msg, '', 'err'), false);
   }
 
   function showFileResult(blob, stats, filename) {
@@ -836,24 +915,16 @@
 
     var html = '';
     if (hasAny) {
-      var summaryClass = (forcedEq > 0 && normalEq === 0) ? 'no-eq' : '';
-      var checkIcon = (forcedEq > 0 && normalEq === 0) ? '⚠' : '✓';
-      html += '<div class="conv-summary ' + summaryClass + '">' +
-        '<span class="conv-check">' + checkIcon + '</span>' +
-        '<span class="conv-fname">' + escHtml(filename) + '</span>' +
-        '<span class="conv-meta">' + metaParts.join(' · ') + '</span>' +
-        '</div>';
-      html += '<a class="dl-btn" href="' + fileResultUrl + '" download="' + escHtml(filename) + '">변환된 파일 다운로드</a>';
+      var kind = (forcedEq > 0 && normalEq === 0) ? 'warn' : '';
+      html += fileCardHtml(extBadge(filename), filename, metaParts.join(', '), kind);
+      html += '<a class="dl-btn" href="' + fileResultUrl + '" download="' + escHtml(filename) + '">' +
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg>' +
+        '변환된 파일 내려받기</a>';
     } else {
-      html += '<div class="conv-summary no-eq">' +
-        '<span class="conv-check">⚠</span>' +
-        '<span class="conv-fname">' + escHtml(filename) + '</span>' +
-        '<span class="conv-meta">변환할 LaTeX 수식 없음</span>' +
-        '</div>';
+      html += fileCardHtml(extBadge(filename), filename, '변환할 LaTeX 수식을 찾지 못했습니다', 'warn');
     }
 
-    fileResultEl.innerHTML = html;
-    fileResultEl.style.display = 'block';
+    showFileCard(html, true);
 
     if (forcedEq > 0) {
       showNoDelimiterModal();
@@ -867,8 +938,7 @@
     var isHwpx = /\.hwpx$/i.test(file.name);
     var isHwp = /\.hwp$/i.test(file.name) && !isHwpx;
 
-    fileResultEl.style.display = 'block';
-    fileResultEl.innerHTML = '<div class="result-badge ok"><span class="conv-spinner"></span> 변환 중…</div>';
+    showFileCard(fileCardHtml('<span class="conv-spinner"></span>', file.name, '변환 중…', ''), true);
 
     var convertPromise = isHwp
       ? convertHwpViaRhwp(file)
@@ -1292,17 +1362,11 @@
 
       if (mdDownloadBtn) {
         mdDownloadBtn.disabled = false;
-        mdDownloadBtn.textContent = 'HWPX로 다운로드';
+        mdDownloadBtn.textContent = 'HWPX 내려받기';
       }
 
       clearFileResult();
-      fileResultEl.style.display = 'block';
-      fileResultEl.innerHTML =
-        '<div class="conv-summary">' +
-          '<span class="conv-check">✅</span>' +
-          '<span class="conv-fname">' + escHtml(file.name) + ' 불러옴</span>' +
-          '<span class="conv-meta">아래에서 설정·미리보기 후 다운로드하세요</span>' +
-        '</div>';
+      showFileCard(fileCardHtml('MD', file.name, '설정과 미리보기를 확인한 뒤 내려받으세요', ''), true);
     };
     reader.onerror = function () {
       clearFileResult();
@@ -1380,8 +1444,7 @@
 
     if (!isHwp && !isHwpx) {
       clearFileResult();
-      fileResultEl.style.display = 'block';
-      fileResultEl.innerHTML = '<div class="conv-summary err"><span class="conv-check">⚠</span><span class="conv-fname">HWP, HWPX, MD 파일만 지원합니다.</span></div>';
+      showFileError('HWP, HWPX, 마크다운(.md) 파일만 지원합니다.');
       return;
     }
     runFileConvert(file);
