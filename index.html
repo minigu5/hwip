@@ -6,12 +6,12 @@
   <title>휩 - LaTeX 한글 수식 변환기</title>
   <link rel="icon" type="image/png" href="public/favicon.png" />
   <script>
-    /* 저장된 테마를 본문 렌더 전에 적용해 깜빡임(FOUC) 방지. 기본값은 라이트 모드. */
+    /* 저장된 테마를 본문 렌더 전에 적용해 깜빡임(FOUC) 방지. 저장값이 없으면 시스템 테마를 따른다. */
     (function () {
       try {
-        if (localStorage.getItem('theme') === 'dark') {
-          document.documentElement.setAttribute('data-theme', 'dark');
-        }
+        var saved = localStorage.getItem('theme');
+        var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (dark) document.documentElement.setAttribute('data-theme', 'dark');
       } catch (e) {}
     })();
   </script>
@@ -825,16 +825,25 @@
   <script defer src="src/md-to-hwpx.js"></script>
   <script defer src="app.js"></script>
   <script>
-    /* 다크 모드 토글: 선택값을 localStorage에 저장. 기본값은 라이트 모드. */
+    /* 다크 모드 토글: 선택값을 localStorage에 저장. 저장값이 없으면 시스템 테마를 따르고 변경도 실시간 반영. */
     (function () {
       var btn = document.getElementById('themeToggle');
+      var mq = window.matchMedia('(prefers-color-scheme: dark)');
       function apply(dark) {
         document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
         btn.setAttribute('aria-pressed', dark ? 'true' : 'false');
       }
-      var dark = false;
-      try { dark = localStorage.getItem('theme') === 'dark'; } catch (e) {}
+      var saved = null;
+      try { saved = localStorage.getItem('theme'); } catch (e) {}
+      var dark = saved ? saved === 'dark' : mq.matches;
       apply(dark);
+      mq.addEventListener('change', function (e) {
+        var pinned = null;
+        try { pinned = localStorage.getItem('theme'); } catch (err) {}
+        if (pinned) return;
+        dark = e.matches;
+        apply(dark);
+      });
       btn.addEventListener('click', function () {
         dark = !dark;
         apply(dark);
