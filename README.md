@@ -1,6 +1,6 @@
 # 휩(Hwip) - LaTeX → 한글(HWP) 수식 변환기
 
-**🌐 [hwip.vercel.app](https://hwip.vercel.app)** · **🧩 [크롬 확장 프로그램](https://chromewebstore.google.com/detail/meahkfhlalnljlgllhmhmfdhpkknfncg)**
+**🌐 [hwip.dshs.dev](https://hwip.dshs.dev)** · **🧩 [크롬 확장 프로그램](https://chromewebstore.google.com/detail/meahkfhlalnljlgllhmhmfdhpkknfncg)**
 
 ChatGPT·Claude·Gemini 같은 AI가 쓴 수식을 한글 문서에 그대로 붙여넣으면 깨집니다. AI는 **LaTeX**로 수식을 쓰고, 한컴오피스 한글은 **자체 수식 편집기 문법**을 쓰기 때문입니다.
 
@@ -28,17 +28,17 @@ open index.html        # macOS
 
 별도 설치 없이 HTTP로 바로 쓸 수 있습니다.
 
-**엔드포인트**: `POST https://hwip.vercel.app/api/convert`
+**엔드포인트**: `POST https://hwip.dshs.dev/api/convert`
 
 ```bash
-curl -X POST https://hwip.vercel.app/api/convert \
+curl -X POST https://hwip.dshs.dev/api/convert \
   -H "Content-Type: application/json" \
   -d '{"latex": "$$\\frac{2\\pi}{24}$$"}'
 # → {"result":"{2 pi} over {24}"}
 ```
 
 ```js
-const res = await fetch('https://hwip.vercel.app/api/convert', {
+const res = await fetch('https://hwip.dshs.dev/api/convert', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ latex: '$$\\frac{2\\pi}{24}$$' }),
@@ -50,7 +50,7 @@ const { result } = await res.json();
 간단한 테스트는 GET도 됩니다:
 
 ```
-GET https://hwip.vercel.app/api/convert?latex=\frac{a}{b}
+GET https://hwip.dshs.dev/api/convert?latex=\frac{a}{b}
 ```
 
 | 항목 | 내용 |

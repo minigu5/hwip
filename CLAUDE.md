@@ -197,7 +197,7 @@ HWP/HWPX 파일을 업로드하면 브라우저 안에서 LaTeX 수식을 한컴
 
 외부 개발자가 변환기를 HTTP로 사용할 수 있도록 Vercel 서버리스 함수(`api/convert.js`)로 노출한다.
 
-- **엔드포인트**: `POST https://hwip.vercel.app/api/convert`
+- **엔드포인트**: `POST https://hwip.dshs.dev/api/convert`
 - **요청**: `{ "latex": "<LaTeX 문자열>" }` (Content-Type: application/json)
 - **응답**: `{ "result": "<한글 수식>" }` 또는 `{ "error": "..." }`
 - GET `?latex=...` 쿼리 파라미터도 지원 (브라우저 테스트용)

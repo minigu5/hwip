@@ -45,12 +45,12 @@
       <h1>개인정보 처리방침 (Privacy Policy)</h1>
       <p><strong>시행일:</strong> 2026년 10월 16일</p>
 
-      <p><b>휩 - AI to 한글(HWP)</b>(이하 "휩")은 크롬 확장 프로그램, 웹 서비스(<a href="https://hwip.vercel.app" rel="noopener">hwip.vercel.app</a>), 변환 API로 구성됩니다.
+      <p><b>휩 - AI to 한글(HWP)</b>(이하 "휩")은 크롬 확장 프로그램, 웹 서비스(<a href="https://hwip.dshs.dev" rel="noopener">hwip.dshs.dev</a>), 변환 API로 구성됩니다.
       휩은 회원가입·로그인이 없으며, 이름·이메일 같은 개인정보를 수집하지 않습니다. 아래에서 어떤 데이터가 어디로 가는지 그대로 밝힙니다.</p>
 
       <h2>1. 한눈에 보기</h2>
       <ul>
-        <li><strong>서버로 전송되는 것은 단 하나:</strong> 크롬 확장의 "HWP 복사" 버튼과 확장 팝업에서 변환하는 <strong>수식(LaTeX) 텍스트</strong>가 변환을 위해 <code>https://hwip.vercel.app/api/convert</code> 로 전송됩니다(HTTPS).</li>
+        <li><strong>서버로 전송되는 것은 단 하나:</strong> 크롬 확장의 "HWP 복사" 버튼과 확장 팝업에서 변환하는 <strong>수식(LaTeX) 텍스트</strong>가 변환을 위해 <code>https://hwip.dshs.dev/api/convert</code> 로 전송됩니다(HTTPS).</li>
         <li>AI 답변 본문, 대화 내용, 이미지, 파일은 서버로 전송되지 않습니다.</li>
         <li>보고서→HWPX 변환, 파일 변환, 이미지 OCR, Markdown→HWPX는 모두 사용자의 브라우저 안에서 처리됩니다.</li>
         <li>사용자 데이터를 판매하거나 광고·프로파일링에 사용하지 않으며, 제3자에게 제공하지 않습니다.</li>
@@ -69,7 +69,7 @@
       <p>아래 권한은 명시된 목적에만 사용됩니다.</p>
       <ul>
         <li><strong>호스트 권한 (ChatGPT, Claude, Gemini, Google AI Studio, Perplexity, Grok, DeepSeek, Poe 등 지원 사이트):</strong> 해당 사이트의 응답에서 수식·본문을 읽고 변환 버튼을 표시하기 위해 사용합니다.</li>
-        <li><strong>호스트 권한 <code>https://hwip.vercel.app/*</code>:</strong> 수식 변환 API 호출에 사용합니다.</li>
+        <li><strong>호스트 권한 <code>https://hwip.dshs.dev/*</code>:</strong> 수식 변환 API 호출에 사용합니다.</li>
         <li><strong>clipboardWrite:</strong> 변환된 한글 수식을 클립보드에 복사합니다.</li>
         <li><strong>clipboardRead:</strong> Google AI Studio의 "Copy as markdown" 결과를 읽어 보고서 변환에 사용합니다. 읽은 내용은 서버로 전송되지 않습니다.</li>
         <li><strong>storage:</strong> 위 2-1에 적은 설정 저장과 사이드패널로의 임시 전달에 사용합니다.</li>
@@ -78,7 +78,7 @@
         <li><strong>선택적 호스트 권한 (모든 사이트, 로컬 파일):</strong> 지원 목록에 없는 페이지나 로컬 파일에서 사용자가 직접 기능을 켤 때에만 요청합니다. 켜기 전에는 해당 페이지에서 아무 것도 읽지 않습니다.</li>
       </ul>
 
-      <h2>3. 웹 서비스 (hwip.vercel.app)</h2>
+      <h2>3. 웹 서비스 (hwip.dshs.dev)</h2>
       <ul>
         <li><strong>수식 변환, 이미지 OCR, 파일(HWP/HWPX) 변환, Markdown→HWPX:</strong> 모두 접속자의 브라우저 안에서 처리되며 입력한 텍스트·이미지·파일이 휩 서버로 전송되거나 저장되지 않습니다.</li>
         <li><strong>외부에서 불러오는 리소스:</strong> 수식 렌더링·마크다운 라이브러리는 <code>cdn.jsdelivr.net</code> 에서, 이미지 OCR 모델은 최초 사용 시 Hugging Face에서 내려받아 브라우저에 보관합니다. HWP(이진) 파일을 변환할 때는 오픈소스 rhwp 편집기 페이지(<code>edwardkim.github.io</code>)를 화면에 보이지 않게 불러와 변환에 사용합니다(인터넷 연결 필요). 이 요청에는 해당 서비스 운영사가 일반적으로 보는 접속 정보(IP 등)가 포함됩니다.</li>
@@ -87,7 +87,7 @@
       </ul>
 
       <h2>4. 변환 API</h2>
-      <p><code>POST https://hwip.vercel.app/api/convert</code> 는 받은 LaTeX 문자열을 변환해 결과만 돌려주며, 서비스 코드는 요청 내용을 저장하지 않습니다. 호스팅 플랫폼의 일반 서버 로그(IP 등)는 위 2-1과 같이 남을 수 있습니다.</p>
+      <p><code>POST https://hwip.dshs.dev/api/convert</code> 는 받은 LaTeX 문자열을 변환해 결과만 돌려주며, 서비스 코드는 요청 내용을 저장하지 않습니다. 호스팅 플랫폼의 일반 서버 로그(IP 등)는 위 2-1과 같이 남을 수 있습니다.</p>
 
       <h2>5. 제3자 제공 및 사용 제한</h2>
       <p>휩은 사용자 데이터를 판매하지 않고, 광고·신용 평가·프로파일링 목적으로 사용하거나 제3자에게 이전하지 않습니다. 휩의 사용자 데이터 사용은 제한적 사용(Limited Use) 요구사항을 포함한 <a href="https://developer.chrome.com/docs/webstore/program-policies/limited-use" target="_blank" rel="noopener">Chrome 웹 스토어 사용자 데이터 정책</a>을 준수합니다. 위에 적은 인프라·CDN 사업자(Vercel, jsDelivr, Hugging Face, GitHub Pages)는 서비스 제공 과정에서 접속 정보를 처리할 수 있으며, 각 사업자의 정책이 적용됩니다.</p>
