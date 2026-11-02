@@ -49,20 +49,29 @@
       --amber-tint: #fdebd3;
       --danger: #c0392b;
       --scrim: rgba(15, 27, 61, 0.42);
+      --seg-track: var(--line);
+      --seg-thumb: var(--sheet);
+      color-scheme: light;
       --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
     }
     [data-theme="dark"] {
-      --ground: #0b1229;
-      --sheet: #121b36;
-      --out-bg: #0f1730;
-      --desk: #070d20;
-      --ink: #e8edfa;
-      --ink-2: #9aa8c7;
-      --line: #24315a;
-      --line-strong: #3b4c80;
-      --blue: #5b9bff;
-      --accent: #8db1ff;
-      --accent-tint: #1b2850;
+      /* 네이비를 그대로 어둡게 하면 채도가 높아 배경·카드 구분이 흐려진다 → 푸른 기만 살짝 남긴 중성 다크 */
+      color-scheme: dark;
+      --ground: #0f1218;
+      --sheet: #171b24;
+      --out-bg: #13161e;
+      --desk: #0a0c11;
+      --ink: #e7eaf1;
+      --ink-2: #9ca5b8;
+      --line: #272d3a;
+      --line-strong: #3a4254;
+      --blue: #6aa1ff;
+      --accent: #93b6ff;
+      --btn: #2f6df6;
+      --btn-hover: #4a80f7;
+      --accent-tint: rgba(106, 161, 255, 0.14);
+      --seg-track: #1b202b;
+      --seg-thumb: #2c3344;
       --amber: #f7b955;
       --amber-tint: rgba(247, 185, 85, 0.16);
       --danger: #ff8a7a;
@@ -89,7 +98,7 @@
 
     /* ── 헤더 ── */
     .site-header {
-      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 20px 0;
     }
     .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); }
@@ -110,6 +119,8 @@
     [data-theme="dark"] .theme-toggle .ico-sun { display: block; }
     [data-theme="dark"] .theme-toggle .ico-moon { display: none; }
     @media (max-width: 640px) { .header-actions .hide-sm { display: none; } }
+    /* 좁은 화면에선 부제를 빼서 로고와 버튼을 한 줄에 유지 */
+    @media (max-width: 480px) { .brand-sub { display: none; } }
 
     .hero { padding: 28px 0 24px; }
     .hero[hidden] { display: none; }
@@ -135,7 +146,7 @@
     /* ── 탭 ── */
     .tab-nav {
       display: inline-flex; flex-wrap: wrap; gap: 4px;
-      padding: 4px; border-radius: 12px; background: var(--line);
+      padding: 4px; border-radius: 12px; background: var(--seg-track);
       margin-bottom: 16px;
     }
     .tab-btn {
@@ -146,7 +157,7 @@
       cursor: pointer; transition: background 0.15s, color 0.15s;
     }
     .tab-btn:hover { color: var(--ink); }
-    .tab-btn.active { background: var(--sheet); color: var(--accent); box-shadow: 0 1px 3px rgba(33, 80, 216, 0.14); }
+    .tab-btn.active { background: var(--seg-thumb); color: var(--accent); box-shadow: 0 1px 3px rgba(33, 80, 216, 0.14); }
     .tab-btn .tab-sub { font-size: 13px; font-weight: 500; color: var(--ink-2); }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
@@ -470,7 +481,7 @@
 
     .solution-tabs {
       display: flex; gap: 4px; padding: 4px; margin: 18px 0;
-      border-radius: 12px; background: var(--line);
+      border-radius: 12px; background: var(--seg-track);
     }
     .solution-tab {
       flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
@@ -480,7 +491,7 @@
       cursor: pointer; transition: background 0.15s, color 0.15s;
     }
     .solution-tab:hover { color: var(--ink); }
-    .solution-tab.active { background: var(--sheet); color: var(--accent); box-shadow: 0 1px 3px rgba(33, 80, 216, 0.14); }
+    .solution-tab.active { background: var(--seg-thumb); color: var(--accent); box-shadow: 0 1px 3px rgba(33, 80, 216, 0.14); }
     @media (max-width: 440px) { .solution-tab svg { display: none; } }
     .solution-panel { min-height: 176px; }
     .solution-panel[hidden] { display: none; }
