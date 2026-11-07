@@ -5,7 +5,7 @@
  * Licensed under Custom License (Non-Commercial & Attribution).
  * See LICENSE file for details.
  *
- * 변환 규칙의 근거는 CONVERSION_RULES.md (한컴 공식 명세 revision 1.2 기반)를 참고.
+ * 변환 규칙의 근거는 CONVERSION_RULES.md (한컴 공식 명세 revision 1.3 기반)를 참고.
  * 브라우저(<script src>로 window.LatexToHwp)와 Node(require) 양쪽에서 동작한다.
  */
 (function (global) {
@@ -28,8 +28,17 @@
   var FUNCTIONS = new Set([
     'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'cosh', 'tanh', 'coth',
     'ln', 'log', 'lg', 'lim', 'Lim', 'max', 'min', 'exp', 'Exp', 'det', 'gcd',
-    'mod', 'arcsin', 'arccos', 'arctan', 'arg', 'deg', 'dim', 'ker', 'hom', 'Pr'
+    'mod', 'arcsin', 'arccos', 'arctan', 'asin', 'acos', 'atan', 'lcm',
+    'arg', 'deg', 'dim', 'ker', 'hom', 'Pr'
   ]);
+
+  // revision 1.3 COLOR 명령에서 자주 쓰는 LaTeX 색상 이름.
+  var COLOR_NAMES = {
+    black: '0,0,0', white: '255,255,255', red: '255,0,0', green: '0,128,0',
+    blue: '0,0,255', cyan: '0,255,255', magenta: '255,0,255', yellow: '255,255,0',
+    gray: '128,128,128', grey: '128,128,128', orange: '255,165,0',
+    purple: '128,0,128', brown: '165,42,42', pink: '255,192,203'
+  };
 
   // 연산/관계/집합/화살표/기타 기호 매핑
   var SYMBOLS = {
@@ -270,6 +279,41 @@
     return name;
   }
 
+  // [ ... ] 선택 인자를 원문으로 읽는다. 없으면 null.
+  function readOptionalRawBracket(tokens, pos) {
+    skipSpaces(tokens, pos);
+    var t = peek(tokens, pos);
+    if (!t || t.type !== 'char' || t.value !== '[') return null;
+    pos.i++;
+    var out = '';
+    while (pos.i < tokens.length) {
+      var tk = tokens[pos.i++];
+      if (tk.type === 'char' && tk.value === ']') break;
+      out += tk.value;
+    }
+    return out.trim();
+  }
+
+  function hwpRgb(model, spec) {
+    var rawModel = model || '';
+    model = rawModel.toLowerCase();
+    spec = String(spec || '').trim();
+    if (!model && COLOR_NAMES.hasOwnProperty(spec.toLowerCase())) return COLOR_NAMES[spec.toLowerCase()];
+    if (model === 'html' || /^#?[0-9a-f]{6}$/i.test(spec)) {
+      var hex = spec.replace(/^#/, '');
+      if (/^[0-9a-f]{6}$/i.test(hex)) {
+        return [0, 2, 4].map(function (i) { return parseInt(hex.slice(i, i + 2), 16); }).join(',');
+      }
+    }
+    var parts = spec.split(',').map(function (v) { return Number(v.trim()); });
+    if (parts.length === 3 && parts.every(function (v) { return Number.isFinite(v); })) {
+      // LaTeX xcolor: `rgb`는 0~1, `RGB`는 0~255 범위다.
+      if (rawModel === 'rgb') parts = parts.map(function (v) { return Math.round(v * 255); });
+      return parts.map(function (v) { return Math.max(0, Math.min(255, Math.round(v))); }).join(',');
+    }
+    return spec;
+  }
+
   function readDelim(tokens, pos) {
     skipSpaces(tokens, pos);
     var t = peek(tokens, pos);
@@ -462,6 +506,37 @@
       var top = readArg(tokens, pos);
       var bot = readArg(tokens, pos);
       return { text: '{' + top + '} CHOOSE {' + bot + '}', keyword: false };
+    }
+
+    // revision 1.3: 왼쪽 위/아래 첨자. amsmath의 \prescript{위}{아래}{본문} 대응.
+    if (name === 'prescript') {
+      var leftSup = readArg(tokens, pos);
+      var leftSub = readArg(tokens, pos);
+      var base = readArg(tokens, pos);
+      var prescript = '{' + base + '}';
+      if (leftSup) prescript += ' LSUP {' + leftSup + '}';
+      if (leftSub) prescript += ' LSUB {' + leftSub + '}';
+      return { text: prescript, keyword: false };
+    }
+
+    // revision 1.3: RGB 색상. \textcolor와 두 번째 그룹을 둔 \color 형태를 지원한다.
+    if (name === 'textcolor' || name === 'color') {
+      var colorModel = readOptionalRawBracket(tokens, pos);
+      var colorSpec = readRawName(tokens, pos);
+      var colorBody = readArg(tokens, pos);
+      return { text: '{COLOR {' + hwpRgb(colorModel, colorSpec) + '}{' + colorBody + '}}', keyword: false };
+    }
+
+    // revision 1.3 한글 전용 레이아웃. 표준 LaTeX 대응이 없어 동명의 확장 명령을 허용한다.
+    var lowerName = name.toLowerCase();
+    if (lowerName === 'ladder' || lowerName === 'sladder') {
+      return { text: lowerName.toUpperCase() + ' {' + readArg(tokens, pos) + '}', keyword: false };
+    }
+    if (lowerName === 'longdiv') {
+      var divisor = readArg(tokens, pos);
+      var dividend = readArg(tokens, pos);
+      var work = readArg(tokens, pos);
+      return { text: 'LONGDIV {' + divisor + '} {' + dividend + '} {' + work + '}', keyword: false };
     }
 
     // 테두리 박스

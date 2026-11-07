@@ -1,8 +1,8 @@
 # LaTeX → 한글(HWP) 수식 변환 규칙
 
-이 문서는 `한글문서파일형식_수식_revision1.2.pdf`(한컴 공식 명세, 2014-10-30)를 정독해 정리한 변환 규칙이다. 변환기 구현과 골든 테스트의 근거가 된다.
+이 문서는 한컴 공식 명세 `한글문서파일형식_수식_revision1.3.pdf`(2018-11-08)를 기준으로 정리한 변환 규칙이다. 기존 revision 1.2의 핵심 문법과 revision 1.3의 신규 기본 함수/명령어를 함께 반영하며, 변환기 구현과 골든 테스트의 근거가 된다.
 
-> 출처: 한컴오피스 한글 문서 파일 형식 - 수식, revision 1.2. 본 변환기는 이 공개 명세를 참고하여 개발한다.
+> 출처: 한컴오피스 한글 문서 파일 형식 - 수식, revision 1.3. 본 변환기는 이 공개 명세를 참고하여 개발한다.
 
 ---
 
@@ -31,11 +31,11 @@
 
 ### 글꼴 명령
 - 영문 기본은 **이탤릭체**. 로만체로 쓰려면 앞에 `rm`.
-- `it`: 이탤릭 전환, `bold`: 볼드, `scale<숫자>`: 첫 글자 크기 100 기준 비율(%).
+- `it`: 이탤릭 전환, `bold`: 볼드. 현재 한글에서는 구식 `SCALE` 명령을 사용하지 않는다.
 - 화학식은 이탤릭이 어색하므로 `rm`을 앞세움 (예: `rm 2H_2 O = 2H_2 + O_2`).
 
 ### 자동 로만체 기본 함수 (그대로 매핑, `\` 만 제거)
-`sin cos tan cot sec csc cosec` · `sinh cosh tanh coth` · `ln lg log` · `lim Lim` · `max min` · `arcsin arccos arctan arcsinh` · `exp Exp` · `det gcd mod`
+`sin cos tan cot sec csc cosec` · `sinh cosh tanh coth` · `ln lg log` · `lim Lim` · `max min` · `arcsin arccos arctan` · `asin acos atan` · `exp Exp` · `det gcd lcm mod`
 
 예약어: `if for and hom ker deg arg dim Pr`
 
@@ -56,7 +56,7 @@
 | `x_{i}` / `x_i` | `x_{i}` | SUB 또는 `_`. 명세 `H_2 O`처럼 단일 숫자는 `_2`도 가능 |
 | `\sum_{i=1}^{n}` | `sum_{i=1}^{n}` | SUM. 명세: `sum_{x=0} ^{inf}` |
 | `\prod_{...}` | `prod_{...}` | PROD |
-| `\int_a^b` | `int_{a}^{b}` | INT. 또는 `int from a to b` (FROM/TO, 명세 2.3) |
+| `\int_a^b` | `int_{a}^{b}` | INT. 현재 한글에서 구식 FROM/TO는 사용하지 않음 |
 | `\oint` | `oint` | OINT |
 | `\iint`/`\iiint` | `dint`/`tint` | DINT, TINT |
 | `\lim_{x \to 0}` | `lim_{x -> 0}` | 명세 2.5: `lim_N->inf` |
@@ -64,6 +64,20 @@
 | `\left( ... \right)` | `LEFT( ... RIGHT)` | 명세 2.5 권장 방식 (아래 4절) |
 | `\overline{x}` / `\bar{x}` | `bar {x}` | 장식 명령(5절) |
 | `\vec{x}` | `vec {x}` | |
+| `\prescript{a}{b}{X}` | `{X} LSUP {a} LSUB {b}` | revision 1.3 왼쪽 위/아래 첨자 |
+| `\textcolor{red}{x}` | `{COLOR {255,0,0}{x}}` | revision 1.3 RGB 색상 |
+
+### revision 1.3 한글 전용 확장 명령
+
+표준 LaTeX에 직접 대응되는 구조가 없는 명령은 동명의 확장 명령으로 입력할 수 있다.
+
+| 입력 | 한글 수식 출력 | 용도 |
+|------|----------------|------|
+| `\ladder{...}` | `LADDER {...}` | 최소공배수/최대공약수 배치 |
+| `\sladder{...}` | `SLADDER {...}` | 10진수→2진수 변환 배치 |
+| `\longdiv{제수}{피제수}{풀이}` | `LONGDIV {...}{...}{...}` | 세로 나눗셈 |
+
+`FROM`, `TO`, `SCALE`, `PHANTOM`은 현재 한글 도움말에서 사용하지 않는 구식 명령으로 분류되므로 새 변환 결과에 생성하지 않는다.
 
 ### 행렬 / 여러 줄
 - `\begin{matrix} a & b \\ c & d \end{matrix}` → `matrix{ a & b # c & d }`  (`\\`→`#`, `&`→`&`)

@@ -197,3 +197,26 @@ test('\\\\[8pt] 행간 지정은 버리고 줄바꿈 # 만 남김', () => {
   );
   assert.strictEqual(convert('a \\\\ [a,b]'), 'a # [ a , b ]');
 });
+
+test('revision 1.3 기본 함수: asin/acos/atan/lcm', () => {
+  assert.strictEqual(convert('\\asin x + \\acos y + \\atan z'), 'asin x `+` acos y `+` atan z');
+  assert.strictEqual(convert('\\lcm(a,b)'), 'lcm (a , b)');
+});
+
+test('revision 1.3 왼쪽 첨자: prescript → LSUP/LSUB', () => {
+  assert.strictEqual(convert('\\prescript{14}{6}{C}'), '{C} LSUP {14} LSUB {6}');
+  assert.strictEqual(convert('\\prescript{}{2}{X}'), '{X} LSUB {2}');
+});
+
+test('revision 1.3 COLOR: 이름/RGB/rgb/HTML 색상', () => {
+  assert.strictEqual(convert('\\textcolor{red}{x}'), '{COLOR {255,0,0}{x}}');
+  assert.strictEqual(convert('\\textcolor[RGB]{12,34,56}{x}'), '{COLOR {12,34,56}{x}}');
+  assert.strictEqual(convert('\\textcolor[rgb]{1,0.5,0}{x}'), '{COLOR {255,128,0}{x}}');
+  assert.strictEqual(convert('\\textcolor[HTML]{336699}{x}'), '{COLOR {51,102,153}{x}}');
+});
+
+test('revision 1.3 한글 전용 LADDER/SLADDER/LONGDIV 확장', () => {
+  assert.strictEqual(convert('\\ladder{2&12&28\\\\2&6&14}'), 'LADDER {2 & 12 & 28 # 2 & 6 & 14}');
+  assert.strictEqual(convert('\\sladder{2&12\\\\2&6&0}'), 'SLADDER {2 & 12 # 2 & 6 & 0}');
+  assert.strictEqual(convert('\\longdiv{6}{422}{2532\\\\24}'), 'LONGDIV {6} {422} {2532 # 24}');
+});
