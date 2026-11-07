@@ -9,6 +9,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
@@ -41,6 +42,8 @@ namespace HwipCompanion
         private readonly EquationClipboard equationClipboard;
         private readonly LocalServer server;
         private readonly Control dispatcher;
+        private readonly ClipboardWatcher clipboardWatcher;
+        private ToolStripMenuItem autoConvertMenu;
 
         internal CompanionContext()
         {
@@ -55,6 +58,7 @@ namespace HwipCompanion
                 Visible = true,
                 ContextMenuStrip = BuildMenu()
             };
+            clipboardWatcher = new ClipboardWatcher(OnClipboardTextChanged);
             tray.ShowBalloonTip(2500, "휩", "한글 수식 개체 복사 준비가 완료되었습니다.", ToolTipIcon.Info);
             server.Start();
         }
@@ -63,9 +67,40 @@ namespace HwipCompanion
         {
             var menu = new ContextMenuStrip();
             menu.Items.Add("실행 중 - 127.0.0.1:38473").Enabled = false;
+            autoConvertMenu = new ToolStripMenuItem("복사한 HWP 수식 자동 개체 변환") { Checked = true, CheckOnClick = true };
+            menu.Items.Add(autoConvertMenu);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("종료", null, delegate { ExitThread(); });
             return menu;
+        }
+
+        private void OnClipboardTextChanged(string text)
+        {
+            if (autoConvertMenu == null || !autoConvertMenu.Checked || !LooksLikeHwpEquation(text)) return;
+            try
+            {
+                CopyResult result = equationClipboard.Copy(text);
+                if (result.success)
+                    tray.ShowBalloonTip(1200, "휩", "복사한 수식을 한글 수식 개체로 변환했습니다. 한글에서 Ctrl+V 하세요.", ToolTipIcon.Info);
+                else
+                    tray.ShowBalloonTip(2500, "휩", result.message, ToolTipIcon.Warning);
+            }
+            catch (Exception ex)
+            {
+                tray.ShowBalloonTip(2500, "휩", FriendlyError(ex), ToolTipIcon.Error);
+            }
+        }
+
+        private static bool LooksLikeHwpEquation(string text)
+        {
+            if (String.IsNullOrWhiteSpace(text) || text.Length > 50000) return false;
+            // 변환기가 이항 연산자 주변에 넣는 1/4칸 표식.
+            if (Regex.IsMatch(text, "`[+\\-*/=<>:]`")) return true;
+            // 첨자 또는 한글 수식 구조 명령이 있으면 수식 문법으로 간주한다.
+            if (Regex.IsMatch(text, @"(?:_|\^)\s*\{[^{}]*\}")) return true;
+            return Regex.IsMatch(text,
+                @"(?:^|\s)(?:over|atop|sqrt|sum|prod|int|oint|dint|tint|lim|Lim|matrix|pmatrix|bmatrix|dmatrix|cases|pile|REL|LEFT|RIGHT|CHOOSE|BINOM|COLOR|LSUB|LSUP|LADDER|SLADDER|LONGDIV)(?=\s|\{|\(|\[)",
+                RegexOptions.IgnoreCase);
         }
 
         private CopyResult CopyEquationOnUiThread(string equation, int timeoutMs)
@@ -98,11 +133,72 @@ namespace HwipCompanion
         protected override void ExitThreadCore()
         {
             server.Dispose();
+            clipboardWatcher.Dispose();
             equationClipboard.Dispose();
             dispatcher.Dispose();
             tray.Visible = false;
             tray.Dispose();
             base.ExitThreadCore();
+        }
+    }
+
+    internal sealed class ClipboardWatcher : NativeWindow, IDisposable
+    {
+        private const int WmClipboardUpdate = 0x031D;
+        private readonly Action<string> onText;
+        private readonly System.Windows.Forms.Timer debounce;
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool AddClipboardFormatListener(IntPtr hwnd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool RemoveClipboardFormatListener(IntPtr hwnd);
+
+        internal ClipboardWatcher(Action<string> onText)
+        {
+            this.onText = onText;
+            CreateHandle(new CreateParams());
+            if (!AddClipboardFormatListener(Handle)) throw new InvalidOperationException("클립보드 감시를 시작하지 못했습니다.");
+            debounce = new System.Windows.Forms.Timer { Interval = 120 };
+            debounce.Tick += delegate
+            {
+                debounce.Stop();
+                TryReadClipboard();
+            };
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            if (m.Msg == WmClipboardUpdate)
+            {
+                debounce.Stop();
+                debounce.Start();
+            }
+            base.WndProc(ref m);
+        }
+
+        private void TryReadClipboard()
+        {
+            try
+            {
+                IDataObject data = Clipboard.GetDataObject();
+                if (data == null || data.GetDataPresent("Hwp Native", false)) return;
+                if (!data.GetDataPresent(DataFormats.UnicodeText, true)) return;
+                string text = data.GetData(DataFormats.UnicodeText, true) as string;
+                if (!String.IsNullOrEmpty(text)) onText(text);
+            }
+            catch (ExternalException)
+            {
+                // 다른 앱이 클립보드를 잠깐 점유한 경우 다음 복사 이벤트에서 다시 시도한다.
+            }
+        }
+
+        public void Dispose()
+        {
+            debounce.Stop();
+            debounce.Dispose();
+            if (Handle != IntPtr.Zero) RemoveClipboardFormatListener(Handle);
+            DestroyHandle();
         }
     }
 
