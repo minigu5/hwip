@@ -249,6 +249,14 @@
     #copyHint { margin: 0; padding: 0 20px 14px; font-size: 13px; color: var(--ink-2); }
     #copyHint.copied { color: var(--accent); font-weight: 700; }
     #copyHint.copied::before { content: "✓ "; }
+    .companion-help {
+      margin: 0 20px 16px; padding: 14px 16px;
+      border: 1px solid var(--line-strong); border-radius: 10px;
+      background: var(--accent-tint); color: var(--ink-2); font-size: 13px; line-height: 1.6;
+    }
+    .companion-help strong { display: block; color: var(--ink); font-size: 14px; margin-bottom: 3px; }
+    .companion-help .btn { display: inline-flex; margin-top: 9px; text-decoration: none; }
+    .companion-error { color: var(--danger); }
 
     /* ── 미리보기 ── */
     .preview-panel { padding: 14px 20px 22px; }
@@ -629,11 +637,18 @@
           <span class="label output-title">한글 수식</span>
           <div class="input-actions">
             <label class="space-check"><input type="checkbox" id="spaceToggle" /> 공백 기호 강조</label>
-            <button class="btn" id="copyBtn" type="button">복사</button>
+            <button class="btn ghost" id="copyTextBtn" type="button" title="수식 편집기 입력용 문자열 복사">문법 복사</button>
+            <button class="btn" id="copyBtn" type="button">수식 개체 복사</button>
           </div>
         </div>
         <div class="output" id="output" aria-live="polite"></div>
-        <p id="copyHint">변환되면 자동으로 클립보드에 복사됩니다.</p>
+        <p id="copyHint">문법은 자동 복사됩니다. Windows 보조 프로그램 실행 후 수식 개체로 복사할 수 있습니다.</p>
+        <div class="companion-help" id="companionHelp" hidden>
+          <strong>휩 Windows 보조 프로그램이 필요합니다</strong>
+          <span id="companionHelpText">한 번 실행해 두면 수식 개체 복사 후 한글 본문에서 바로 Ctrl+V 할 수 있습니다.</span><br />
+          <a class="btn" href="public/downloads/HwipCompanion.exe" download>Windows 프로그램 다운로드</a>
+          <a href="public/downloads/HwipCompanion.sha256" download style="margin-left:10px">SHA-256</a>
+        </div>
       </div>
 
       <div class="panel preview-panel" id="previewPanel" hidden>

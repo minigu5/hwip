@@ -11,8 +11,11 @@
   var output = document.getElementById('output');
   var preview = document.getElementById('preview');
   var copyBtn = document.getElementById('copyBtn');
+  var copyTextBtn = document.getElementById('copyTextBtn');
   var clearBtn = document.getElementById('clearBtn');
   var copyHint = document.getElementById('copyHint');
+  var companionHelp = document.getElementById('companionHelp');
+  var companionHelpText = document.getElementById('companionHelpText');
 
   // Modal elements — 렌더링된 수식 경고
   var modal = document.getElementById('warningModal');
@@ -305,6 +308,50 @@
     }
   }
 
+  var COMPANION_URL = 'http://127.0.0.1:38473/v1/equation/copy';
+  function copyEquationObject(equation) {
+    if (!equation || copyBtn.disabled) return;
+    var previous = copyBtn.dataset.label || copyBtn.textContent;
+    copyBtn.dataset.label = previous;
+    copyBtn.disabled = true;
+    copyBtn.textContent = '수식 개체 생성 중…';
+    if (companionHelp) companionHelp.hidden = true;
+
+    var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timeout = setTimeout(function () { if (controller) controller.abort(); }, 16000);
+    fetch(COMPANION_URL, {
+      method: 'POST',
+      mode: 'cors',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ equation: equation }),
+      signal: controller ? controller.signal : undefined
+    }).then(function (response) {
+      return response.json().catch(function () { return {}; }).then(function (data) {
+        if (!response.ok || !data.success) throw new Error(data.message || '수식 개체 복사에 실패했습니다.');
+        return data;
+      });
+    }).then(function () {
+      flashCopied(copyBtn);
+      flashHint('한글 수식 개체가 복사됨 — 한글 본문에서 Ctrl+V 하세요');
+    }).catch(function (error) {
+      if (companionHelp) {
+        companionHelp.hidden = false;
+        companionHelp.classList.toggle('companion-error', error && error.name !== 'TypeError');
+      }
+      if (companionHelpText) {
+        var unavailable = !error || error.name === 'TypeError' || error.name === 'AbortError';
+        companionHelpText.textContent = unavailable
+          ? '프로그램이 실행 중인지 확인한 뒤 다시 눌러 주세요. 처음이라면 아래에서 내려받아 실행하세요.'
+          : error.message;
+      }
+    }).then(function () {
+      clearTimeout(timeout);
+      copyBtn.disabled = false;
+      if (copyBtn.textContent === '수식 개체 생성 중…') copyBtn.textContent = previous;
+    });
+  }
+
   var previewPanel = document.getElementById('previewPanel');
   function setPreviewVisible(visible) {
     if (previewPanel) previewPanel.hidden = !visible;
@@ -453,7 +500,10 @@
   });
 
   copyBtn.addEventListener('click', function () {
-    copyText(output.textContent, function () { flashCopied(copyBtn); });
+    copyEquationObject(output.textContent);
+  });
+  copyTextBtn.addEventListener('click', function () {
+    copyText(output.textContent, function () { flashCopied(copyTextBtn); });
   });
 
   // ── 이미지 OCR (브라우저 로컬 · FormulaNet via transformers.js) ───────
