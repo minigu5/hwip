@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -13,14 +14,29 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
+using Microsoft.Win32;
 
 namespace HwipCompanion
 {
     internal static class Program
     {
+        internal const string ExtensionUrl = "https://chromewebstore.google.com/detail/meahkfhlalnljlgllhmhmfdhpkknfncg";
+        internal const string RunValueName = "HwipCompanion";
+
         [STAThread]
-        private static void Main()
+        private static void Main(string[] args)
         {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
+            bool portable = Array.IndexOf(args, "--portable") >= 0;
+            bool installedLaunch = Array.IndexOf(args, "--installed") >= 0;
+            if (!portable && !installedLaunch && !Installer.IsInstalledExecutable())
+            {
+                Installer.RunFirstInstall();
+                return;
+            }
+
             bool created;
             using (var mutex = new Mutex(true, "Local\\HwipCompanion-38473", out created))
             {
@@ -29,10 +45,76 @@ namespace HwipCompanion
                     MessageBox.Show("휩 수식 개체 복사가 이미 실행 중입니다.", "휩", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
                 Application.Run(new CompanionContext());
             }
+        }
+    }
+
+    internal static class Installer
+    {
+        internal static string InstallDirectory
+        {
+            get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Hwip"); }
+        }
+
+        internal static string InstalledExecutable
+        {
+            get { return Path.Combine(InstallDirectory, "HwipCompanion.exe"); }
+        }
+
+        internal static bool IsInstalledExecutable()
+        {
+            return String.Equals(Path.GetFullPath(Application.ExecutablePath), Path.GetFullPath(InstalledExecutable), StringComparison.OrdinalIgnoreCase);
+        }
+
+        internal static void RunFirstInstall()
+        {
+            DialogResult choice = MessageBox.Show(
+                "휩 Windows 프로그램을 설치하고 크롬 확장 설치 페이지를 여시겠습니까?\n\n" +
+                "설치 후에는 Windows 시작 시 자동으로 실행됩니다. 크롬에서는 '확장 프로그램 추가'를 한 번 눌러 주세요.",
+                "휩 설치", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information);
+            if (choice == DialogResult.Cancel) return;
+            if (choice == DialogResult.No)
+            {
+                Process.Start(new ProcessStartInfo(Application.ExecutablePath, "--portable") { UseShellExecute = true });
+                return;
+            }
+
+            try
+            {
+                Directory.CreateDirectory(InstallDirectory);
+                File.Copy(Application.ExecutablePath, InstalledExecutable, true);
+                SetAutoStart(true);
+                Process.Start(new ProcessStartInfo(InstalledExecutable, "--installed") { UseShellExecute = true });
+                OpenExtensionStore();
+                MessageBox.Show(
+                    "Windows 프로그램 설치가 완료되었습니다.\n\n열린 크롬 웹스토어에서 '확장 프로그램 추가'를 누르면 준비가 끝납니다.",
+                    "휩 설치 완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("설치하지 못했습니다: " + ex.Message, "휩 설치 오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        internal static bool IsAutoStartEnabled()
+        {
+            using (RegistryKey key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", false))
+                return key != null && key.GetValue(Program.RunValueName) != null;
+        }
+
+        internal static void SetAutoStart(bool enabled)
+        {
+            using (RegistryKey key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run"))
+            {
+                if (enabled) key.SetValue(Program.RunValueName, "\"" + InstalledExecutable + "\" --installed");
+                else key.DeleteValue(Program.RunValueName, false);
+            }
+        }
+
+        internal static void OpenExtensionStore()
+        {
+            Process.Start(new ProcessStartInfo(Program.ExtensionUrl) { UseShellExecute = true });
         }
     }
 
@@ -44,6 +126,7 @@ namespace HwipCompanion
         private readonly Control dispatcher;
         private readonly ClipboardWatcher clipboardWatcher;
         private ToolStripMenuItem autoConvertMenu;
+        private ToolStripMenuItem autoStartMenu;
 
         internal CompanionContext()
         {
@@ -69,6 +152,20 @@ namespace HwipCompanion
             menu.Items.Add("실행 중 - 127.0.0.1:38473").Enabled = false;
             autoConvertMenu = new ToolStripMenuItem("복사한 HWP 수식 자동 개체 변환") { Checked = true, CheckOnClick = true };
             menu.Items.Add(autoConvertMenu);
+            bool installed = Installer.IsInstalledExecutable();
+            autoStartMenu = new ToolStripMenuItem("Windows 시작 시 자동 실행")
+            {
+                Checked = installed && Installer.IsAutoStartEnabled(),
+                CheckOnClick = true,
+                Enabled = installed
+            };
+            autoStartMenu.CheckedChanged += delegate
+            {
+                try { Installer.SetAutoStart(autoStartMenu.Checked); }
+                catch (Exception ex) { MessageBox.Show("자동 실행 설정을 변경하지 못했습니다: " + ex.Message, "휩", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            };
+            menu.Items.Add(autoStartMenu);
+            menu.Items.Add("크롬 확장 설치 페이지 열기", null, delegate { Installer.OpenExtensionStore(); });
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("종료", null, delegate { ExitThread(); });
             return menu;
