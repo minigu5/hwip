@@ -167,8 +167,16 @@ namespace HwipCompanion
             menu.Items.Add(autoStartMenu);
             menu.Items.Add("크롬 확장 설치 페이지 열기", null, delegate { Installer.OpenExtensionStore(); });
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("종료", null, delegate { ExitThread(); });
+            menu.Items.Add("종료", null, delegate { ConfirmExit(); });
             return menu;
+        }
+
+        private void ConfirmExit()
+        {
+            DialogResult result = MessageBox.Show(
+                "휩을 종료하면 한글 문서를 작성할 때 HWP 수식 복사와 수식 개체 자동 변환을 이용할 수 없습니다.\n\n정말 종료하시겠습니까?",
+                "휩 종료", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+            if (result == DialogResult.Yes) ExitThread();
         }
 
         private void OnClipboardTextChanged(string text)
