@@ -86,9 +86,9 @@ namespace HwipCompanion
                 File.Copy(Application.ExecutablePath, InstalledExecutable, true);
                 SetAutoStart(true);
                 Process.Start(new ProcessStartInfo(InstalledExecutable, "--installed") { UseShellExecute = true });
-                OpenExtensionStore();
+                OpenExtensionStoreForProfiles();
                 MessageBox.Show(
-                    "Windows 프로그램 설치가 완료되었습니다.\n\n열린 크롬 웹스토어에서 '확장 프로그램 추가'를 누르면 준비가 끝납니다.",
+                    "Windows 프로그램 설치가 완료되었습니다.\n\n선택한 각 Chrome 프로필의 웹스토어 창에서 'Chrome에 추가'를 눌러 주세요.",
                     "휩 설치 완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
@@ -112,9 +112,131 @@ namespace HwipCompanion
             }
         }
 
-        internal static void OpenExtensionStore()
+        internal static void OpenExtensionStoreForProfiles()
         {
-            Process.Start(new ProcessStartInfo(Program.ExtensionUrl) { UseShellExecute = true });
+            string chrome = FindChromeExecutable();
+            List<ChromeProfile> profiles = DiscoverChromeProfiles();
+            if (chrome == null || profiles.Count == 0)
+            {
+                Process.Start(new ProcessStartInfo(Program.ExtensionUrl) { UseShellExecute = true });
+                return;
+            }
+
+            using (var dialog = new ProfileSelectionForm(profiles))
+            {
+                if (dialog.ShowDialog() != DialogResult.OK) return;
+                foreach (ChromeProfile profile in dialog.SelectedProfiles)
+                {
+                    string arguments = "--profile-directory=\"" + profile.DirectoryName.Replace("\"", "") + "\" \"" + Program.ExtensionUrl + "\"";
+                    Process.Start(new ProcessStartInfo(chrome, arguments) { UseShellExecute = true });
+                }
+            }
+        }
+
+        private static string FindChromeExecutable()
+        {
+            string[] candidates = {
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Google\Chrome\Application\chrome.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"Google\Chrome\Application\chrome.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Google\Chrome\Application\chrome.exe")
+            };
+            foreach (string candidate in candidates) if (File.Exists(candidate)) return candidate;
+            return null;
+        }
+
+        private static List<ChromeProfile> DiscoverChromeProfiles()
+        {
+            string userData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Google\Chrome\User Data");
+            var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            string localState = Path.Combine(userData, "Local State");
+            try
+            {
+                if (File.Exists(localState))
+                {
+                    var json = new JavaScriptSerializer { MaxJsonLength = 4 * 1024 * 1024 };
+                    var root = json.Deserialize<Dictionary<string, object>>(File.ReadAllText(localState, Encoding.UTF8));
+                    var profile = root != null && root.ContainsKey("profile") ? root["profile"] as Dictionary<string, object> : null;
+                    var cache = profile != null && profile.ContainsKey("info_cache") ? profile["info_cache"] as Dictionary<string, object> : null;
+                    if (cache != null)
+                    {
+                        foreach (KeyValuePair<string, object> item in cache)
+                        {
+                            var info = item.Value as Dictionary<string, object>;
+                            string display = info != null && info.ContainsKey("name") ? Convert.ToString(info["name"]) : item.Key;
+                            names[item.Key] = String.IsNullOrWhiteSpace(display) ? item.Key : display;
+                        }
+                    }
+                }
+            }
+            catch { /* 손상되거나 잠긴 Local State는 디렉터리 이름으로 대체한다. */ }
+
+            if (Directory.Exists(userData))
+            {
+                foreach (string directory in Directory.GetDirectories(userData))
+                {
+                    string name = Path.GetFileName(directory);
+                    if (name == "Default" || name.StartsWith("Profile ", StringComparison.OrdinalIgnoreCase))
+                        if (!names.ContainsKey(name)) names[name] = name == "Default" ? "기본 프로필" : name;
+                }
+            }
+
+            var result = new List<ChromeProfile>();
+            foreach (KeyValuePair<string, string> item in names)
+                if (Directory.Exists(Path.Combine(userData, item.Key))) result.Add(new ChromeProfile(item.Key, item.Value));
+            result.Sort(delegate(ChromeProfile a, ChromeProfile b) { return String.Compare(a.DisplayName, b.DisplayName, StringComparison.CurrentCultureIgnoreCase); });
+            return result;
+        }
+    }
+
+    internal sealed class ChromeProfile
+    {
+        internal readonly string DirectoryName;
+        internal readonly string DisplayName;
+        internal ChromeProfile(string directoryName, string displayName) { DirectoryName = directoryName; DisplayName = displayName; }
+        public override string ToString() { return DisplayName + "  (" + DirectoryName + ")"; }
+    }
+
+    internal sealed class ProfileSelectionForm : Form
+    {
+        private readonly CheckedListBox profiles = new CheckedListBox();
+        internal List<ChromeProfile> SelectedProfiles { get; private set; }
+
+        internal ProfileSelectionForm(List<ChromeProfile> available)
+        {
+            Text = "휩 Chrome 프로필 선택";
+            Width = 470;
+            Height = 360;
+            StartPosition = FormStartPosition.CenterScreen;
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MaximizeBox = false;
+            MinimizeBox = false;
+
+            var label = new Label
+            {
+                Text = "휩 확장을 설치할 Chrome 프로필을 선택하세요.\n선택한 각 프로필에서 설치 승인을 한 번씩 해야 합니다.",
+                AutoSize = false, Left = 18, Top = 16, Width = 420, Height = 44
+            };
+            profiles.Left = 18; profiles.Top = 65; profiles.Width = 420; profiles.Height = 205;
+            profiles.CheckOnClick = true;
+            foreach (ChromeProfile profile in available) profiles.Items.Add(profile, true);
+
+            var install = new Button { Text = "선택한 프로필에서 설치", Left = 238, Top = 280, Width = 200, Height = 32 };
+            var cancel = new Button { Text = "취소", Left = 152, Top = 280, Width = 78, Height = 32, DialogResult = DialogResult.Cancel };
+            install.Click += delegate
+            {
+                SelectedProfiles = new List<ChromeProfile>();
+                foreach (object item in profiles.CheckedItems) SelectedProfiles.Add((ChromeProfile)item);
+                if (SelectedProfiles.Count == 0)
+                {
+                    MessageBox.Show("프로필을 하나 이상 선택해 주세요.", "휩", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+                DialogResult = DialogResult.OK;
+                Close();
+            };
+            Controls.Add(label); Controls.Add(profiles); Controls.Add(cancel); Controls.Add(install);
+            AcceptButton = install;
+            CancelButton = cancel;
         }
     }
 
@@ -165,7 +287,7 @@ namespace HwipCompanion
                 catch (Exception ex) { MessageBox.Show("자동 실행 설정을 변경하지 못했습니다: " + ex.Message, "휩", MessageBoxButtons.OK, MessageBoxIcon.Error); }
             };
             menu.Items.Add(autoStartMenu);
-            menu.Items.Add("크롬 확장 설치 페이지 열기", null, delegate { Installer.OpenExtensionStore(); });
+            menu.Items.Add("Chrome 프로필에 확장 설치", null, delegate { Installer.OpenExtensionStoreForProfiles(); });
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("종료", null, delegate { ConfirmExit(); });
             return menu;
