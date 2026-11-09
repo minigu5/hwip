@@ -26,13 +26,29 @@
     href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="public/site.css" />
   <script>
+    /* Vercel 방문 통계: 미리 렌더링(prerender)된 페이지는 실제로 열렸을 때만 집계한다. */
     window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    (function () {
+      function load(src) { var s = document.createElement('script'); s.defer = true; s.src = src; document.head.appendChild(s); }
+      function start() {
+        load('/_vercel/insights/script.js');
+      }
+      if (document.prerendering) document.addEventListener('prerenderingchange', start, { once: true });
+      else start();
+    })();
   </script>
-  <script defer src="/_vercel/insights/script.js"></script>
+  <script type="speculationrules">
+    {
+      "prefetch": [{ "source": "document", "where": { "selector_matches": ".site-nav a" }, "eagerness": "immediate" }],
+      "prerender": [{ "source": "document", "where": { "and": [
+        { "href_matches": "/*" }, { "not": { "href_matches": "/api/*" } }, { "not": { "selector_matches": "[aria-current]" } }
+      ] }, "eagerness": "moderate" }]
+    }
+  </script>
   <script defer src="public/site.js"></script>
 </head>
 <body>
-  <div class="wrap">
+  <div class="wrap wide">
     <header class="site-header">
       <a class="brand" href="./">
         <img src="public/logo.svg" alt="" width="36" height="36" />
@@ -41,10 +57,10 @@
       </a>
       <nav class="site-nav" aria-label="사이트 메뉴">
         <a href="./">변환기</a>
-        <a href="guide.html">사용법</a>
-        <a href="examples.html">예시</a>
-        <a href="syntax.html" aria-current="page">문법</a>
-        <a href="about.html">소개</a>
+        <a href="guide">사용법</a>
+        <a href="examples">예시</a>
+        <a href="syntax" aria-current="page">문법</a>
+        <a href="about">소개</a>
       </nav>
       <div class="header-actions">
         <a class="btn ghost hide-sm" href="https://github.com/minigu5/hwip" target="_blank" rel="noopener">GitHub</a>
@@ -62,255 +78,261 @@
     </header>
 
 
-    <section class="hero">
-      <h1>한글 수식 문법</h1>
-      <p>한컴오피스 한글 수식 편집기의 입력 문법을 LaTeX와 나란히 정리했습니다. 한글과컴퓨터가 공개한 ‘한글 문서 파일 형식 – 수식(revision 1.2)’ 명세를 바탕으로 했습니다.</p>
-    </section>
+    <div class="doc-layout">
+      <aside class="side-toc" aria-label="목차">
+        <ul>
+          <li><a href="#basics">기본 규칙</a></li>
+          <li><a href="#font">글꼴·함수</a></li>
+          <li><a href="#structure">분수·첨자·근호</a></li>
+          <li><a href="#bigop">합·적분·극한</a></li>
+          <li><a href="#bracket">괄호</a></li>
+          <li><a href="#matrix">행렬·여러 줄</a></li>
+          <li><a href="#accent">글자 장식</a></li>
+          <li><a href="#greek">그리스 문자</a></li>
+          <li><a href="#ops">연산·관계</a></li>
+          <li><a href="#sets">집합</a></li>
+          <li><a href="#arrows">화살표</a></li>
+          <li><a href="#misc">기타 기호</a></li>
+        </ul>
+      </aside>
+      <main class="doc-main">
+        <section class="hero">
+          <h1>한글 수식 문법</h1>
+          <p>한컴오피스 한글 수식 편집기의 입력 문법을 LaTeX와 나란히 정리했습니다. 한글과컴퓨터가 공개한 ‘한글 문서 파일 형식 – 수식(revision 1.2)’ 명세를 바탕으로 했습니다.</p>
+        </section>
 
-    <ul class="toc" aria-label="이 페이지의 목차">
-      <li><a href="#basics">기본 규칙</a></li>
-      <li><a href="#font">글꼴·함수</a></li>
-      <li><a href="#structure">분수·첨자·근호</a></li>
-      <li><a href="#bigop">합·적분·극한</a></li>
-      <li><a href="#bracket">괄호</a></li>
-      <li><a href="#matrix">행렬·여러 줄</a></li>
-      <li><a href="#accent">글자 장식</a></li>
-      <li><a href="#greek">그리스 문자</a></li>
-      <li><a href="#ops">연산·관계</a></li>
-      <li><a href="#sets">집합</a></li>
-      <li><a href="#arrows">화살표</a></li>
-      <li><a href="#misc">기타 기호</a></li>
-    </ul>
 
-    <section class="panel" id="basics">
-      <h2>기본 규칙</h2>
-      <p>한글 수식은 LaTeX처럼 <code>\</code>로 명령을 시작하지 않고, <code>over</code>, <code>sqrt</code>, <code>alpha</code> 같은 영어 낱말을 그대로 씁니다. 그래서 <strong>빈칸이 낱말을 나누는 역할</strong>을 하고, 화면에는 나타나지 않습니다.</p>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>기호</th><th>뜻</th><th>설명</th></tr></thead>
-          <tbody>
-            <tr><td>빈칸</td><td>낱말(항) 구분</td><td>화면에는 보이지 않습니다. 여러 번 눌러도 하나로 취급됩니다.</td></tr>
-            <tr><td><code>{ }</code></td><td>묶음</td><td>여러 항을 하나로 묶습니다. 화면에는 보이지 않습니다.</td></tr>
-            <tr><td><code>~</code></td><td>보통 크기 빈칸</td><td>화면에 실제 빈칸이 생깁니다.</td></tr>
-            <tr><td><code>`</code></td><td>1/4 크기 빈칸</td><td>등호·더하기 주변처럼 좁은 간격을 줄 때 씁니다.</td></tr>
-            <tr><td><code>#</code></td><td>줄 바꿈</td><td>행렬이나 여러 줄 수식에서 다음 줄로 넘깁니다.</td></tr>
-            <tr><td><code>&amp;</code></td><td>칸 맞춤</td><td>행렬의 열을 나누거나 여러 줄의 정렬 위치를 맞춥니다.</td></tr>
-            <tr><td><code>"…"</code></td><td>낱말 묶음</td><td>9글자가 넘는 낱말은 둘로 쪼개지므로 따옴표로 묶어 한 낱말로 유지합니다.</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="callout">
-        <p><strong>명령어 앞뒤에는 빈칸을 두세요.</strong> <code>1 over 2</code>, <code>sqrt 2</code>처럼 띄어야 명령어로 인식됩니다. 반대로 <code>s in</code>처럼 함수 이름 중간을 띄우면 다른 글자로 읽힙니다.</p>
-      </div>
-    </section>
+        <section class="panel" id="basics">
+          <h2>기본 규칙</h2>
+          <p>한글 수식은 LaTeX처럼 <code>\</code>로 명령을 시작하지 않고, <code>over</code>, <code>sqrt</code>, <code>alpha</code> 같은 영어 낱말을 그대로 씁니다. 그래서 <strong>빈칸이 낱말을 나누는 역할</strong>을 하고, 화면에는 나타나지 않습니다.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>기호</th><th>뜻</th><th>설명</th></tr></thead>
+              <tbody>
+                <tr><td>빈칸</td><td>낱말(항) 구분</td><td>화면에는 보이지 않습니다. 여러 번 눌러도 하나로 취급됩니다.</td></tr>
+                <tr><td><code>{ }</code></td><td>묶음</td><td>여러 항을 하나로 묶습니다. 화면에는 보이지 않습니다.</td></tr>
+                <tr><td><code>~</code></td><td>보통 크기 빈칸</td><td>화면에 실제 빈칸이 생깁니다.</td></tr>
+                <tr><td><code>`</code></td><td>1/4 크기 빈칸</td><td>등호·더하기 주변처럼 좁은 간격을 줄 때 씁니다.</td></tr>
+                <tr><td><code>#</code></td><td>줄 바꿈</td><td>행렬이나 여러 줄 수식에서 다음 줄로 넘깁니다.</td></tr>
+                <tr><td><code>&amp;</code></td><td>칸 맞춤</td><td>행렬의 열을 나누거나 여러 줄의 정렬 위치를 맞춥니다.</td></tr>
+                <tr><td><code>"…"</code></td><td>낱말 묶음</td><td>9글자가 넘는 낱말은 둘로 쪼개지므로 따옴표로 묶어 한 낱말로 유지합니다.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout">
+            <p><strong>명령어 앞뒤에는 빈칸을 두세요.</strong> <code>1 over 2</code>, <code>sqrt 2</code>처럼 띄어야 명령어로 인식됩니다. 반대로 <code>s in</code>처럼 함수 이름 중간을 띄우면 다른 글자로 읽힙니다.</p>
+          </div>
+        </section>
 
-    <section class="panel" id="font">
-      <h2>글꼴·함수</h2>
-      <p>영문은 기본으로 기울임꼴(이탤릭)로 그려집니다. 바꾸고 싶은 글자 앞에 글꼴 명령을 붙입니다.</p>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>한글 수식</th><th>뜻</th><th>예</th></tr></thead>
-          <tbody>
-            <tr><td><code>rm</code></td><td>바른꼴(로만체)</td><td><code>rm 2H_2 O</code> (화학식)</td></tr>
-            <tr><td><code>it</code></td><td>기울임꼴로 되돌림</td><td><code>rm km it x</code></td></tr>
-            <tr><td><code>bold</code></td><td>굵게</td><td><code>bold v</code></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p>아래 함수 이름은 자동으로 바른꼴로 그려집니다. LaTeX에서 <code>\</code>만 빼면 됩니다. <code>lim</code>과 <code>Lim</code>처럼 대소문자를 구분합니다.</p>
-      <pre class="code"><code>sin cos tan cot sec csc cosec sinh cosh tanh coth
+        <section class="panel" id="font">
+          <h2>글꼴·함수</h2>
+          <p>영문은 기본으로 기울임꼴(이탤릭)로 그려집니다. 바꾸고 싶은 글자 앞에 글꼴 명령을 붙입니다.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>한글 수식</th><th>뜻</th><th>예</th></tr></thead>
+              <tbody>
+                <tr><td><code>rm</code></td><td>바른꼴(로만체)</td><td><code>rm 2H_2 O</code> (화학식)</td></tr>
+                <tr><td><code>it</code></td><td>기울임꼴로 되돌림</td><td><code>rm km it x</code></td></tr>
+                <tr><td><code>bold</code></td><td>굵게</td><td><code>bold v</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>아래 함수 이름은 자동으로 바른꼴로 그려집니다. LaTeX에서 <code>\</code>만 빼면 됩니다. <code>lim</code>과 <code>Lim</code>처럼 대소문자를 구분합니다.</p>
+          <pre class="code"><code>sin cos tan cot sec csc cosec sinh cosh tanh coth
 ln lg log lim Lim max min exp Exp det gcd mod
 arcsin arccos arctan arcsinh</code></pre>
-    </section>
+        </section>
 
-    <section class="panel" id="structure">
-      <h2>분수·첨자·근호</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>LaTeX</th><th>한글 수식</th><th>설명</th></tr></thead>
-          <tbody>
-            <tr><td><code>\frac{a}{b}</code></td><td><code>{a} over {b}</code></td><td>분수. 분자·분모를 <code>{ }</code>로 묶어야 범위가 정확합니다.</td></tr>
-            <tr><td><code>{a \atop b}</code></td><td><code>{a} atop {b}</code></td><td>분수선 없이 위아래로 쌓기</td></tr>
-            <tr><td><code>x^{n}</code></td><td><code>x ^{n}</code></td><td>위첨자 (<code>sup</code>도 같음)</td></tr>
-            <tr><td><code>x_{i}</code></td><td><code>x _{i}</code></td><td>아래첨자 (<code>sub</code>도 같음)</td></tr>
-            <tr><td><code>\sqrt{x}</code></td><td><code>sqrt {x}</code></td><td>제곱근</td></tr>
-            <tr><td><code>\sqrt[3]{x}</code></td><td><code>^{3} sqrt {x}</code></td><td>n제곱근. 근호 앞에 위첨자로 차수를 씁니다.</td></tr>
-            <tr><td><code>\binom{n}{k}</code></td><td><code>n CHOOSE k</code></td><td>이항계수 (<code>BINOM</code>도 같음)</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+        <section class="panel" id="structure">
+          <h2>분수·첨자·근호</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>LaTeX</th><th>한글 수식</th><th>설명</th></tr></thead>
+              <tbody>
+                <tr><td><code>\frac{a}{b}</code></td><td><code>{a} over {b}</code></td><td>분수. 분자·분모를 <code>{ }</code>로 묶어야 범위가 정확합니다.</td></tr>
+                <tr><td><code>{a \atop b}</code></td><td><code>{a} atop {b}</code></td><td>분수선 없이 위아래로 쌓기</td></tr>
+                <tr><td><code>x^{n}</code></td><td><code>x ^{n}</code></td><td>위첨자 (<code>sup</code>도 같음)</td></tr>
+                <tr><td><code>x_{i}</code></td><td><code>x _{i}</code></td><td>아래첨자 (<code>sub</code>도 같음)</td></tr>
+                <tr><td><code>\sqrt{x}</code></td><td><code>sqrt {x}</code></td><td>제곱근</td></tr>
+                <tr><td><code>\sqrt[3]{x}</code></td><td><code>^{3} sqrt {x}</code></td><td>n제곱근. 근호 앞에 위첨자로 차수를 씁니다.</td></tr>
+                <tr><td><code>\binom{n}{k}</code></td><td><code>n CHOOSE k</code></td><td>이항계수 (<code>BINOM</code>도 같음)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-    <section class="panel" id="bigop">
-      <h2>합·적분·극한</h2>
-      <p>범위는 첨자로 붙입니다. 적분은 <code>from … to …</code>로 쓸 수도 있습니다.</p>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>LaTeX</th><th>한글 수식</th><th>설명</th></tr></thead>
-          <tbody>
-            <tr><td><code>\sum_{i=1}^{n}</code></td><td><code>sum _{i=1} ^{n}</code></td><td>합</td></tr>
-            <tr><td><code>\prod_{i=1}^{n}</code></td><td><code>prod _{i=1} ^{n}</code></td><td>곱</td></tr>
-            <tr><td><code>\int_a^b</code></td><td><code>int _{a} ^{b}</code></td><td>적분 (<code>int from a to b</code>도 같음)</td></tr>
-            <tr><td><code>\iint</code>, <code>\iiint</code></td><td><code>dint</code>, <code>tint</code></td><td>이중·삼중 적분</td></tr>
-            <tr><td><code>\oint</code></td><td><code>oint</code></td><td>선적분</td></tr>
-            <tr><td><code>\lim_{x \to 0}</code></td><td><code>lim _{x -&gt; 0}</code></td><td>극한</td></tr>
-            <tr><td><code>\infty</code></td><td><code>inf</code></td><td>무한대</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+        <section class="panel" id="bigop">
+          <h2>합·적분·극한</h2>
+          <p>범위는 첨자로 붙입니다. 적분은 <code>from … to …</code>로 쓸 수도 있습니다.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>LaTeX</th><th>한글 수식</th><th>설명</th></tr></thead>
+              <tbody>
+                <tr><td><code>\sum_{i=1}^{n}</code></td><td><code>sum _{i=1} ^{n}</code></td><td>합</td></tr>
+                <tr><td><code>\prod_{i=1}^{n}</code></td><td><code>prod _{i=1} ^{n}</code></td><td>곱</td></tr>
+                <tr><td><code>\int_a^b</code></td><td><code>int _{a} ^{b}</code></td><td>적분 (<code>int from a to b</code>도 같음)</td></tr>
+                <tr><td><code>\iint</code>, <code>\iiint</code></td><td><code>dint</code>, <code>tint</code></td><td>이중·삼중 적분</td></tr>
+                <tr><td><code>\oint</code></td><td><code>oint</code></td><td>선적분</td></tr>
+                <tr><td><code>\lim_{x \to 0}</code></td><td><code>lim _{x -&gt; 0}</code></td><td>극한</td></tr>
+                <tr><td><code>\infty</code></td><td><code>inf</code></td><td>무한대</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-    <section class="panel" id="bracket">
-      <h2>괄호</h2>
-      <p>일반 괄호 <code>( )</code>, <code>[ ]</code>는 그대로 씁니다. 분수처럼 키가 큰 내용을 감쌀 때 그냥 괄호를 쓰면 괄호가 작게 남으므로 <code>LEFT</code>/<code>RIGHT</code>를 붙여 내용 높이에 맞춥니다.</p>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>LaTeX</th><th>한글 수식</th></tr></thead>
-          <tbody>
-            <tr><td><code>\left( \frac{a}{b} \right)</code></td><td><code>LEFT( {a} over {b} RIGHT)</code></td></tr>
-            <tr><td><code>\left[ … \right]</code></td><td><code>LEFT[ … RIGHT]</code></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+        <section class="panel" id="bracket">
+          <h2>괄호</h2>
+          <p>일반 괄호 <code>( )</code>, <code>[ ]</code>는 그대로 씁니다. 분수처럼 키가 큰 내용을 감쌀 때 그냥 괄호를 쓰면 괄호가 작게 남으므로 <code>LEFT</code>/<code>RIGHT</code>를 붙여 내용 높이에 맞춥니다.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>LaTeX</th><th>한글 수식</th></tr></thead>
+              <tbody>
+                <tr><td><code>\left( \frac{a}{b} \right)</code></td><td><code>LEFT( {a} over {b} RIGHT)</code></td></tr>
+                <tr><td><code>\left[ … \right]</code></td><td><code>LEFT[ … RIGHT]</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-    <section class="panel" id="matrix">
-      <h2>행렬·여러 줄</h2>
-      <p>칸은 <code>&amp;</code>, 줄은 <code>#</code>으로 나눕니다.</p>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>LaTeX</th><th>한글 수식</th><th>모양</th></tr></thead>
-          <tbody>
-            <tr><td><code>\begin{matrix} a &amp; b \\ c &amp; d \end{matrix}</code></td><td><code>matrix{ a &amp; b # c &amp; d }</code></td><td>괄호 없음</td></tr>
-            <tr><td><code>pmatrix</code></td><td><code>pmatrix{ … }</code></td><td>소괄호</td></tr>
-            <tr><td><code>bmatrix</code></td><td><code>bmatrix{ … }</code></td><td>대괄호</td></tr>
-            <tr><td><code>vmatrix</code></td><td><code>dmatrix{ … }</code></td><td>세로줄 (행렬식)</td></tr>
-            <tr><td><code>\begin{cases} … \\ … \end{cases}</code></td><td><code>cases{ … # … }</code></td><td>연립식·경우 나누기</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+        <section class="panel" id="matrix">
+          <h2>행렬·여러 줄</h2>
+          <p>칸은 <code>&amp;</code>, 줄은 <code>#</code>으로 나눕니다.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>LaTeX</th><th>한글 수식</th><th>모양</th></tr></thead>
+              <tbody>
+                <tr><td><code>\begin{matrix} a &amp; b \\ c &amp; d \end{matrix}</code></td><td><code>matrix{ a &amp; b # c &amp; d }</code></td><td>괄호 없음</td></tr>
+                <tr><td><code>pmatrix</code></td><td><code>pmatrix{ … }</code></td><td>소괄호</td></tr>
+                <tr><td><code>bmatrix</code></td><td><code>bmatrix{ … }</code></td><td>대괄호</td></tr>
+                <tr><td><code>vmatrix</code></td><td><code>dmatrix{ … }</code></td><td>세로줄 (행렬식)</td></tr>
+                <tr><td><code>\begin{cases} … \\ … \end{cases}</code></td><td><code>cases{ … # … }</code></td><td>연립식·경우 나누기</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-    <section class="panel" id="accent">
-      <h2>글자 장식</h2>
-      <p>장식 명령 뒤에 꾸밀 글자를 씁니다. 예: <code>hat {y}</code>, <code>vec {F}</code>.</p>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>LaTeX</th><th>한글 수식</th><th>LaTeX</th><th>한글 수식</th></tr></thead>
-          <tbody>
-            <tr><td><code>\hat</code></td><td><code>hat</code></td><td><code>\dot</code></td><td><code>dot</code></td></tr>
-            <tr><td><code>\check</code></td><td><code>check</code></td><td><code>\ddot</code></td><td><code>ddot</code></td></tr>
-            <tr><td><code>\tilde</code></td><td><code>tilde</code></td><td><code>\bar</code>, <code>\overline</code></td><td><code>bar</code></td></tr>
-            <tr><td><code>\acute</code></td><td><code>acute</code></td><td><code>\vec</code></td><td><code>vec</code></td></tr>
-            <tr><td><code>\grave</code></td><td><code>grave</code></td><td><code>\overrightarrow</code></td><td><code>dyad</code></td></tr>
-            <tr><td><code>\underline</code></td><td><code>under</code></td><td>(없음)</td><td><code>arch</code> (위로 굽은 호)</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+        <section class="panel" id="accent">
+          <h2>글자 장식</h2>
+          <p>장식 명령 뒤에 꾸밀 글자를 씁니다. 예: <code>hat {y}</code>, <code>vec {F}</code>.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>LaTeX</th><th>한글 수식</th><th>LaTeX</th><th>한글 수식</th></tr></thead>
+              <tbody>
+                <tr><td><code>\hat</code></td><td><code>hat</code></td><td><code>\dot</code></td><td><code>dot</code></td></tr>
+                <tr><td><code>\check</code></td><td><code>check</code></td><td><code>\ddot</code></td><td><code>ddot</code></td></tr>
+                <tr><td><code>\tilde</code></td><td><code>tilde</code></td><td><code>\bar</code>, <code>\overline</code></td><td><code>bar</code></td></tr>
+                <tr><td><code>\acute</code></td><td><code>acute</code></td><td><code>\vec</code></td><td><code>vec</code></td></tr>
+                <tr><td><code>\grave</code></td><td><code>grave</code></td><td><code>\overrightarrow</code></td><td><code>dyad</code></td></tr>
+                <tr><td><code>\underline</code></td><td><code>under</code></td><td>(없음)</td><td><code>arch</code> (위로 굽은 호)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-    <section class="panel" id="greek">
-      <h2>그리스 문자</h2>
-      <p>LaTeX에서 <code>\</code>만 빼고 영어 이름을 그대로 씁니다. 첫 글자를 대문자로 쓰면 대문자가 됩니다(<code>lambda</code> → λ, <code>Lambda</code> → Λ).</p>
-      <pre class="code"><code>alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu
+        <section class="panel" id="greek">
+          <h2>그리스 문자</h2>
+          <p>LaTeX에서 <code>\</code>만 빼고 영어 이름을 그대로 씁니다. 첫 글자를 대문자로 쓰면 대문자가 됩니다(<code>lambda</code> → λ, <code>Lambda</code> → Λ).</p>
+          <pre class="code"><code>alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu
 nu xi omicron pi rho sigma tau upsilon phi chi psi omega</code></pre>
-      <p>변형 문자: <code>vartheta</code>, <code>varpi</code>, <code>varsigma</code>, <code>varphi</code>, <code>varepsilon</code>, <code>varupsilon</code>, <code>varrho</code></p>
-    </section>
+          <p>변형 문자: <code>vartheta</code>, <code>varpi</code>, <code>varsigma</code>, <code>varphi</code>, <code>varepsilon</code>, <code>varupsilon</code>, <code>varrho</code></p>
+        </section>
 
-    <section class="panel" id="ops">
-      <h2>연산·관계</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>LaTeX</th><th>한글 수식</th><th>LaTeX</th><th>한글 수식</th></tr></thead>
-          <tbody>
-            <tr><td><code>\times</code></td><td><code>times</code></td><td><code>\leq</code></td><td><code>leq</code></td></tr>
-            <tr><td><code>\div</code></td><td><code>div</code></td><td><code>\geq</code></td><td><code>geq</code></td></tr>
-            <tr><td><code>\pm</code></td><td><code>plusminus</code></td><td><code>\neq</code></td><td><code>neq</code> 또는 <code>!=</code></td></tr>
-            <tr><td><code>\mp</code></td><td><code>minusplus</code></td><td><code>\equiv</code></td><td><code>equiv</code> 또는 <code>==</code></td></tr>
-            <tr><td><code>\cdot</code></td><td><code>cdot</code></td><td><code>\approx</code></td><td><code>approx</code></td></tr>
-            <tr><td><code>\circ</code></td><td><code>circ</code></td><td><code>\sim</code></td><td><code>sim</code></td></tr>
-            <tr><td><code>\bullet</code></td><td><code>bullet</code></td><td><code>\simeq</code></td><td><code>simeq</code></td></tr>
-            <tr><td><code>\ast</code></td><td><code>ast</code></td><td><code>\cong</code></td><td><code>cong</code></td></tr>
-            <tr><td><code>\star</code></td><td><code>star</code></td><td><code>\propto</code></td><td><code>propto</code></td></tr>
-            <tr><td><code>\oplus</code></td><td><code>oplus</code></td><td><code>\ll</code></td><td><code>&lt;&lt;</code></td></tr>
-            <tr><td><code>\otimes</code></td><td><code>otimes</code></td><td><code>\gg</code></td><td><code>&gt;&gt;</code></td></tr>
-            <tr><td><code>\odot</code></td><td><code>odot</code></td><td><code>\prec</code>, <code>\succ</code></td><td><code>prec</code>, <code>succ</code></td></tr>
-            <tr><td><code>\vee</code>, <code>\lor</code></td><td><code>vee</code></td><td><code>\wedge</code>, <code>\land</code></td><td><code>wedge</code></td></tr>
-            <tr><td><code>\degree</code></td><td><code>DEG</code></td><td><code>\not=</code></td><td><code>not =</code></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+        <section class="panel" id="ops">
+          <h2>연산·관계</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>LaTeX</th><th>한글 수식</th><th>LaTeX</th><th>한글 수식</th></tr></thead>
+              <tbody>
+                <tr><td><code>\times</code></td><td><code>times</code></td><td><code>\leq</code></td><td><code>leq</code></td></tr>
+                <tr><td><code>\div</code></td><td><code>div</code></td><td><code>\geq</code></td><td><code>geq</code></td></tr>
+                <tr><td><code>\pm</code></td><td><code>plusminus</code></td><td><code>\neq</code></td><td><code>neq</code> 또는 <code>!=</code></td></tr>
+                <tr><td><code>\mp</code></td><td><code>minusplus</code></td><td><code>\equiv</code></td><td><code>equiv</code> 또는 <code>==</code></td></tr>
+                <tr><td><code>\cdot</code></td><td><code>cdot</code></td><td><code>\approx</code></td><td><code>approx</code></td></tr>
+                <tr><td><code>\circ</code></td><td><code>circ</code></td><td><code>\sim</code></td><td><code>sim</code></td></tr>
+                <tr><td><code>\bullet</code></td><td><code>bullet</code></td><td><code>\simeq</code></td><td><code>simeq</code></td></tr>
+                <tr><td><code>\ast</code></td><td><code>ast</code></td><td><code>\cong</code></td><td><code>cong</code></td></tr>
+                <tr><td><code>\star</code></td><td><code>star</code></td><td><code>\propto</code></td><td><code>propto</code></td></tr>
+                <tr><td><code>\oplus</code></td><td><code>oplus</code></td><td><code>\ll</code></td><td><code>&lt;&lt;</code></td></tr>
+                <tr><td><code>\otimes</code></td><td><code>otimes</code></td><td><code>\gg</code></td><td><code>&gt;&gt;</code></td></tr>
+                <tr><td><code>\odot</code></td><td><code>odot</code></td><td><code>\prec</code>, <code>\succ</code></td><td><code>prec</code>, <code>succ</code></td></tr>
+                <tr><td><code>\vee</code>, <code>\lor</code></td><td><code>vee</code></td><td><code>\wedge</code>, <code>\land</code></td><td><code>wedge</code></td></tr>
+                <tr><td><code>\degree</code></td><td><code>DEG</code></td><td><code>\not=</code></td><td><code>not =</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-    <section class="panel" id="sets">
-      <h2>집합</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>LaTeX</th><th>한글 수식</th><th>LaTeX</th><th>한글 수식</th></tr></thead>
-          <tbody>
-            <tr><td><code>\cup</code></td><td><code>union</code></td><td><code>\in</code></td><td><code>IN</code></td></tr>
-            <tr><td><code>\cap</code></td><td><code>inter</code></td><td><code>\notin</code></td><td><code>notin</code></td></tr>
-            <tr><td><code>\subset</code></td><td><code>subset</code></td><td><code>\ni</code></td><td><code>owns</code></td></tr>
-            <tr><td><code>\supset</code></td><td><code>supset</code></td><td><code>\emptyset</code></td><td><code>emptyset</code></td></tr>
-            <tr><td><code>\subseteq</code></td><td><code>subseteq</code></td><td><code>\aleph</code></td><td><code>aleph</code></td></tr>
-            <tr><td><code>\supseteq</code></td><td><code>supseteq</code></td><td><code>\uplus</code></td><td><code>uplus</code></td></tr>
-            <tr><td><code>\sqcup</code></td><td><code>sqcup</code></td><td><code>\sqcap</code></td><td><code>sqcap</code></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="muted">첨자 없이 작은 크기로 쓰려면 명령 앞에 <code>SMALL</code>을 붙입니다. 예: <code>A SMALLUNION B</code></p>
-    </section>
+        <section class="panel" id="sets">
+          <h2>집합</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>LaTeX</th><th>한글 수식</th><th>LaTeX</th><th>한글 수식</th></tr></thead>
+              <tbody>
+                <tr><td><code>\cup</code></td><td><code>union</code></td><td><code>\in</code></td><td><code>IN</code></td></tr>
+                <tr><td><code>\cap</code></td><td><code>inter</code></td><td><code>\notin</code></td><td><code>notin</code></td></tr>
+                <tr><td><code>\subset</code></td><td><code>subset</code></td><td><code>\ni</code></td><td><code>owns</code></td></tr>
+                <tr><td><code>\supset</code></td><td><code>supset</code></td><td><code>\emptyset</code></td><td><code>emptyset</code></td></tr>
+                <tr><td><code>\subseteq</code></td><td><code>subseteq</code></td><td><code>\aleph</code></td><td><code>aleph</code></td></tr>
+                <tr><td><code>\supseteq</code></td><td><code>supseteq</code></td><td><code>\uplus</code></td><td><code>uplus</code></td></tr>
+                <tr><td><code>\sqcup</code></td><td><code>sqcup</code></td><td><code>\sqcap</code></td><td><code>sqcap</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="muted">첨자 없이 작은 크기로 쓰려면 명령 앞에 <code>SMALL</code>을 붙입니다. 예: <code>A SMALLUNION B</code></p>
+        </section>
 
-    <section class="panel" id="arrows">
-      <h2>화살표</h2>
-      <p>소문자로 쓰면 가는 화살표, 대문자로 쓰면 겹화살표(⇒)입니다.</p>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>LaTeX</th><th>한글 수식</th><th>LaTeX</th><th>한글 수식</th></tr></thead>
-          <tbody>
-            <tr><td><code>\rightarrow</code>, <code>\to</code></td><td><code>rarrow</code> 또는 <code>-&gt;</code></td><td><code>\Rightarrow</code></td><td><code>RARROW</code></td></tr>
-            <tr><td><code>\leftarrow</code></td><td><code>larrow</code> 또는 <code>&lt;-</code></td><td><code>\Leftarrow</code></td><td><code>LARROW</code></td></tr>
-            <tr><td><code>\leftrightarrow</code></td><td><code>lrarrow</code> 또는 <code>&lt;-&gt;</code></td><td><code>\Leftrightarrow</code></td><td><code>LRARROW</code></td></tr>
-            <tr><td><code>\uparrow</code></td><td><code>uparrow</code></td><td><code>\Uparrow</code></td><td><code>UPARROW</code></td></tr>
-            <tr><td><code>\downarrow</code></td><td><code>downarrow</code></td><td><code>\Downarrow</code></td><td><code>DOWNARROW</code></td></tr>
-            <tr><td><code>\updownarrow</code></td><td><code>udarrow</code></td><td><code>\mapsto</code></td><td><code>mapsto</code></td></tr>
-            <tr><td><code>\nearrow</code></td><td><code>nearrow</code></td><td><code>\nwarrow</code></td><td><code>nwarrow</code></td></tr>
-            <tr><td><code>\searrow</code></td><td><code>searrow</code></td><td><code>\swarrow</code></td><td><code>swarrow</code></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+        <section class="panel" id="arrows">
+          <h2>화살표</h2>
+          <p>소문자로 쓰면 가는 화살표, 대문자로 쓰면 겹화살표(⇒)입니다.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>LaTeX</th><th>한글 수식</th><th>LaTeX</th><th>한글 수식</th></tr></thead>
+              <tbody>
+                <tr><td><code>\rightarrow</code>, <code>\to</code></td><td><code>rarrow</code> 또는 <code>-&gt;</code></td><td><code>\Rightarrow</code></td><td><code>RARROW</code></td></tr>
+                <tr><td><code>\leftarrow</code></td><td><code>larrow</code> 또는 <code>&lt;-</code></td><td><code>\Leftarrow</code></td><td><code>LARROW</code></td></tr>
+                <tr><td><code>\leftrightarrow</code></td><td><code>lrarrow</code> 또는 <code>&lt;-&gt;</code></td><td><code>\Leftrightarrow</code></td><td><code>LRARROW</code></td></tr>
+                <tr><td><code>\uparrow</code></td><td><code>uparrow</code></td><td><code>\Uparrow</code></td><td><code>UPARROW</code></td></tr>
+                <tr><td><code>\downarrow</code></td><td><code>downarrow</code></td><td><code>\Downarrow</code></td><td><code>DOWNARROW</code></td></tr>
+                <tr><td><code>\updownarrow</code></td><td><code>udarrow</code></td><td><code>\mapsto</code></td><td><code>mapsto</code></td></tr>
+                <tr><td><code>\nearrow</code></td><td><code>nearrow</code></td><td><code>\nwarrow</code></td><td><code>nwarrow</code></td></tr>
+                <tr><td><code>\searrow</code></td><td><code>searrow</code></td><td><code>\swarrow</code></td><td><code>swarrow</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-    <section class="panel" id="misc">
-      <h2>기타 기호</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>LaTeX</th><th>한글 수식</th><th>LaTeX</th><th>한글 수식</th></tr></thead>
-          <tbody>
-            <tr><td><code>\partial</code></td><td><code>partial</code></td><td><code>\prime</code></td><td><code>prime</code></td></tr>
-            <tr><td><code>\forall</code></td><td><code>forall</code></td><td><code>\exists</code></td><td><code>exist</code></td></tr>
-            <tr><td><code>\therefore</code></td><td><code>therefore</code></td><td><code>\because</code></td><td><code>because</code></td></tr>
-            <tr><td><code>\cdots</code></td><td><code>cdots</code></td><td><code>\ldots</code></td><td><code>ldots</code></td></tr>
-            <tr><td><code>\vdots</code></td><td><code>vdots</code></td><td><code>\ddots</code></td><td><code>ddots</code></td></tr>
-            <tr><td><code>\angle</code></td><td><code>angle</code></td><td><code>\triangle</code></td><td><code>triangle</code></td></tr>
-            <tr><td><code>\perp</code></td><td><code>bot</code></td><td><code>\top</code></td><td><code>top</code></td></tr>
-            <tr><td><code>\neg</code></td><td><code>lnot</code></td><td><code>\dagger</code></td><td><code>dagger</code></td></tr>
-            <tr><td><code>\ell</code></td><td><code>ELL</code></td><td><code>\AA</code></td><td><code>ANGSTROM</code></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+        <section class="panel" id="misc">
+          <h2>기타 기호</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>LaTeX</th><th>한글 수식</th><th>LaTeX</th><th>한글 수식</th></tr></thead>
+              <tbody>
+                <tr><td><code>\partial</code></td><td><code>partial</code></td><td><code>\prime</code></td><td><code>prime</code></td></tr>
+                <tr><td><code>\forall</code></td><td><code>forall</code></td><td><code>\exists</code></td><td><code>exist</code></td></tr>
+                <tr><td><code>\therefore</code></td><td><code>therefore</code></td><td><code>\because</code></td><td><code>because</code></td></tr>
+                <tr><td><code>\cdots</code></td><td><code>cdots</code></td><td><code>\ldots</code></td><td><code>ldots</code></td></tr>
+                <tr><td><code>\vdots</code></td><td><code>vdots</code></td><td><code>\ddots</code></td><td><code>ddots</code></td></tr>
+                <tr><td><code>\angle</code></td><td><code>angle</code></td><td><code>\triangle</code></td><td><code>triangle</code></td></tr>
+                <tr><td><code>\perp</code></td><td><code>bot</code></td><td><code>\top</code></td><td><code>top</code></td></tr>
+                <tr><td><code>\neg</code></td><td><code>lnot</code></td><td><code>\dagger</code></td><td><code>dagger</code></td></tr>
+                <tr><td><code>\ell</code></td><td><code>ELL</code></td><td><code>\AA</code></td><td><code>ANGSTROM</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-    <section class="panel">
-      <h2>직접 쓰기 어렵다면</h2>
-      <p>이 문법을 외울 필요는 없습니다. LaTeX를 <a href="./">변환기</a>에 붙여넣으면 이 규칙대로 자동으로 바꿔 줍니다. 자주 쓰는 수식은 <a href="examples.html">변환 예시</a>에서 바로 복사할 수 있습니다.</p>
-    </section>
+        <section class="panel">
+          <h2>직접 쓰기 어렵다면</h2>
+          <p>이 문법을 외울 필요는 없습니다. LaTeX를 <a href="./">변환기</a>에 붙여넣으면 이 규칙대로 자동으로 바꿔 줍니다. 자주 쓰는 수식은 <a href="examples">변환 예시</a>에서 바로 복사할 수 있습니다.</p>
+        </section>
+      </main>
+    </div>
 
     <footer class="site-footer">
-      <a href="about.html">소개</a>
-      <a href="terms.html">이용약관</a>
-      <a href="privacy.html">개인정보처리방침</a>
-      <a href="about.html#contact">문의</a>
+      <a href="about">소개</a>
+      <a href="terms">이용약관</a>
+      <a href="privacy">개인정보처리방침</a>
+      <a href="about#contact">문의</a>
       <a href="https://github.com/minigu5/hwip" target="_blank" rel="noopener">GitHub</a>
       <span class="copy">© 2026 휩</span>
     </footer>

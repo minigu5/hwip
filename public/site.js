@@ -26,6 +26,35 @@
     });
   }
 
+  /* 고정 헤더: 스크롤되면 구분선 표시 */
+  var header = document.querySelector('.site-header');
+  if (header) {
+    var onScroll = function () { header.classList.toggle('is-stuck', window.scrollY > 0); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+
+  /* 목차 사이드바: 지금 화면 위쪽에 있는 섹션의 링크를 강조 */
+  var tocLinks = document.querySelectorAll('.side-toc a[href^="#"]');
+  if (tocLinks.length) {
+    var targets = [];
+    tocLinks.forEach(function (a) {
+      var sec = document.getElementById(a.getAttribute('href').slice(1));
+      if (sec) targets.push({ link: a, sec: sec });
+    });
+    var spy = function () {
+      var line = 140;  // 고정 헤더 바로 아래 기준선
+      var current = targets[0];
+      targets.forEach(function (t) { if (t.sec.getBoundingClientRect().top <= line) current = t; });
+      // 맨 아래까지 내리면 마지막 섹션
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) current = targets[targets.length - 1];
+      targets.forEach(function (t) { t.link.classList.toggle('active', t === current); });
+    };
+    window.addEventListener('scroll', spy, { passive: true });
+    window.addEventListener('resize', spy);
+    spy();
+  }
+
   /* 복사 버튼: data-copy-target="#id" 요소의 textContent를 복사 */
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-copy-target]');

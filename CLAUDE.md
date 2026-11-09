@@ -219,6 +219,8 @@ HWP/HWPX 파일을 업로드하면 브라우저 안에서 LaTeX 수식을 한컴
 - 외부 의존성은 최소로. 가능하면 추가하지 않는다.
 - 커밋·푸시는 사용자가 요청할 때만 한다.
 - `src/converter.js` 수정 시 `chrome-extension/lib/converter.js`도 함께 동기화한다.
+- 페이지 간 링크는 확장자 없는 경로(`guide`, `about#contact`)로 건다 — Vercel `cleanUrls`가 `.html`을 308 리디렉션해 이동이 느려지기 때문. 로컬 미리보기는 `npx serve`(cleanUrls 지원)로. 각 페이지의 `speculationrules`가 메뉴 링크를 미리 받아 두고 호버 시 미리 렌더링한다(방문 통계는 실제로 열릴 때만 로드).
+- 안내 페이지 공통 스타일·스크립트(`public/site.css`·`site.js`)는 SW cache-first라 수정 시 `CACHE_VERSION`을 올린다.
 - 앱 쉘 자원(HTML/JS/CSS/벤더/템플릿) 추가·삭제 시 `sw.js`의 `APP_SHELL`과 `CACHE_VERSION`을 함께 갱신.
 - `api/convert.js`는 변환 로직을 직접 구현하지 않고 `src/converter.js`에만 의존한다 — 중복 구현 금지.
 - `src/md-to-hwpx.js`는 `src/converter.js`(`window.LatexToHwp`)에 의존한다. 마크다운 변환 엔진을 수정할 때 이 의존 관계를 깨지 않도록 주의.

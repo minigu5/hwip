@@ -27,10 +27,26 @@
   <script defer
     src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
   <script>
+    /* Vercel 방문 통계: 미리 렌더링(prerender)된 페이지는 실제로 열렸을 때만 집계한다. */
     window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    (function () {
+      function load(src) { var s = document.createElement('script'); s.defer = true; s.src = src; document.head.appendChild(s); }
+      function start() {
+        load('/_vercel/insights/script.js');
+        load('https://cdn.vercel-insights.com/v1/script.js');
+      }
+      if (document.prerendering) document.addEventListener('prerenderingchange', start, { once: true });
+      else start();
+    })();
   </script>
-  <script defer src="/_vercel/insights/script.js"></script>
-  <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
+  <script type="speculationrules">
+    {
+      "prefetch": [{ "source": "document", "where": { "selector_matches": ".site-nav a" }, "eagerness": "immediate" }],
+      "prerender": [{ "source": "document", "where": { "and": [
+        { "href_matches": "/*" }, { "not": { "href_matches": "/api/*" } }, { "not": { "selector_matches": "[aria-current]" } }
+      ] }, "eagerness": "moderate" }]
+    }
+  </script>
   <style>
     /* 브랜드 토큰은 크롬 확장(chrome-extension/store/src/common.css)과 맞춘다. */
     :root {
@@ -102,7 +118,18 @@
     .site-header {
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 20px 0;
+      position: sticky; top: 0; z-index: 50;
+      background: var(--ground);
+      /* 배경을 wrap 폭 밖까지 늘려 스크롤된 본문이 옆으로 비치지 않게 한다 */
+      box-shadow: 0 0 0 100vmax var(--ground);
+      clip-path: inset(0 -100vmax -1px);
     }
+    /* 스크롤되면 아래쪽에 전폭 구분선 */
+    .site-header::after {
+      content: ""; position: absolute; left: -100vmax; right: -100vmax; bottom: -1px; height: 1px;
+      background: var(--line); opacity: 0; transition: opacity 0.15s;
+    }
+    .site-header.is-stuck::after { opacity: 1; }
     .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); }
     .brand img { display: block; width: 36px; height: 36px; }
     .brand-name { font-size: 20px; font-weight: 800; color: var(--blue); }
@@ -583,10 +610,10 @@
       </a>
       <nav class="site-nav" aria-label="사이트 메뉴">
         <a href="./" aria-current="page">변환기</a>
-        <a href="guide.html">사용법</a>
-        <a href="examples.html">예시</a>
-        <a href="syntax.html">문법</a>
-        <a href="about.html">소개</a>
+        <a href="guide">사용법</a>
+        <a href="examples">예시</a>
+        <a href="syntax">문법</a>
+        <a href="about">소개</a>
       </nav>
       <div class="header-actions">
         <a class="btn ghost hide-sm" href="https://github.com/minigu5/hwip" target="_blank" rel="noopener">GitHub</a>
@@ -743,10 +770,10 @@
         <a href="https://github.com/fakeminjun7321/hwpx-latex-to-equation" target="_blank" rel="noopener">hwpx-latex-to-equation</a>,
         <a href="https://github.com/edwardkim/rhwp" target="_blank" rel="noopener">rhwp</a>,
         <a href="https://github.com/minigu5/markdown_to_hwp" target="_blank" rel="noopener">markdown_to_hwp</a></span>
-      <a href="about.html">소개</a>
-      <a href="terms.html">이용약관</a>
-      <a href="privacy.html">개인정보처리방침</a>
-      <a href="about.html#contact">문의</a>
+      <a href="about">소개</a>
+      <a href="terms">이용약관</a>
+      <a href="privacy">개인정보처리방침</a>
+      <a href="about#contact">문의</a>
       <a href="https://github.com/minigu5/hwip" target="_blank" rel="noopener">GitHub</a>
       <span class="copy">© 2026 휩</span>
     </footer>
@@ -902,6 +929,14 @@
         }
       });
     }
+
+    /* 고정 헤더: 스크롤되면 구분선 표시 */
+    (function () {
+      var header = document.querySelector('.site-header');
+      function onScroll() { header.classList.toggle('is-stuck', window.scrollY > 0); }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    })();
 
     /* 오프라인 안내 배너 — 연결 상태에 따라 표시/숨김 */
     (function () {

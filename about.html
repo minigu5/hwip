@@ -26,9 +26,25 @@
     href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="public/site.css" />
   <script>
+    /* Vercel 방문 통계: 미리 렌더링(prerender)된 페이지는 실제로 열렸을 때만 집계한다. */
     window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    (function () {
+      function load(src) { var s = document.createElement('script'); s.defer = true; s.src = src; document.head.appendChild(s); }
+      function start() {
+        load('/_vercel/insights/script.js');
+      }
+      if (document.prerendering) document.addEventListener('prerenderingchange', start, { once: true });
+      else start();
+    })();
   </script>
-  <script defer src="/_vercel/insights/script.js"></script>
+  <script type="speculationrules">
+    {
+      "prefetch": [{ "source": "document", "where": { "selector_matches": ".site-nav a" }, "eagerness": "immediate" }],
+      "prerender": [{ "source": "document", "where": { "and": [
+        { "href_matches": "/*" }, { "not": { "href_matches": "/api/*" } }, { "not": { "selector_matches": "[aria-current]" } }
+      ] }, "eagerness": "moderate" }]
+    }
+  </script>
   <script defer src="public/site.js"></script>
 </head>
 <body>
@@ -41,10 +57,10 @@
       </a>
       <nav class="site-nav" aria-label="사이트 메뉴">
         <a href="./">변환기</a>
-        <a href="guide.html">사용법</a>
-        <a href="examples.html">예시</a>
-        <a href="syntax.html">문법</a>
-        <a href="about.html" aria-current="page">소개</a>
+        <a href="guide">사용법</a>
+        <a href="examples">예시</a>
+        <a href="syntax">문법</a>
+        <a href="about" aria-current="page">소개</a>
       </nav>
       <div class="header-actions">
         <a class="btn ghost hide-sm" href="https://github.com/minigu5/hwip" target="_blank" rel="noopener">GitHub</a>
@@ -82,13 +98,13 @@
         <li><strong>마크다운 → HWPX</strong>: AI 답변 전체를 제목·표·수식이 살아 있는 한글 문서로 만듭니다.</li>
         <li><strong>크롬 확장</strong>: AI 사이트에서 수식에 마우스를 올려 바로 복사합니다.</li>
       </ul>
-      <p>자세한 방법은 <a href="guide.html">사용법</a>에 정리되어 있습니다.</p>
+      <p>자세한 방법은 <a href="guide">사용법</a>에 정리되어 있습니다.</p>
     </section>
 
     <section class="panel">
       <h2>이렇게 만들었습니다</h2>
       <ul>
-        <li><strong>공식 명세 기반</strong>: 변환 규칙은 한글과컴퓨터가 공개한 ‘한글 문서 파일 형식 – 수식(revision 1.2)’ 명세를 기준으로 정리했습니다. 정리한 규칙은 <a href="syntax.html">한글 수식 문법</a>에서 볼 수 있습니다.</li>
+        <li><strong>공식 명세 기반</strong>: 변환 규칙은 한글과컴퓨터가 공개한 ‘한글 문서 파일 형식 – 수식(revision 1.2)’ 명세를 기준으로 정리했습니다. 정리한 규칙은 <a href="syntax">한글 수식 문법</a>에서 볼 수 있습니다.</li>
         <li><strong>브라우저 안에서 처리</strong>: 웹 버전의 수식 변환, 이미지 인식, 문서 변환은 모두 사용자의 브라우저에서 실행됩니다. 입력한 수식, 이미지, 파일이 서버로 올라가지 않습니다.</li>
         <li><strong>회원가입 없음</strong>: 계정 없이 바로 쓸 수 있고, 한 번 접속한 뒤에는 오프라인에서도 대부분의 기능이 동작합니다.</li>
         <li><strong>소스 공개</strong>: 소스 코드는 <a href="https://github.com/minigu5/hwip" target="_blank" rel="noopener">GitHub</a>에 공개되어 있습니다. 비상업적 이용과 출처 표시 조건으로 수정·재배포할 수 있습니다.</li>
@@ -121,10 +137,10 @@
     </section>
 
     <footer class="site-footer">
-      <a href="about.html">소개</a>
-      <a href="terms.html">이용약관</a>
-      <a href="privacy.html">개인정보처리방침</a>
-      <a href="about.html#contact">문의</a>
+      <a href="about">소개</a>
+      <a href="terms">이용약관</a>
+      <a href="privacy">개인정보처리방침</a>
+      <a href="about#contact">문의</a>
       <a href="https://github.com/minigu5/hwip" target="_blank" rel="noopener">GitHub</a>
       <span class="copy">© 2026 휩</span>
     </footer>
