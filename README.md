@@ -2,6 +2,8 @@
 
 **🌐 [hwip.dshs.dev](https://hwip.dshs.dev)** · **🧩 [크롬 확장 프로그램](https://chromewebstore.google.com/detail/meahkfhlalnljlgllhmhmfdhpkknfncg)**
 
+📖 [사용법](https://hwip.dshs.dev/guide) · [변환 예시](https://hwip.dshs.dev/examples) · [한글 수식 문법](https://hwip.dshs.dev/syntax) · [소개·문의](https://hwip.dshs.dev/about)
+
 ChatGPT·Claude·Gemini 같은 AI가 쓴 수식을 한글 문서에 그대로 붙여넣으면 깨집니다. AI는 **LaTeX**로 수식을 쓰고, 한컴오피스 한글은 **자체 수식 편집기 문법**을 쓰기 때문입니다.
 
 휩은 이 둘 사이를 이어 줍니다. LaTeX 수식을 한글 수식 문법으로 바꿔 주고, 결과를 한글 수식 편집기에 붙여넣으면 바로 올바른 수식으로 보입니다.
@@ -17,11 +19,13 @@ ChatGPT·Claude·Gemini 같은 AI가 쓴 수식을 한글 문서에 그대로 �
 
 ### 웹 (권장)
 
-정적 파일이므로 `index.html`을 브라우저로 직접 열거나, GitHub Pages 등 정적 호스팅에 그대로 올릴 수 있습니다.  
-단, 이미지 OCR은 모듈 Web Worker를 사용하므로 정적 서버를 통해 여세요.
+[hwip.dshs.dev](https://hwip.dshs.dev)에서 바로 쓸 수 있습니다. 기능별 자세한 안내는 [사용법](https://hwip.dshs.dev/guide) 페이지에 있습니다.
+
+빌드 과정이 없는 정적 파일이라 정적 호스팅에 그대로 올릴 수 있습니다. 로컬에서는 정적 서버로 여세요.
+페이지 간 링크가 확장자 없는 경로(`/guide`)이고 이미지 OCR이 모듈 Web Worker를 쓰기 때문에, `file://`로 직접 열면 일부 기능이 동작하지 않습니다.
 
 ```bash
-open index.html        # macOS  
+npx serve .            # http://localhost:3000 (확장자 없는 경로 지원)
 ```
 
 ### REST API
@@ -83,8 +87,9 @@ convert('$$\\frac{2\\pi}{24}(t - \\phi_1)$$');
 - **렌더링된 수식 감지 및 해결 안내**: AI 챗봇 화면에서 수식을 평문으로 그냥 복사하면(위/아래 첨자 정보 손실) 이를 자동 감지해 경고 모달을 띄웁니다. **"해결 방안 보기"**를 누르면 3가지 방법(① LaTeX 재요청 프롬프트, ② 이미지 OCR, ③ 크롬 확장 프로그램)을 안내합니다.
 - **Fallback 복구**: ChatGPT·Google AI Studio·Claude의 렌더링 평문 복사 패턴을 분석해 가능한 수준에서 HWP 코드로 복구합니다.
 - **다크 모드**: 우측 상단 토글로 전환합니다(선택은 브라우저에 기억됩니다).
+- **오프라인**: 한 번 접속하면 Service Worker가 앱을 저장해 두어 인터넷 없이도 수식 변환·HWPX 변환이 동작합니다.
 
-### 📄 파일 변환 탭 (HWP / HWPX)
+### 📄 문서 변환 탭 (HWP / HWPX / Markdown)
 
 HWP 또는 HWPX 파일을 업로드하면, 문서 안의 텍스트 LaTeX 수식을 자동으로 찾아 **한컴 수식 개체**(`hp:equation`)로 교체한 뒤 새 HWPX 파일로 내보냅니다. 모든 처리는 브라우저에서 실행되며 파일은 서버로 전송되지 않습니다.
 
@@ -92,9 +97,24 @@ HWP 또는 HWPX 파일을 업로드하면, 문서 안의 텍스트 LaTeX 수식�
 - **HWPX 파일**: ZIP+XML 구조를 JSZip으로 열어 `Contents/section*.xml`의 텍스트 런에서 `$…$`, `$$…$$`, `\(…\)`, `\[…\]` 형태의 LaTeX를 탐지하고, 각각을 `<hp:equation><hp:script>…</hp:script></hp:equation>` 개체로 치환한 뒤 다시 ZIP으로 묶어 내보냅니다.
 - **HWP 파일(이진 포맷)**: 오픈소스 엔진 [rhwp](https://github.com/edwardkim/rhwp)(인터넷 연결 필요)으로 먼저 HWPX로 변환한 뒤, 위와 같은 방식으로 수식을 삽입합니다.
 
+**Markdown → HWPX:** AI 답변을 통째로 붙여넣거나(⌘/Ctrl+V) `.md` 파일을 올리면 글꼴·크기를 고르고 A4 미리보기를 본 뒤 `.hwpx`로 내려받습니다. 제목·목록·표·코드 블록·인용·수식이 한글 서식과 수식 개체로 들어갑니다.
+
 **참고한 오픈소스 프로젝트:**
 - [hwpx-latex-to-equation](https://github.com/fakeminjun7321/hwpx-latex-to-equation) — HWPX ZIP+XML 파싱 및 수식 개체 삽입 구조
 - [rhwp](https://github.com/edwardkim/rhwp) — HWP 이진 파일 파싱 및 HWPX 변환 엔진
+- [markdown_to_hwp](https://github.com/minigu5/markdown_to_hwp) — Markdown → HWPX 변환
+
+### 📖 안내 페이지
+
+| 페이지 | 내용 |
+|--------|------|
+| [사용법](https://hwip.dshs.dev/guide) (`guide.html`) | AI에게 LaTeX 받기부터 한글 수식 편집기에 붙여넣기까지, 기능별 단계 안내와 FAQ |
+| [변환 예시](https://hwip.dshs.dev/examples) (`examples.html`) | 보고서·논문에 자주 쓰는 수식 18개의 LaTeX ↔ 한글 수식 (바로 복사) |
+| [한글 수식 문법](https://hwip.dshs.dev/syntax) (`syntax.html`) | 한글 수식 편집기 문법을 LaTeX와 나란히 정리한 표 |
+| [소개](https://hwip.dshs.dev/about) (`about.html`) | 만든 이유, 만든 사람, 문의처 |
+| [이용약관](https://hwip.dshs.dev/terms) · [개인정보처리방침](https://hwip.dshs.dev/privacy) | |
+
+예시 페이지의 한글 수식은 변환기 출력을 그대로 넣은 것이며, `test/examples-page.test.js`가 변환 로직과 어긋나지 않는지 검사합니다.
 
 ### 🧩 크롬 확장 프로그램
 
@@ -149,6 +169,12 @@ npm test     # 또는: node --test
 - 일부 기호(`\nabla` 등 명세에 이미지로만 있는 항목)는 실제 한글 동작 검증이 필요합니다.
 - 미확인 LaTeX 명령은 임의로 버리지 않고 이름을 보존합니다.
 - 파일 변환 결과는 항상 HWPX 형식으로 출력됩니다. HWP 파일이 필요하다면 한컴 오피스에서 "다른 이름으로 저장"하세요.
+
+---
+
+## 문의
+
+변환이 잘못되는 수식이나 필요한 기능은 [GitHub Issues](https://github.com/minigu5/hwip/issues) 또는 이메일 seong381400@gmail.com 으로 알려 주세요.
 
 ---
 
