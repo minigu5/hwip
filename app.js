@@ -855,9 +855,7 @@
     tabFileBtn.setAttribute('aria-selected', isFile ? 'true' : 'false');
     tabTextPanel.classList.toggle('active', !isFile);
     tabFilePanel.classList.toggle('active', isFile);
-    // 문서 변환은 설정·미리보기 2열이라 페이지 폭을 넓히고, 제목·푸터 문구를 탭에 맞춘다
-    var pageWrap = document.getElementById('pageWrap');
-    if (pageWrap) pageWrap.classList.toggle('wide', isFile);
+    // 페이지 폭은 탭과 무관하게 고정하고, 제목·푸터 문구만 탭에 맞춘다
     [['heroText', !isFile], ['heroFile', isFile], ['footerText', !isFile], ['footerFile', isFile]].forEach(function (p) {
       var el = document.getElementById(p[0]);
       if (el) el.hidden = !p[1];

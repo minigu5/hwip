@@ -112,13 +112,11 @@
     a { color: var(--accent); }
 
     .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px 40px; }
-    .wrap.wide { max-width: 1120px; }
 
     /* ── 헤더 ── */
     .site-header {
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 20px 0;
-      /* 문서 변환 탭(.wrap.wide)에서도 헤더 폭은 다른 페이지와 같게 */
       max-width: 832px; margin: 0 auto;
       position: sticky; top: 0; z-index: 50;
       background: var(--ground);
