@@ -118,6 +118,8 @@
     .site-header {
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 20px 0;
+      /* 문서 변환 탭(.wrap.wide)에서도 헤더 폭은 다른 페이지와 같게 */
+      max-width: 832px; margin: 0 auto;
       position: sticky; top: 0; z-index: 50;
       background: var(--ground);
       /* 배경을 wrap 폭 밖까지 늘려 스크롤된 본문이 옆으로 비치지 않게 한다 */
@@ -126,8 +128,10 @@
     }
     /* 스크롤되면 아래쪽에 전폭 구분선 */
     .site-header::after {
-      content: ""; position: absolute; left: -100vmax; right: -100vmax; bottom: -1px; height: 1px;
-      background: var(--line); opacity: 0; transition: opacity 0.15s;
+      content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+      /* 레이아웃 폭을 넓히면 가로 스크롤이 생기므로 그림자로만 전폭을 칠한다 */
+      background: var(--line); box-shadow: 0 0 0 100vmax var(--line); clip-path: inset(0 -100vmax);
+      opacity: 0; transition: opacity 0.15s;
     }
     .site-header.is-stuck::after { opacity: 1; }
     .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); }

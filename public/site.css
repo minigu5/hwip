@@ -52,12 +52,13 @@ button { font-family: inherit; }
 a { color: var(--accent); }
 
 .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px 40px; }
-.wrap.wide { max-width: 1080px; }
 
 /* ── 헤더 ── */
 .site-header {
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px; padding: 20px 0;
+  /* 본문이 넓은 페이지에서도 헤더 폭은 모든 페이지와 같게 */
+  max-width: 832px; margin: 0 auto;
   position: sticky; top: 0; z-index: 50;
   background: var(--ground);
   /* 배경을 wrap 폭 밖까지 늘려 스크롤된 본문이 옆으로 비치지 않게 한다 */
@@ -66,8 +67,10 @@ a { color: var(--accent); }
 }
 /* 스크롤되면 아래쪽에 전폭 구분선 */
 .site-header::after {
-  content: ""; position: absolute; left: -100vmax; right: -100vmax; bottom: -1px; height: 1px;
-  background: var(--line); opacity: 0; transition: opacity 0.15s;
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+  /* 레이아웃 폭을 넓히면 가로 스크롤이 생기므로 그림자로만 전폭을 칠한다 */
+  background: var(--line); box-shadow: 0 0 0 100vmax var(--line); clip-path: inset(0 -100vmax);
+  opacity: 0; transition: opacity 0.15s;
 }
 .site-header.is-stuck::after { opacity: 1; }
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); flex: none; }
@@ -174,6 +177,10 @@ ol.steps > li::before {
 
 /* 왼쪽 목차 사이드바: 현재 읽는 섹션을 살짝 표시 */
 .doc-layout { display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 32px; align-items: start; }
+/* 넓은 화면: 사이드바를 본문 왼쪽 바깥 여백으로 빼서 본문 폭을 다른 페이지와 맞춘다 */
+@media (min-width: 1290px) {
+  .doc-layout { width: calc(100% + 200px); margin-left: -200px; }
+}
 .side-toc { position: sticky; top: 96px; padding-top: 34px; max-height: calc(100vh - 112px); overflow-y: auto; scrollbar-width: none; }
 .side-toc::-webkit-scrollbar { display: none; }
 .side-toc ul { list-style: none; margin: 0; padding: 0; border-left: 1px solid var(--line); }
