@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>소개 - 휩 LaTeX 한글 수식 변환기</title>
+  <meta name="description" content="휩은 AI가 쓴 LaTeX 수식을 한글(HWP) 수식 편집기 문법으로 바꿔 주는 무료 도구입니다. 만든 이유, 기능, 문의처를 소개합니다." />
+  <link rel="canonical" href="https://hwip.dshs.dev/about" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="휩" />
+  <meta property="og:title" content="소개 - 휩 LaTeX 한글 수식 변환기" />
+  <meta property="og:description" content="휩은 AI가 쓴 LaTeX 수식을 한글(HWP) 수식 편집기 문법으로 바꿔 주는 무료 도구입니다. 만든 이유, 기능, 문의처를 소개합니다." />
+  <meta property="og:url" content="https://hwip.dshs.dev/about" />
+  <link rel="icon" type="image/png" href="public/favicon.png" />
+  <script>
+    /* 저장된 테마를 본문 렌더 전에 적용해 깜빡임(FOUC) 방지. 저장값이 없으면 시스템 테마를 따른다. */
+    (function () {
+      try {
+        var saved = localStorage.getItem('theme');
+        var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (dark) document.documentElement.setAttribute('data-theme', 'dark');
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="public/site.css" />
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
+  <script defer src="public/site.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <header class="site-header">
+      <a class="brand" href="./">
+        <img src="public/logo.svg" alt="" width="36" height="36" />
+        <span class="brand-name">휩</span>
+        <span class="brand-sub">AI to 한글(HWP)</span>
+      </a>
+      <nav class="site-nav" aria-label="사이트 메뉴">
+        <a href="./">변환기</a>
+        <a href="guide.html">사용법</a>
+        <a href="examples.html">예시</a>
+        <a href="syntax.html">문법</a>
+        <a href="about.html" aria-current="page">소개</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn ghost hide-sm" href="https://github.com/minigu5/hwip" target="_blank" rel="noopener">GitHub</a>
+        <button class="btn ghost theme-toggle" id="themeToggle" type="button"
+          aria-pressed="false" aria-label="다크 모드 전환" title="다크 모드 전환">
+          <svg class="ico-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+          <svg class="ico-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
+        <a class="ext-btn" href="https://chromewebstore.google.com/detail/%ED%9C%A9-latex-%E2%86%92-%ED%95%9C%EA%B8%80hwp-%EC%88%98%EC%8B%9D-%EB%B3%B5%EC%82%AC/meahkfhlalnljlgllhmhmfdhpkknfncg"
+          target="_blank" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h3a2 2 0 0 1 2 2v1h3a2 2 0 0 1 2 2v3h-1a2 2 0 1 0 0 4h1v3a2 2 0 0 1-2 2h-3v-1a2 2 0 1 0-4 0v1H6a2 2 0 0 1-2-2v-3h1a2 2 0 1 0 0-4H4V8a2 2 0 0 1 2-2h3V5"/></svg>
+          크롬 확장 설치
+        </a>
+      </div>
+    </header>
+
+
+    <section class="hero">
+      <h1>휩 소개</h1>
+      <p>휩(Hwip)은 AI가 쓴 LaTeX 수식을 한컴오피스 한글(HWP)의 수식 편집기 문법으로 바꿔 주는 무료 도구입니다.</p>
+    </section>
+
+    <section class="panel">
+      <h2>왜 만들었나요</h2>
+      <p>요즘은 연구 보고서나 논문 초안을 쓸 때 AI의 도움을 많이 받습니다. 글은 AI가 금방 정리해 주는데, 막상 한글 문서로 옮기려고 하면 수식에서 시간이 오래 걸렸습니다. AI는 수식을 LaTeX로 쓰고, 한글 수식 편집기는 자기만의 문법을 쓰기 때문에 그대로 붙여넣으면 깨집니다. 결국 분수 하나, 첨자 하나를 수식 편집기에서 다시 입력해야 했습니다.</p>
+      <p>휩은 이 반복 작업을 없애서 보고서를 쓰는 시간을 줄이려고 만들었습니다. 수식을 붙여넣으면 한글 문법으로 바뀌어 복사되고, 답변 전체를 수식이 들어간 한글 문서로 내려받을 수도 있습니다.</p>
+    </section>
+
+    <section class="panel">
+      <h2>할 수 있는 일</h2>
+      <ul>
+        <li><strong>수식 변환</strong>: LaTeX 수식을 한글 수식 문법으로 바꾸고 자동으로 복사합니다.</li>
+        <li><strong>이미지에서 인식</strong>: 수식 캡처 이미지를 읽어 LaTeX로 바꾼 뒤 변환합니다.</li>
+        <li><strong>HWP·HWPX 문서 변환</strong>: 문서 속 LaTeX 글자를 한글 수식 개체로 한 번에 바꿉니다.</li>
+        <li><strong>마크다운 → HWPX</strong>: AI 답변 전체를 제목·표·수식이 살아 있는 한글 문서로 만듭니다.</li>
+        <li><strong>크롬 확장</strong>: AI 사이트에서 수식에 마우스를 올려 바로 복사합니다.</li>
+      </ul>
+      <p>자세한 방법은 <a href="guide.html">사용법</a>에 정리되어 있습니다.</p>
+    </section>
+
+    <section class="panel">
+      <h2>이렇게 만들었습니다</h2>
+      <ul>
+        <li><strong>공식 명세 기반</strong>: 변환 규칙은 한글과컴퓨터가 공개한 ‘한글 문서 파일 형식 – 수식(revision 1.2)’ 명세를 기준으로 정리했습니다. 정리한 규칙은 <a href="syntax.html">한글 수식 문법</a>에서 볼 수 있습니다.</li>
+        <li><strong>브라우저 안에서 처리</strong>: 웹 버전의 수식 변환, 이미지 인식, 문서 변환은 모두 사용자의 브라우저에서 실행됩니다. 입력한 수식, 이미지, 파일이 서버로 올라가지 않습니다.</li>
+        <li><strong>회원가입 없음</strong>: 계정 없이 바로 쓸 수 있고, 한 번 접속한 뒤에는 오프라인에서도 대부분의 기능이 동작합니다.</li>
+        <li><strong>소스 공개</strong>: 소스 코드는 <a href="https://github.com/minigu5/hwip" target="_blank" rel="noopener">GitHub</a>에 공개되어 있습니다. 비상업적 이용과 출처 표시 조건으로 수정·재배포할 수 있습니다.</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>함께 쓴 오픈소스</h2>
+      <ul>
+        <li><a href="https://github.com/fakeminjun7321/hwpx-latex-to-equation" target="_blank" rel="noopener">hwpx-latex-to-equation</a>: HWPX 문서에 수식 개체를 넣는 구조</li>
+        <li><a href="https://github.com/edwardkim/rhwp" target="_blank" rel="noopener">rhwp</a>: HWP 파일을 HWPX로 바꾸는 엔진</li>
+        <li><a href="https://github.com/minigu5/markdown_to_hwp" target="_blank" rel="noopener">markdown_to_hwp</a>: 마크다운 → HWPX 변환</li>
+        <li><a href="https://huggingface.co/alephpi/FormulaNet" target="_blank" rel="noopener">FormulaNet</a>: 수식 이미지 인식 모델</li>
+        <li><a href="https://katex.org" target="_blank" rel="noopener">KaTeX</a>, <a href="https://marked.js.org" target="_blank" rel="noopener">marked</a>, <a href="https://stuk.github.io/jszip/" target="_blank" rel="noopener">JSZip</a>: 수식 미리보기, 마크다운 해석, 문서 압축</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>만든 사람</h2>
+      <p><strong>신민규</strong> · GitHub <a href="https://github.com/minigu5" target="_blank" rel="noopener">minigu5</a></p>
+    </section>
+
+    <section class="panel" id="contact">
+      <h2>문의</h2>
+      <p>변환이 잘못되는 수식, 필요한 기능, 그 밖의 문의는 아래로 보내 주세요. 변환 오류를 알려 주실 때는 입력한 LaTeX와 나온 결과를 함께 적어 주시면 빨리 고칠 수 있습니다.</p>
+      <ul>
+        <li>이메일: <a href="mailto:seong381400@gmail.com">seong381400@gmail.com</a></li>
+        <li>GitHub Issues: <a href="https://github.com/minigu5/hwip/issues" target="_blank" rel="noopener">github.com/minigu5/hwip/issues</a></li>
+      </ul>
+    </section>
+
+    <footer class="site-footer">
+      <a href="about.html">소개</a>
+      <a href="terms.html">이용약관</a>
+      <a href="privacy.html">개인정보처리방침</a>
+      <a href="about.html#contact">문의</a>
+      <a href="https://github.com/minigu5/hwip" target="_blank" rel="noopener">GitHub</a>
+      <span class="copy">© 2026 휩</span>
+    </footer>
+  </div>
+</body>
+</html>

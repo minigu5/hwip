@@ -15,7 +15,7 @@
  * 로직을 고칠 때 CACHE_VERSION을 올리면 사용자 브라우저가 새 셸을 받는다.
  */
 
-var CACHE_VERSION = 'v8-2026-11-02-dark-palette';
+var CACHE_VERSION = 'v9-2026-11-09-info-pages';
 var CACHE_NAME = 'whip-app-shell-' + CACHE_VERSION;
 
 var APP_SHELL = [
@@ -31,6 +31,8 @@ var APP_SHELL = [
   'templates/blank.hwpx',
   'public/favicon.png',
   'public/logo.svg',
+  'public/site.css',
+  'public/site.js',
   'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css',
   'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css',
   'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js',

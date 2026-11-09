@@ -65,6 +65,12 @@ lambda  (t)= lambda  ` _{`0} +A _{1} sin( {2 pi } over {24} (t`-` phi  _{1} ))+A
 ```
 index.html              메인 UI (탭 2개: 텍스트 변환 / 파일 변환)
 privacy.html            개인정보 처리방침 페이지
+guide.html              사용법 (기능별 안내 + FAQ)
+examples.html           변환 예시 — 한글 수식은 converter 출력을 정적으로 박음(test/examples-page.test.js가 동기화 검증)
+syntax.html             한글 수식 문법 정리 (CONVERSION_RULES.md 기반, 미확인 기호 제외)
+about.html              소개·만든 사람·문의(#contact)
+terms.html              이용약관
+robots.txt, sitemap.xml 검색엔진용 (sitemap은 cleanUrls 경로)
 app.js                  UI 이벤트, OCR 흐름, 파일 변환 흐름, 마크다운 붙여넣기 흐름
 sw.js                   Service Worker — 앱 쉘 캐시·오프라인 지원
 api/
@@ -80,6 +86,8 @@ vendor/
   jszip.min.js          JSZip v3.10.1 (hwpx-convert.js·md-to-hwpx.js 의존성, MIT)
 public/
   favicon.png
+  site.css              안내 페이지 공통 스타일 (헤더·푸터·토큰은 index.html과 동일하게 유지)
+  site.js               안내 페이지 공통 스크립트 (테마 토글·복사 버튼·KaTeX 렌더·SW 등록)
   logo.svg              헤더 로고 — chrome-extension/store/icon.svg와 동일해야 함
 test/
   converter.test.js     변환 엔진 골든 테스트
