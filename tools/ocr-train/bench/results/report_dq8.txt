@@ -1,0 +1,142 @@
+| 변형 | 크기 | 보기 일치(전체) | 깔끔 | 저해상도 | 다크 | HWP 출력 일치 | 토큰 오류율 | fp32와 동일 | 추론 ms |
+|---|---|---|---|---|---|---|---|---|---|
+| fp32 | 80MB | 89.4% (279/312) | 94.2% | 82.7% | 91.3% | 51.3% | 0.161 | 100.0% | 445 |
+| w8 | 20MB | 88.8% (277/312) | 93.3% | 81.7% | 91.3% | 51.6% | 0.166 | 95.2% | 615 |
+| dq8 | 21MB | 87.2% (272/312) | 92.3% | 78.8% | 90.4% | 47.8% | 0.309 | 85.6% | 651 |
+
+## fp32 대비 dq8 차이
+- [3:clean] gt: \log_a (xy) = \log_a x + \log_a y
+    fp32(O): \log _ { a } ( x y ) = \log _ { a } { x } + \log _ { a } { y }
+    dq8(O): \log _ { a } ( x y ) = \log _ { a } x + \log _ { a } y
+- [3:dark] gt: \log_a (xy) = \log_a x + \log_a y
+    fp32(O): \log _ { a } ( x y ) = \log _ { a } { x } + \log _ { a } { y }
+    dq8(O): \log _ { a } ( x y ) = \log _ { a } x + \log _ { a } y
+- [12:clean] gt: x_{12}^{34}
+    fp32(O): x _ { 1 2 } ^ { 3 4 }
+    dq8(X): \pmb { x } _ { 1 2 } ^ { 3 4 }
+- [12:small] gt: x_{12}^{34}
+    fp32(X): x _ { 1 7 } ^ { 3 4 }
+    dq8(X): x _ { 1 0 } ^ { 3 4 }
+- [14:clean] gt: S_n = \frac{n(a_1 + a_n)}{2}
+    fp32(O): S _ { n } = { \frac { n { \bigl ( } a _ { 1 } + a _ { n } { \bigr ) } } { 2 } }
+    dq8(O): S _ { n } = { \frac { n ( a _ { 1 } + a _ { n } ) } { 2 } }
+- [18:small] gt: _{n}C_{r} = \frac{n!}{r!(n-r)!}
+    fp32(O): _ { n } C _ { r } = { \frac { n! } { r! ( n - r )! } }
+    dq8(O): _ n C _ { r } = { \frac { n! } { r! ( n - r )! } }
+- [25:small] gt: A \cap B = \emptyset
+    fp32(X): A \cap B = \alpha
+    dq8(X): A \cap B = 0
+- [30:small] gt: \sin^2 \theta + \cos^2 \theta = 1
+    fp32(O): \sin ^ { 2 } \theta + \cos ^ { 2 } \theta = 1
+    dq8(X): \sin ^ { 2 } \theta + \cos ^ { 2 } \theta ~ { = } ~ 1
+- [38:small] gt: \int_a^b f(x) \, dx = F(b) - F(a)
+    fp32(O): \int _ { a } ^ { b } f ( x ) ~ d x = F ( b ) - F ( a )
+    dq8(O): \int _ { \alpha } ^ { b } f ( x ) ~ d x = F ( b ) - F ( a )
+- [40:dark] gt: \frac{d}{dx} e^x = e^x
+    fp32(O): { \frac { d } { d x } } e ^ { x } = e ^ { x }
+    dq8(X): { \frac { d } { d r } } e ^ { x } = e ^ { x }
+- [45:clean] gt: \int e^{-x^2} dx
+    fp32(O): \int \! e ^ { - x ^ { 2 } } d x
+    dq8(O): \int e ^ { - x ^ { 2 } } d x
+- [46:small] gt: \int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
+    fp32(X): \int _ { - \alpha } ^ { \infin } e ^ { - x ^ { 2 } } d x = { \sqrt { \pi } }
+    dq8(O): \int _ { - \infin } ^ { \infin } e ^ { - x ^ { 2 } } d x = { \sqrt { \pi } }
+- [47:dark] gt: \frac{\partial f}{\partial x} + \frac{\partial f}{\partial y}
+    fp32(O): \frac { \partial f } { \partial x } + \frac { \partial f } { \partial y }
+    dq8(O): { \frac { \partial f } { \partial x } } + { \frac { \partial f } { \partial y } }
+- [48:clean] gt: \nabla \cdot \vec{E} = \frac{\rho}{\varepsilon_0}
+    fp32(O): \nabla \cdot \vec { E } = \frac { \rho } { \varepsilon _ { 0 } }
+    dq8(O): \nabla \cdot { \vec { E } } = { \frac { \rho } { \varepsilon _ { 0 } } }
+- [48:dark] gt: \nabla \cdot \vec{E} = \frac{\rho}{\varepsilon_0}
+    fp32(O): \nabla \cdot { \vec { E } } = { \frac { \rho } { \varepsilon _ { 0 } } }
+    dq8(O): \nabla \cdot \vec { E } = \frac { \rho } { \varepsilon _ { 0 } }
+- [49:small] gt: \oint_C \vec{B} \cdot d\vec{l} = \mu_0 I
+    fp32(O): \oint _ { C } { \vec { B } } \cdot d { \vec { l } } = \mu _ { 0 } I
+    dq8(O): \oint _ { C } \vec { B } \cdot d \vec { l } = \mu _ { 0 } I
+- [58:small] gt: P(A|B) = \frac{P(B|A)P(A)}{P(B)}
+    fp32(O): P ( A | B ) = \frac { P ( B | A ) P ( A ) } { P ( B ) }
+    dq8(O): P ( A | B ) = { \frac { P ( B | A ) P ( A ) } { P ( B ) } }
+- [58:dark] gt: P(A|B) = \frac{P(B|A)P(A)}{P(B)}
+    fp32(O): P ( A | B ) = \frac { P ( B | A ) P ( A ) } { P ( B ) }
+    dq8(O): P ( A | B ) = { \frac { P ( B | A ) P ( A ) } { P ( B ) } }
+- [61:small] gt: Z = \frac{X - \mu}{\sigma}
+    fp32(O): Z = { \frac { X - \mu } { \sigma } }
+    dq8(O): Z = \frac { X - \mu } { \sigma }
+- [63:clean] gt: A = \begin{pmatrix} a & b \\ c & d \end{pmatrix}
+    fp32(X): A = { \binom { a } { c } } \quad b
+    dq8(X): A = { \binom { a } { c } } \quad d
+- [63:small] gt: A = \begin{pmatrix} a & b \\ c & d \end{pmatrix}
+    fp32(O): A = \left ( \begin{array} { c c } { a } & { b } \\ { c } & { d } \end{array} \right )
+    dq8(X): A = \left ( \begin{array} { c c } & { b } \\ { c } & { d } \end{array} \right )
+- [63:dark] gt: A = \begin{pmatrix} a & b \\ c & d \end{pmatrix}
+    fp32(X): A = { \binom { a } { c } } \quad d
+    dq8(X): A = { \binom { a } { c } } ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+- [65:clean] gt: A^{-1} = \frac{1}{ad - bc} \begin{pmatrix} d & -b \\ -c & a \end{pmatrix}
+    fp32(X): A ^ { - 1 } = { \frac { 1 } { a d - b c } } { \binom { d } { - b } { - c } } ~ ~ a
+    dq8(X): A ^ { - 1 } = { \frac { 1 } { a d - b c } } { \binom { d } { - b } { - c } } ~ a ~
+- [66:dark] gt: \begin{cases} 2x + y = 5 \\ x - y = 1 \end{cases}
+    fp32(X): \left \{ { 2 x + y = 5 } \right.
+    dq8(O): \left \{ \begin{array} { l } { 2 x + y = 5 } \\ { x - y = 1 } \end{array} \right.
+- [69:clean] gt: \begin{bmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \end{bmatrix}
+    fp32(O): \left [ \begin{array} { l l l } { 1 } & { 0 } & { 0 } \\ { 0 } & { 1 } & { 0 } \\ { 0 } & { 0 } & { 1 } \end{array} \right ]
+    dq8(O): \begin{array} { c c c } { \left [ \begin{array} { c c c } { 1 } & { 0 } & { 0 } \\ { 0 } & { 1 } & { 0 } \\ { 0 } & { 0 } & { 1 } \end{array} \right ] } \end{array}
+- [71:small] gt: \| \mathbf{v} \| = \sqrt{v_1^2 + v_2^2 + v_3^2}
+    fp32(O): \| \mathbf { v } \| = { \sqrt { v _ { 1 } ^ { 2 } + v _ { 2 } ^ { 2 } + v _ { 3 } ^ { 2 } } }
+    dq8(O): \| \mathbf { v } \| = \sqrt { v _ { 1 } ^ { 2 } + v _ { 2 } ^ { 2 } + v _ { 3 } ^ { 2 } }
+- [75:clean] gt: v = v_0 + at
+    fp32(O): v = v _ { 0 } + a t
+    dq8(X): { \pmb v } = { \pmb v } _ { 0 } + a t
+- [80:small] gt: T = 2\pi \sqrt{\frac{l}{g}}
+    fp32(X): T = 2 \pi { \sqrt { \frac { 1 } { g } } }
+    dq8(X): T = 2 \pi \sqrt { \frac { 1 } { g } }
+- [81:clean] gt: \lambda = \frac{h}{p}
+    fp32(O): \lambda = \frac { h } { p }
+    dq8(O): \lambda = { \frac { h } { p } }
+- [83:clean] gt: i\hbar \frac{\partial}{\partial t} \Psi = \hat{H} \Psi
+    fp32(O): i \hbar \frac { \partial } { \partial t } \Psi = \hat { H } \Psi
+    dq8(O): i \hbar { \frac { \partial } { \partial t } } \Psi = { \hat { H } } \Psi
+- [83:dark] gt: i\hbar \frac{\partial}{\partial t} \Psi = \hat{H} \Psi
+    fp32(O): i \hbar \frac { \partial } { \partial t } \Psi = \hat { H } \Psi
+    dq8(O): i \hbar { \frac { \partial } { \partial t } } \Psi = { \hat { H } } \Psi
+- [86:clean] gt: \tau = r \times F
+    fp32(O): \tau = r \times F
+    dq8(X): \boldsymbol { \tau } = \boldsymbol { r } \times \boldsymbol { F }
+- [86:small] gt: \tau = r \times F
+    fp32(O): \tau = r \times F
+    dq8(X): \boldsymbol { \tau } = \boldsymbol { r } \times \boldsymbol { F }
+- [88:small] gt: \omega = 2\pi f
+    fp32(O): \omega = 2 \pi f
+    dq8(X): \omega = 2 \pi t
+- [89:small] gt: \lambda(t) = \lambda_0 + A_1 \sin\left(\frac{2\pi}{24}(t - \phi_1)\right)
+    fp32(O): \lambda ( t ) = \lambda _ { 0 } + A _ { 1 } \sin \left ( { \frac { 2 \pi } { 2 4 } } ( t - \phi _ { 1 } ) \right )
+    dq8(O): \lambda ( t ) = \lambda _ { 0 } + A _ { 1 } \sin \left ( { \frac { 2 \pi } { 2 4 } } { \big ( } t - \phi _ { 1 } { \big ) } \right )
+- [90:small] gt: k = A e^{-\frac{E_a}{RT}}
+    fp32(X): k = A e ^ { - { \frac { E _ { n } } { N 7 } } }
+    dq8(X): k = A e ^ { - { \frac { E _ { 0 } } { N 7 } } }
+- [93:small] gt: \prod_{i=1}^{n} x_i
+    fp32(O): \prod _ { i = 1 } ^ { n } x,
+    dq8(X): \prod _ { i } ^ { n } x,
+- [93:dark] gt: \prod_{i=1}^{n} x_i
+    fp32(O): \prod _ { i = 1 } ^ { n } x _ { i }
+    dq8(O): \prod _ { i = 1 } ^ { n } x _ { * }
+- [97:clean] gt: \left[ \frac{x}{2} \right]
+    fp32(X): [ { \frac { x } { 2 } } ]
+    dq8(O): \left [ { \frac { x } { 2 } } \right ]
+- [97:dark] gt: \left[ \frac{x}{2} \right]
+    fp32(O): \left [ \frac { x } { 2 } \right ]
+    dq8(X): | \frac { x } { 2 }
+- [98:dark] gt: \overline{AB} = 5
+    fp32(O): \overline { A B } = 5
+    dq8(O): { \overline { A B } } = 5
+- [100:clean] gt: \triangle ABC \sim \triangle DEF
+    fp32(X): { A B C } \sim { D E F }
+    dq8(X): { \big. } { \big. } { \big. } { \big. } { \big. } { A } { B } { C } { \big. } { \big. } { C } { B } { E } { F }
+- [102:dark] gt: \sqrt{\frac{a}{b}} = \frac{\sqrt{a}}{\sqrt{b}}
+    fp32(O): { \sqrt { \frac { a } { b } } } = { \frac { { \sqrt { a } } } { { \sqrt { b } } } }
+    dq8(O): { \sqrt { \frac { a } { b } } } = { \frac { { \sqrt { a } } } { \sqrt { b } } }
+- [103:small] gt: \frac{1}{1 + \frac{1}{x}}
+    fp32(X): \frac { 1 } { 1 + \frac { 1 } { \pi } }
+    dq8(X): \frac { 1 } { 1 + \frac { 1 } { 2 } }
+- [103:dark] gt: \frac{1}{1 + \frac{1}{x}}
+    fp32(X): \frac { 1 } { 1 + \frac { 1 } { \pi } }
+    dq8(X): \frac { 1 } { 1 + { \frac { 1 } { \pi } } }

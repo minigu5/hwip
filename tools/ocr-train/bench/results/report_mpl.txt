@@ -1,0 +1,99 @@
+| 변형 | 크기 | 보기 일치(전체) | (미사용) | | | HWP 출력 일치 | 토큰 오류율 | fp32와 동일 | 추론 ms |
+|---|---|---|---|---|---|---|---|---|---|
+| fp32 | 80MB | 64.8% (127/196) | 0.0% | 0.0% | 0.0% | 39.3% | 0.206 | 100.0% | 426 |
+| w8 | 20MB | 66.8% (131/196) | 0.0% | 0.0% | 0.0% | 39.8% | 0.210 | 84.2% | 612 |
+
+## fp32 대비 w8 차이
+- [10:mpl_stix] gt: f(x) = 2x^3 - 5x + 7
+    fp32(X): f ( x ) ~ { = } ~ 2 x ^ { 3 } - 5 x + 7
+    w8(X): f \! ( x ) ~ { = } ~ 2 x ^ { 3 } - 5 x + 7
+- [17:mpl_stix] gt: \sum_{k=1}^{n} k^2 = \frac{n(n+1)(2n+1)}{6}
+    fp32(X): \sum _ { k ~ = ~ 1 } ^ { n } k ^ { ~ 2 } ~ { = ~ } ~ { \frac { n ( n + 1 ) ( 2 n + 1 ) } { 6 } }
+    w8(O): \sum _ { k ~ = ~ 1 } ^ { n } k ^ { ~ 2 } = ~ { \frac { n ( n + 1 ) ( 2 n + 1 ) } { 6 } }
+- [18:mpl_stix] gt: _{n}C_{r} = \frac{n!}{r!(n-r)!}
+    fp32(X): \begin{array} { r } { _ { n } C _ { r } { = } ~ { \frac { n! } { r! ~ ( n - r )! } } } \end{array}
+    w8(X): \begin{array} { r } { _ { n } C _ { r } = \frac { n! } { r! ~ ( n - r )! } } \end{array}
+- [26:mpl_cm] gt: x \in \mathbb{R}
+    fp32(X): x \in / / /
+    w8(X): x \in { \mathit { i R } }
+- [26:mpl_stix] gt: x \in \mathbb{R}
+    fp32(X): x \in D R
+    w8(X): x \in { \mathit { i n } }
+- [35:mpl_cm] gt: c^2 = a^2 + b^2 - 2ab\cos C
+    fp32(X): c ^ { 2 } ~ { = } ~ a ^ { 2 } + b ~ ^ { 2 } - 2 a b { \cos C }
+    w8(X): c ^ { 2 } = a ^ { 2 } + b ^ { 2 } - 2 a b { \cos C }
+- [35:mpl_stix] gt: c^2 = a^2 + b^2 - 2ab\cos C
+    fp32(X): c ^ { 2 } ~ { = } ~ a ^ { 2 } + b ^ { 2 } - 2 a b { \cos C }
+    w8(X): c ^ { 2 } ~ { = } ~ a ^ { 2 } + b ^ { 2 } - 2 a b { \cos { C } }
+- [36:mpl_cm] gt: f'(x) = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h}
+    fp32(O): f ^ { \prime } ( x ) = \operatorname* { l i m } _ { h \rarr 0 } { \frac { f \! \! \! ( x + h ) - f \! \! \! ( x ) } { h } }
+    w8(O): f ^ { \prime } ( x ) = \operatorname* { l i m } _ { h \rarr 0 } { \frac { f \! \! ( x + h ) - f \! \! ( x ) } { h } }
+- [36:mpl_stix] gt: f'(x) = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h}
+    fp32(O): f ^ { \prime } ( x ) \! = \! \operatorname* { l i m } _ { h \rarr 0 } { \frac { f \! \! ( x + h ) - f \! \! ( x ) } { h } }
+    w8(O): f ^ { \prime } ( x ) \! = \! \operatorname* { l i m } _ { h \rarr 0 } { \frac { f \! \! ( x + h ) \! - f \! \! ( x ) } { h } }
+- [38:mpl_cm] gt: \int_a^b f(x) \, dx = F(b) - F(a)
+    fp32(O): \int _ { a } ^ { b } \! f ( x ) ~ d x = F \! \! ( b ) - F \! \! ( a )
+    w8(O): \int _ { a } ^ { b } \! f ( x ) ~ d x = F \! ( b ) - F \! ( a )
+- [38:mpl_stix] gt: \int_a^b f(x) \, dx = F(b) - F(a)
+    fp32(X): \int _ { a } ^ { b } \! f \! ( x ) ~ d x ~ { = } ~ F ( b ) - F ( a )
+    w8(O): { \int _ { a } ^ { b } \! \! f \! ( x ) ~ d x \! = \! F ( b ) - F ( a ) }
+- [41:mpl_cm] gt: \frac{d}{dx} \ln x = \frac{1}{x}
+    fp32(X): \begin{array} { r } { \frac { d } { d x } \mathrm { l n } ~ x = \frac { 1 } { x } } \end{array}
+    w8(X): \begin{array} { r } { \frac { d } { d x } \ln x = \frac { 1 } { x } } \end{array}
+- [46:mpl_cm] gt: \int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
+    fp32(X): { \int _ { - \infin } ^ { \infin } } e ^ { - x ^ { 2 } } d x = \sqrt { \pi }
+    w8(O): \int _ { - \infin } ^ { \infin } \! e ^ { - x ^ { 2 } } d x = \sqrt { \pi }
+- [47:mpl_stix] gt: \frac{\partial f}{\partial x} + \frac{\partial f}{\partial y}
+    fp32(O): \frac { \partial f } { \partial x } + \frac { \partial f } { \partial y }
+    w8(X): \begin{array} { r } { \frac { \partial f } { \partial x } + \frac { \partial f } { \partial y } } \end{array}
+- [48:mpl_cm] gt: \nabla \cdot \vec{E} = \frac{\rho}{\varepsilon_0}
+    fp32(X): \begin{array} { r } { \nabla \cdot \vec { E } \! = \frac { \rho } { \varepsilon _ { 0 } } } \end{array}
+    w8(X): \begin{array} { r } { \nabla \cdot \vec { E } \! = \! \frac { \rho } { \varepsilon _ { 0 } } } \end{array}
+- [49:mpl_stix] gt: \oint_C \vec{B} \cdot d\vec{l} = \mu_0 I
+    fp32(O): \oint _ { C } \! \vec { B } \cdot d \vec { l } \! = \! \mu _ { 0 } I
+    w8(O): \oint _ { C } \! \vec { B } \cdot \vec { d l } \! = \! \mu _ { 0 } I
+- [56:mpl_stix] gt: f(x) = \frac{1}{\sigma \sqrt{2\pi}} e^{-\frac{(x-\mu)^2}{2\sigma^2}}
+    fp32(X): \begin{array} { r } { f ( x ) ~ { = } ~ \frac { 1 } { \sigma \sqrt { 2 \pi } } e ^ { - \frac { ( x ~ { - } ~ { \mu } ) ^ { 2 } } { 2 { \sigma } ^ { 2 } } } } \end{array}
+    w8(X): \begin{array} { r } { f ( x ) ~ { = } ~ \frac { 1 } { \sigma \sqrt { 2 \pi } } e ^ { - \frac { ( x ~ { - } ~ { \mu } ) ^ { 2 } } { 2 \sigma ^ { 2 } } } } \end{array}
+- [58:mpl_cm] gt: P(A|B) = \frac{P(B|A)P(A)}{P(B)}
+    fp32(X): \begin{array} { r } { P \! \left ( A | B \right ) = \frac { P \! \left ( B | A \right ) P \! \left ( A \right ) } { P \! \left ( B \right ) } } \end{array}
+    w8(X): \begin{array} { r } { P \! ( A | B ) = \frac { P \! ( B | A ) P \! ( A ) } { P \! ( B ) } } \end{array}
+- [59:mpl_stix] gt: E(X) = \sum_{i} x_i p_i
+    fp32(X): E ( X ) \! = { \sum _ { i } } \! x _ { i } p _ { i }
+    w8(O): E ( X ) \! = \! \sum _ { i } \! x _ { i } p _ { i }
+- [60:mpl_cm] gt: V(X) = E(X^2) - \{E(X)\}^2
+    fp32(X): V \! ( X ) = E \! ( X ^ { 2 } ) - \left \{ E ( X ) \right \} ^ { 2 }
+    w8(X): V \! ( X ) = E ( X ^ { 2 } ) - \left \{ E ( X ) \right \} ^ { 2 }
+- [62:mpl_stix] gt: P(X = k) = \binom{n}{k} p^k (1-p)^{n-k}
+    fp32(O): P ( X \! = \! k ) \! = { \binom { n } { k } } p ^ { k } ( 1 - p ) ^ { n \! - \! k }
+    w8(O): P ( X \! = \! k ) \! = { \binom { n } { k } } p ^ { k } ( 1 - p ) ^ { n ~ - ~ k }
+- [68:mpl_stix] gt: \vec{a} \cdot \vec{b} = |\vec{a}| |\vec{b}| \cos\theta
+    fp32(X): { \vec { a } } \cdot { \vec { b } } ~ { = } ~ | { \vec { a } } | | { \vec { b } } | { \cos \theta }
+    w8(X): { \vec { a } } \cdot { \vec { b } } ~ { = } ~ | { \vec { a } } | | { \vec { b } } | \cos \theta
+- [76:mpl_cm] gt: s = v_0 t + \frac{1}{2} a t^2
+    fp32(O): s = v _ { 0 } t + { \frac { 1 } { 2 } } a t ^ { 2 }
+    w8(X): \begin{array} { r } { s = v _ { 0 } t + \frac { 1 } { 2 } a t ^ { 2 } } \end{array}
+- [80:mpl_stix] gt: T = 2\pi \sqrt{\frac{l}{g}}
+    fp32(X): \begin{array} { r } { T \! = \! 2 \pi \sqrt { \frac { l } { g } } } \end{array}
+    w8(X): \begin{array} { r } { T \! = \! 2 \pi { \sqrt { \frac { l } { g } } } } \end{array}
+- [86:mpl_stix] gt: \tau = r \times F
+    fp32(X): { \boldsymbol { \tau } } ~ = ~ { \boldsymbol { r } } \times { \boldsymbol { F } }
+    w8(X): \boldsymbol { \tau } ~ = \boldsymbol { r } \times \boldsymbol { F }
+- [87:mpl_stix] gt: p = mv
+    fp32(X): p = m \nu
+    w8(X): p \! = \! m \nu
+- [90:mpl_cm] gt: k = A e^{-\frac{E_a}{RT}}
+    fp32(X): k = A e ^ { - \frac { E _ { \mathrm { a } } } { R T } }
+    w8(O): k = A e ^ { - \frac { E _ { a } } { R T } }
+- [91:mpl_cm] gt: pH = -\log [H^+]
+    fp32(O): p H \! = - \log [ H ^ { ~ + ~ } ]
+    w8(O): p H \! = - \log [ H ^ { + } ]
+- [93:mpl_cm] gt: \prod_{i=1}^{n} x_i
+    fp32(X): \prod _ { i = 0 } ^ { n } x _ { i }
+    w8(O): \prod _ { i = 1 } ^ { n } x _ { i }
+- [96:mpl_cm] gt: f: X \rightarrow Y
+    fp32(X): f \colon X \rarr Y
+    w8(X): f \colon X \! \rarr Y
+- [100:mpl_cm] gt: \triangle ABC \sim \triangle DEF
+    fp32(O): \triangle A B C \! \sim ~ \triangle D E F
+    w8(O): \triangle A B C \! \sim \triangle D E F

@@ -1,0 +1,48 @@
+<!doctype html><meta charset="utf-8"><title>rescore</title><body><pre id="log"></pre>
+<script>window.MathJax = { svg: { fontCache: 'none' }, startup: { typeset: false } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg-full.js"></script>
+<script type="module">
+await MathJax.startup.promise;
+// KaTeX 별칭·공백 명령 정규화 (채점용 — 보기 차이 없는 표기 차이는 무시)
+const ALIAS = { rarr: 'rightarrow', larr: 'leftarrow', Rarr: 'Rightarrow', Larr: 'Leftarrow', lrarr: 'leftrightarrow',
+  infin: 'infty', empty: 'emptyset', isin: 'in', sub: 'subset', sube: 'subseteq', real: 'Re', image: 'Im', plusmn: 'pm' };
+function norm(t) {
+  return t
+    .replace(/\\operatorname\*?\s*\{([^}]*)\}/g, (_, n) => { n = n.replace(/\s+/g, ''); return /^(lim|max|min|sup|inf|det|log|ln|sin|cos|tan)$/.test(n) ? '\\' + n : '\\operatorname{' + n + '}'; })
+    .replace(/\\([A-Za-z]+)/g, (m, n) => ALIAS[n] ? '\\' + ALIAS[n] : m)
+    .replace(/\\[bB]ig{1,2}[lr]?\s*/g, '')
+    .replace(/~|\\[,;:! ]|\\q?quad/g, ' ');
+}
+function svgOf(tex) {
+  const svg = MathJax.tex2svg(tex, { display: true }).querySelector('svg');
+  if (!svg || svg.querySelector('[data-mjx-error], merror')) return null;
+  return svg;
+}
+async function raster(tex) {
+  const svg = svgOf(tex); if (!svg) return null;
+  const ex = 10, w = parseFloat(svg.getAttribute('width')) * ex, h = parseFloat(svg.getAttribute('height')) * ex;
+  svg.setAttribute('width', w); svg.setAttribute('height', h);
+  const xml = new XMLSerializer().serializeToString(svg).replace(/currentColor/g, '#000');
+  const img = new Image(); img.src = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml' })); await img.decode();
+  const c = document.createElement('canvas'); c.width = Math.ceil(w) + 4; c.height = Math.ceil(h) + 4;
+  const x = c.getContext('2d', { willReadFrequently: true }); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 2, 2, w, h);
+  return c;
+}
+const cache = new Map();
+async function rast(t) { if (!cache.has(t)) cache.set(t, await raster(norm(t))); return cache.get(t); }
+async function same(a, b) {
+  const ca = await rast(a), cb = await rast(b);
+  if (!ca || !cb) return false;
+  if (Math.abs(ca.width - cb.width) > 3 || Math.abs(ca.height - cb.height) > 3) return false;
+  const W = Math.min(ca.width, cb.width), H = Math.min(ca.height, cb.height);
+  const da = ca.getContext('2d').getImageData(0, 0, W, H).data, db = cb.getContext('2d').getImageData(0, 0, W, H).data;
+  let ink = 0, diff = 0;
+  for (let i = 0; i < da.length; i += 4) { const pa = da[i] < 128, pb = db[i] < 128; if (pa || pb) ink++; if (pa !== pb) diff++; }
+  return ink > 0 && diff / ink < 0.06;
+}
+const rows = (await (await fetch('/' + (new URLSearchParams(location.search).get('f') || 'full.jsonl'))).text()).trim().split('\n').map(l => JSON.parse(l)).filter(r => r.type === 'pred');
+const out = [];
+for (const r of rows) out.push({ v: r.v, id: r.id, vis2: await same(r.pred, r.gt) });
+await fetch('/log', { method: 'POST', body: JSON.stringify(out) });
+document.getElementById('log').textContent = 'RESCORED ' + out.length;
+</script>
