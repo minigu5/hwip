@@ -71,6 +71,9 @@
     // Shorthand (common in AI outputs)
     larr: 'larrow', rarr: 'rarrow', uarr: 'uparrow', darr: 'downarrow', harr: 'lrarrow',
     Larr: 'LARROW', Rarr: 'RARROW', Uarr: 'UPARROW', Darr: 'DOWNARROW', Harr: 'LRARROW',
+    lrarr: 'lrarrow', Lrarr: 'LRARROW', lArr: 'LARROW', rArr: 'RARROW', lrArr: 'LRARROW', hArr: 'LRARROW',
+    // KaTeX 별칭 (수식 OCR 모델도 이 이름으로 출력한다)
+    infin: 'inf', empty: 'emptyset', colon: ':',
     // 논리 함의 (amsmath) — \Rightarrow 등과 같은 화살표
     implies: 'RARROW', impliedby: 'LARROW', iff: 'LRARROW',
     // 증명 종료 기호·정의 등호 — 한글 수식 명세에 키워드가 없어 유니코드 글자 그대로 쓴다
@@ -184,7 +187,8 @@
 
   // {..} 안에 LaTeX cmd 토큰이 없으면 원문 텍스트 반환, 있으면 null (기존 readArg로 폴백).
   // \text{liquid}, \mathrm{eq} 등에서 "liquid", "eq" 같은 HWP 텍스트 모드 출력에 쓴다.
-  function tryReadRawText(tokens, pos) {
+  // mathMode: \mathrm 처럼 수식 모드 글꼴이면 글자 사이 공백(보이지 않음)은 버린다.
+  function tryReadRawText(tokens, pos, mathMode) {
     skipSpaces(tokens, pos);
     var saved = pos.i;
     var t = peek(tokens, pos);
@@ -199,6 +203,7 @@
     while (pos.i < tokens.length) {
       var tok = tokens[pos.i];
       if (tok.type === 'ctrl' && tok.value === '}') { pos.i++; break; }
+      if (mathMode && tok.type === 'space') { pos.i++; continue; }
       if (tok.type === 'cmd') {
         if (tok.value === ',' || tok.value === ';' || tok.value === ' ' || tok.value === '!') {
           pieces.push(' ');
@@ -508,7 +513,11 @@
 
     // 로만/볼드/기타 폰트
     if (name === 'mathrm' || name === 'text' || name === 'textrm' || name === 'operatorname') {
-      var rawT = tryReadRawText(tokens, pos);
+      if (name === 'operatorname' && peek(tokens, pos) && peek(tokens, pos).value === '*') pos.i++;
+      var mathFont = name === 'mathrm' || name === 'operatorname';
+      var rawT = tryReadRawText(tokens, pos, mathFont);
+      // \mathrm{s i n}(OCR 출력) → 공백이 빠져 'sin' — 함수 이름이면 함수로
+      if (mathFont && rawT !== null && FUNCTIONS.has(rawT)) return { text: rawT, keyword: true };
       if (rawT !== null) return { text: '"' + rawT + '"', keyword: true };
       return { text: readArg(tokens, pos), keyword: true };
     }
@@ -636,7 +645,194 @@
     return cleanup(out);
   }
 
-  var api = { convert: convert };
+  // ── 수식 OCR 출력 정리 ─────────────────────────────────────────
+  // 이미지 인식 모델(FormulaNet)은 UniMER 학습 라벨 규약대로 `a _ { n } ~ { = } ~ 1`
+  // 처럼 토큰을 공백으로 띄우고, 화면상의 간격을 `~`·`\!`로, 행렬·cases를
+  // `\left ( \begin{array}`로 적는다. 사람이 읽고 고치기 쉬운 표준 LaTeX로 바꾼다.
+
+  var OCR_ALIAS = {
+    '\\infin': '\\infty', '\\empty': '\\emptyset', '\\cfrac': '\\frac',
+    '\\rarr': '\\rightarrow', '\\larr': '\\leftarrow', '\\lrarr': '\\leftrightarrow', '\\harr': '\\leftrightarrow',
+    '\\Rarr': '\\Rightarrow', '\\Larr': '\\Leftarrow', '\\Lrarr': '\\Leftrightarrow', '\\Harr': '\\Leftrightarrow',
+    '\\rArr': '\\Rightarrow', '\\lArr': '\\Leftarrow', '\\lrArr': '\\Leftrightarrow', '\\hArr': '\\Leftrightarrow',
+    '\\uarr': '\\uparrow', '\\darr': '\\downarrow'
+  };
+  // 혼자 {}에 싸이면 간격이 사라지는 연산·관계 기호 (`{ = }` → `=`)
+  var OCR_BARE_OPS = new Set(['=', '+', '-', '<', '>', ',', '\\sim', '\\neq', '\\leq', '\\geq', '\\approx',
+    '\\equiv', '\\cdot', '\\times', '\\pm', '\\mp', '\\to', '\\rightarrow', '\\in', '\\subset', '\\cup', '\\cap']);
+  // `{ \frac … }`처럼 통째로 감싼 그룹을 벗겨도 되는 구조 명령
+  var OCR_UNIT_CMDS = new Set(['\\frac', '\\dfrac', '\\tfrac', '\\sqrt', '\\binom', '\\sum', '\\prod', '\\int',
+    '\\iint', '\\oint', '\\lim', '\\bigcup', '\\bigcap', '\\bar', '\\hat', '\\tilde', '\\vec', '\\dot', '\\ddot',
+    '\\overline', '\\mathrm', '\\operatorname']);
+  var OCR_TEXT_CMDS = new Set(['\\text', '\\mbox', '\\textrm', '\\textit', '\\textbf']);
+  var OCR_MATRIX = { '(|)': 'pmatrix', '[|]': 'bmatrix', '|||': 'vmatrix', '\\||\\|': 'Vmatrix', '\\{|\\}': 'Bmatrix' };
+
+  function ocrParse(toks, pos) {
+    var out = [];
+    while (pos.i < toks.length) {
+      var t = toks[pos.i++];
+      if (t === '{') out.push({ g: ocrParse(toks, pos) });
+      else if (t === '}') return out;
+      else out.push(t);
+    }
+    return out;
+  }
+
+  function isGroup(x) { return x !== null && typeof x === 'object'; }
+
+  // 그룹 안에서 &·\\ 기준으로 칸을 나눴을 때 칸이 { … } 하나뿐이면 벗긴다
+  function unwrapCells(items) {
+    var out = [];
+    for (var i = 0; i < items.length; i++) {
+      var x = items[i];
+      var cellStart = i === 0 || items[i - 1] === '&' || items[i - 1] === '\\\\';
+      var cellEnd = i === items.length - 1 || items[i + 1] === '&' || items[i + 1] === '\\\\';
+      if (isGroup(x) && cellStart && cellEnd) out.push.apply(out, x.g);
+      else out.push(x);
+    }
+    return out;
+  }
+
+  // 구조 명령 하나(인자·[]옵션·첨자 포함)로만 이뤄졌는지
+  function isUnit(items) {
+    if (!items.length || typeof items[0] !== 'string' || !OCR_UNIT_CMDS.has(items[0])) return false;
+    var inOpt = false;
+    for (var i = 1; i < items.length; i++) {
+      var x = items[i];
+      if (x === '[') inOpt = true;
+      else if (x === ']') inOpt = false;
+      else if (!inOpt && !isGroup(x) && x !== '_' && x !== '^' && x !== '*' &&
+               items[i - 1] !== '_' && items[i - 1] !== '^') return false;
+    }
+    return true;
+  }
+
+  var OCR_ARITY = { '\\frac': 2, '\\dfrac': 2, '\\tfrac': 2, '\\binom': 2, '\\sqrt': 1, '\\bar': 1, '\\hat': 1,
+    '\\tilde': 1, '\\vec': 1, '\\dot': 1, '\\ddot': 1, '\\overline': 1, '\\mathrm': 1, '\\mathbf': 1,
+    '\\boldsymbol': 1, '\\operatorname': 1, '\\text': 1, '\\mbox': 1 };
+
+  var OCR_ARG_CMDS = /^\\(operatorname\*?|stackrel|overset|underset|x[a-zA-Z]*arrow|math[a-z]+|text[a-z]*|wide[a-z]+|over[a-z]+|under[a-z]+|color|textcolor|cancel|boxed|phantom|pmod|begin|end)$/;
+
+  // 그룹을 벗겨도 앞 명령의 인자가 바뀌지 않는 자리인지 (`=`, `(`, 글자, 끝난 첨자·분수 뒤 등)
+  function isFreeSlot(res) {
+    var n = res.length;
+    if (!n) return true;
+    var prev = res[n - 1];
+    if (isGroup(prev)) {
+      var k = 0;
+      while (k < n && isGroup(res[n - 1 - k])) k++;
+      var head = res[n - 1 - k];
+      if (k === 1 && (head === '_' || head === '^')) return true;
+      if (head === ']') { // \sqrt[3]{x}
+        var lb = res.lastIndexOf('[', n - 1 - k);
+        return k === 1 && lb > 0 && res[lb - 1] === '\\sqrt';
+      }
+      return OCR_ARITY[head] === k;
+    }
+    if (prev === '_' || prev === '^' || prev === ']' || prev === '\\left' || prev === '\\right') return false;
+    if (/^\\begin\{/.test(prev)) return false;
+    return !OCR_ARITY.hasOwnProperty(prev) && !OCR_ARG_CMDS.test(prev);
+  }
+
+  function ocrTransform(items, inText) {
+    var out = [];
+    var i, x;
+    for (i = 0; i < items.length; i++) {
+      x = items[i];
+      if (isGroup(x)) {
+        var textArg = !inText && out.length && OCR_TEXT_CMDS.has(out[out.length - 1]);
+        out.push({ g: ocrTransform(x.g, inText || textArg) });
+        continue;
+      }
+      if (x === '\\!') continue;
+      if (x === '~') {
+        // 글 상자(\text{…}) 앞뒤 띄어쓰기만 살린다 — 나머지는 화면 간격 잡음
+        var afterText = out.length > 1 && isGroup(out[out.length - 1]) && OCR_TEXT_CMDS.has(out[out.length - 2]);
+        if (inText) out.push(' ');
+        else if (afterText || OCR_TEXT_CMDS.has(items[i + 1])) out.push('~');
+        continue;
+      }
+      // 같은 토큰이 끝없이 반복되는 생성 폭주 (`\int \int \int …`)는 하나로
+      var run = i;
+      while (run + 1 < items.length && items[run + 1] === x) run++;
+      if (run - i >= 7) { out.push(x); i = run; continue; }
+      out.push(OCR_ALIAS.hasOwnProperty(x) ? OCR_ALIAS[x] : x);
+    }
+
+    // \mathrm{s i n}·\operatorname*{l i m} → \sin·\lim (글자만 있을 때)
+    for (i = 0; i < out.length - 1; i++) {
+      x = out[i];
+      var star = out[i + 1] === '*' && x === '\\operatorname';
+      var arg = out[i + (star ? 2 : 1)];
+      if ((x === '\\mathrm' || x === '\\operatorname' || x === '\\operatorname*') && isGroup(arg) &&
+          arg.g.length && arg.g.every(function (c) { return typeof c === 'string' && /^[a-zA-Z]$/.test(c); })) {
+        var nm = arg.g.join('');
+        if (FUNCTIONS.has(nm) || nm === 'sup' || nm === 'inf') out.splice(i, star ? 3 : 2, '\\' + nm);
+        else arg.g = [nm];
+      }
+    }
+
+    // \begin{array}{r}{한 줄}\end{array} → 한 줄 (라벨 잡음으로 생긴 감싸기)
+    for (i = 0; i < out.length; i++) {
+      if (out[i] !== '\\begin{array}') continue;
+      var end = out.indexOf('\\end{array}', i);
+      if (end < 0 || !isGroup(out[i + 1])) continue;
+      var body = out.slice(i + 2, end);
+      if (body.indexOf('&') >= 0 || body.indexOf('\\\\') >= 0) continue;
+      if (body.length === 1 && isGroup(body[0])) body = body[0].g;
+      out.splice.apply(out, [i, end - i + 1].concat(body));
+    }
+
+    // \left ( \begin{array} … \end{array} \right ) → pmatrix, \left \{ … \right. → cases
+    for (i = 0; i < out.length; i++) {
+      if (out[i] !== '\\left' || out[i + 2] !== '\\begin{array}' || !isGroup(out[i + 3])) continue;
+      var spec = out[i + 3].g.join('');
+      var e = out.indexOf('\\end{array}', i);
+      if (e < 0 || /\|/.test(spec)) continue;
+      var open = out[i + 1], close, len;
+      if (out[e + 1] === '\\right.') { close = '.'; len = e + 2 - i; }
+      else if (out[e + 1] === '\\right') { close = out[e + 2]; len = e + 3 - i; }
+      else continue;
+      var env = open === '\\{' && close === '.' ? 'cases' : OCR_MATRIX[open + '|' + close];
+      if (!env) continue;
+      out.splice.apply(out, [i, len, '\\begin{' + env + '}'].concat(unwrapCells(out.slice(i + 4, e)), ['\\end{' + env + '}']));
+    }
+
+    // 감싸기 벗기기: `{ = }` → `=`, `= { \frac{a}{b} }` → `= \frac{a}{b}`
+    var res = [];
+    for (i = 0; i < out.length; i++) {
+      x = out[i];
+      if (isGroup(x) && !inText) {
+        var op = x.g.length === 1 && OCR_BARE_OPS.has(x.g[0]);
+        var fn = x.g.length === 1 && /^\\[a-zA-Z]+$/.test(x.g[0]) && FUNCTIONS.has(x.g[0].slice(1));
+        if ((op || fn || isUnit(x.g)) && isFreeSlot(res)) { res.push.apply(res, x.g); continue; }
+      }
+      res.push(x);
+    }
+    return res;
+  }
+
+  // 토큰을 붙여 쓴다. 명령 이름 뒤에 글자가 오면 공백 하나 (`\pi r`).
+  function ocrSerialize(items) {
+    var s = '';
+    for (var i = 0; i < items.length; i++) {
+      var piece = isGroup(items[i]) ? '{' + ocrSerialize(items[i].g) + '}' : items[i];
+      if (/\\[a-zA-Z]+$/.test(s) && /^[a-zA-Z]/.test(piece)) s += ' ';
+      s += piece;
+      // `\\c` 처럼 줄바꿈 뒤에 글자를 바로 붙이면 MathJax가 못 읽는다
+      if (piece === '\\\\' && i < items.length - 1) s += ' ';
+    }
+    return s;
+  }
+
+  function cleanOcr(latex) {
+    // 토큰은 대개 공백으로 나뉘지만 `},`처럼 붙어 나오기도 하므로 중괄호를 따로 떼어 낸다
+    var toks = (latex || '').match(/\\(begin|end)\{[a-zA-Z*]*\}|\\[a-zA-Z]+\*?|\\[^a-zA-Z\s]|[{}_^&\[\]]|[^{}_^&\[\]\\\s]+/g) || [];
+    if (!toks.length) return '';
+    return ocrSerialize(ocrTransform(ocrParse(toks, { i: 0 }), false)).replace(/ {2,}/g, ' ').trim();
+  }
+
+  var api = { convert: convert, cleanOcr: cleanOcr };
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = api;

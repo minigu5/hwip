@@ -1,8 +1,9 @@
 /*
  * 이미지 → LaTeX OCR 워커 (브라우저 로컬 실행)
  *
- * 모델: alephpi/FormulaNet (PP-FormulaNet-S 기반 파인튜닝, 20M 파라미터, ONNX)
- *   - HuggingFace Hub에서 최초 1회 내려받아 브라우저 Cache Storage에 저장된다(약 80MB).
+ * 모델: minigu5/hwip-formulanet — alephpi/FormulaNet(PP-FormulaNet-S 기반, 20M 파라미터)을
+ *   화면 캡처·행렬·다크모드용으로 파인튜닝하고 가중치만 int8로 압축한 ONNX (tools/ocr-train/)
+ *   - HuggingFace Hub에서 최초 1회 내려받아 브라우저 Cache Storage에 저장된다(약 20MB).
  *   - 추론은 onnxruntime-web(WASM)으로 이 워커(별도 스레드)에서 수행 → UI를 막지 않는다.
  *   - 라이선스: 모델 가중치는 AGPL-3.0. (런타임 라이브러리 transformers.js는 Apache-2.0)
  *
@@ -22,7 +23,7 @@ import {
 // 브라우저에서는 로컬 모델 파일을 찾지 않고 항상 원격(HF Hub)에서 받는다.
 env.allowLocalModels = false;
 
-var MODEL_NAME = 'alephpi/FormulaNet';
+var MODEL_NAME = 'minigu5/hwip-formulanet';
 var OCR_SIZE = 384;
 
 var model = null;

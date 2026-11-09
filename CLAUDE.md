@@ -143,9 +143,11 @@ CONVERSION_RULES.md     LaTeX → 한글 수식 전체 매핑 규칙 (스펙 기
 
 수식 이미지 → LaTeX 인식까지 **접속자 브라우저에서** 처리하고, 그 LaTeX를 `window.LatexToHwp.convert`에 그대로 넘긴다. OCR 자체는 서버리스 함수를 쓰지 않는다(모델 추론이 브라우저 WASM에서 실행됨). 변환 로직은 `api/convert.js` REST API로도 별도 제공한다.
 
-- **모델**: `alephpi/FormulaNet` (PP-FormulaNet-S 파인튜닝, 20M, `image-to-text` ONNX). 라이선스 **AGPL-3.0** — 호스팅 시 소스 공개 의무 유의.
+- **모델**: `minigu5/hwip-formulanet` — `alephpi/FormulaNet`(PP-FormulaNet-S 파인튜닝, 20M, `image-to-text` ONNX)을 화면 캡처·행렬·cases·다크모드용으로 다시 파인튜닝하고 가중치만 int8 압축(20MB). 학습·평가 도구는 `tools/ocr-train/`. 라이선스 **AGPL-3.0** — 호스팅 시 소스 공개 의무 유의.
 - **런타임**: `@huggingface/transformers`(transformers.js v3)를 CDN ESM으로 로드. 추론은 Web Worker `src/ocr-worker.js`에서 별도 스레드로 수행.
 - **모델 사용법/전처리는 추측 금지**: 동일 모델 저자의 검증된 구현(Texo-web)을 그대로 따랐다. `VisionEncoderDecoderModel.from_pretrained(..., {dtype:'fp32'})` + 1채널 384×384 텐서를 3채널로 복제해 `model.generate`. 전처리(`app.js`의 `preprocessImage`)는 UniMERNet 규약(그레이스케일·색반전·여백크롭·중앙패딩·mean 0.7931/std 0.1738)을 따른다. **이 값/순서를 바꾸면 정확도가 떨어지므로 함부로 수정하지 말 것.**
+- **후처리**: 모델 출력은 UniMER 라벨 규약(`a _ { n } ~ { = } ~ 1`, `\left ( \begin{array}` 행렬, `\operatorname* { l i m }`)이라 `converter.js`의 `cleanOcr()`로 표준 LaTeX로 정리한 뒤 입력창에 넣는다. 간격 잡음(`~`·`\!`) 제거, `{ = }`·`{ \frac … }` 감싸기 벗기기(인자 자리는 보존), array→pmatrix/cases, KaTeX 별칭(`\infin`·`\rarr`) 정규화, 생성 폭주 반복 축약. 벤치(508장)에서 433→475.
+- **투명 PNG**: 다크모드에서 복사한 투명 배경 이미지는 글자가 밝으므로 검정 배경에 합성한다(흰 배경이면 글자가 사라짐).
 - **검증**: 헤드리스 Chrome + matplotlib로 렌더한 수식 PNG로 E2E 인식·변환을 확인. (KaTeX는 헤드리스에서 웹폰트 글리프가 비어 부적합 — 실제 렌더 이미지를 쓸 것.)
 
 ## 파일 변환

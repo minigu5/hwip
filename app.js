@@ -472,7 +472,7 @@
   var UNIMER_STD = 0.1738;
 
   var TF_CDN = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.5';
-  var OCR_MODEL = 'alephpi/FormulaNet';
+  var OCR_MODEL = 'minigu5/hwip-formulanet';
 
   var ocrEngine = null;       // Promise → { predict(Float32Array) → Promise<string> }
   var lastPreviewUrl = null;
@@ -609,9 +609,20 @@
       var base = document.createElement('canvas');
       base.width = W; base.height = H;
       var bx = base.getContext('2d', { willReadFrequently: true });
-      bx.fillStyle = '#fff';
-      bx.fillRect(0, 0, W, H);          // 투명 배경을 흰색으로
+      // 투명 배경은 글자와 반대색으로 채운다. 다크모드에서 복사한 투명 PNG는
+      // 글자가 흰색이라 흰 배경에 합성하면 아무것도 안 보인다.
       bx.drawImage(bmp, 0, 0);
+      var raw = bx.getImageData(0, 0, W, H).data;
+      var clear = 0, inkSum = 0, inkN = 0;
+      for (var t = 0; t < raw.length; t += 4) {
+        if (raw[t + 3] < 128) clear++;
+        else { inkSum += raw[t] * 0.299 + raw[t + 1] * 0.587 + raw[t + 2] * 0.114; inkN++; }
+      }
+      var lightInk = clear > W * H * 0.05 && inkN && inkSum / inkN > 128;
+      bx.globalCompositeOperation = 'destination-over';
+      bx.fillStyle = lightInk ? '#000' : '#fff';
+      bx.fillRect(0, 0, W, H);
+      bx.globalCompositeOperation = 'source-over';
       var rgba = bx.getImageData(0, 0, W, H).data;
 
       // 그레이스케일 (Rec.601 luma — PIL 'L' 변환과 동일)
@@ -719,7 +730,8 @@
         return pre.then(function (arr) { return engine.predict(arr); });
       })
       .then(function (latex) {
-        latex = (latex || '').trim();
+        // 모델 출력(띄어 쓴 토큰·간격 잡음·array 행렬)을 표준 LaTeX로 정리
+        latex = window.LatexToHwp.cleanOcr(latex || '');
         if (!latex) {
           setOcrStatus('수식을 찾지 못했어요. 더 또렷하고 여백이 적은 이미지로 다시 시도해 보세요.', 'error');
           return;
