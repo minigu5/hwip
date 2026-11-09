@@ -483,18 +483,29 @@
     ocrStatus.innerHTML = html;
   }
 
+  // transformers.js는 인코더(54MB)·디코더(26MB) 등 파일마다 따로 진행률을 보낸다.
+  // 파일별 %를 그대로 그리면 바가 두 번 차는 것처럼 보이므로 전체 바이트로 합산하고,
+  // 늦게 시작한 파일 때문에 %가 뒤로 가지 않게 최댓값만 표시한다.
+  // config·tokenizer 같은 작은 파일이 먼저 끝나 100%로 고정되지 않게 가중치 파일만 센다.
+  var OCR_MIN_FILE = 1024 * 1024;
+  var ocrFiles = {};
+  var ocrPct = 0;
+
+  function resetOcrProgress() { ocrFiles = {}; ocrPct = 0; }
+
   function renderOcrProgress(p) {
-    if (!p) return;
-    if (p.status === 'progress') {
-      var pct = (typeof p.progress === 'number') ? Math.round(p.progress)
-        : (p.total ? Math.round((p.loaded / p.total) * 100) : null);
-      if (pct === null) { setOcrStatus('AI 모델 내려받는 중…', 'busy'); return; }
-      if (pct > 100) pct = 100;
-      setOcrStatus('AI 모델 다운로드 중… ' + pct +
-        '% <span class="ocr-progress"><i style="width:' + pct + '%"></i></span>', 'busy');
-    } else if (p.status === 'initiate' || p.status === 'download') {
-      setOcrStatus('AI 모델 내려받는 중… (최초 1회)', 'busy');
+    if (!p || !p.file) return;
+    if (p.status === 'progress' && p.total >= OCR_MIN_FILE) {
+      ocrFiles[p.file] = { loaded: p.loaded || 0, total: p.total };
+    } else if (p.status === 'done' && ocrFiles[p.file]) {
+      ocrFiles[p.file].loaded = ocrFiles[p.file].total;
     }
+    var loaded = 0, total = 0;
+    Object.keys(ocrFiles).forEach(function (k) { loaded += ocrFiles[k].loaded; total += ocrFiles[k].total; });
+    if (!total) { setOcrStatus('AI 모델 준비 중… (최초 1회 약 80MB 다운로드)', 'busy'); return; }
+    ocrPct = Math.max(ocrPct, Math.min(100, Math.round((loaded / total) * 100)));
+    setOcrStatus('AI 모델 준비 중… ' + ocrPct +
+      '% <span class="ocr-progress"><i style="width:' + ocrPct + '%"></i></span>', 'busy');
   }
 
   function ocrUid() {
@@ -510,6 +521,7 @@
       try {
         worker = new Worker('src/ocr-worker.js', { type: 'module' });
       } catch (e) {
+        e.workerUnavailable = true;
         reject(e); return;
       }
       var ready = false;
@@ -537,7 +549,10 @@
         }
       };
       worker.onerror = function (ev) {
-        if (!ready) reject(new Error(ev.message || '워커 로딩 실패'));
+        if (ready) return;
+        var err = new Error(ev.message || '워커 로딩 실패');
+        err.workerUnavailable = true; // 모듈 워커 스크립트 자체를 못 불러온 경우
+        reject(err);
       };
       worker.postMessage({ action: 'init' });
     });
@@ -568,11 +583,19 @@
     });
   }
 
-  // 엔진을 한 번만 만든다. 워커가 안 되면 메인 스레드로 자동 폴백.
+  // 엔진을 한 번만 만든다. 워커 생성 자체가 안 될 때만 메인 스레드로 폴백한다
+  // (모델 로딩 중 실패로 폴백하면 같은 모델을 처음부터 또 받게 된다).
+  // 실패하면 엔진을 비워 다음 시도에서 다시 만들 수 있게 한다.
   function ensureOcrEngine() {
     if (ocrEngine) return ocrEngine;
-    ocrEngine = createWorkerEngine().catch(function () {
+    resetOcrProgress();
+    ocrEngine = createWorkerEngine().catch(function (err) {
+      if (!err || !err.workerUnavailable) throw err;
+      resetOcrProgress();
       return createMainThreadEngine();
+    }).catch(function (err) {
+      ocrEngine = null;
+      throw err;
     });
     return ocrEngine;
   }
