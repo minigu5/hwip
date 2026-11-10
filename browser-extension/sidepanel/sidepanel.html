@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title data-i18n="sidepanelDocTitle">HWPX 변환 — 휩</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+</head>
+<body>
+
+  <!-- 상단 설정 패널 -->
+  <div class="settings-panel">
+    <h1 data-i18n="sidepanelHeading">📄 HWPX 문서로 변환</h1>
+
+    <div class="row">
+      <label for="fontFamily" data-i18n="fontLabel">글꼴</label>
+      <select id="fontFamily"></select>
+      <button id="loadLocalFontsBtn" class="btn-loadfont" type="button" data-i18n="fontLocalBtn">내 PC 글꼴</button>
+    </div>
+
+    <div class="row">
+      <label for="fontSize" data-i18n="fontSizeLabel">글자 크기</label>
+      <select id="fontSize">
+        <option value="9">9pt</option>
+        <option value="10" selected data-i18n="fontSizeDefault">10pt (기본)</option>
+        <option value="11">11pt</option>
+        <option value="12">12pt</option>
+        <option value="14">14pt</option>
+        <option value="16">16pt</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <label for="fileNameInput" data-i18n="fileNameLabel">파일명</label>
+      <div class="filename-row">
+        <input type="text" id="fileNameInput" placeholder="비워두면 자동 감지" data-i18n-placeholder="fileNamePlaceholder" maxlength="100" autocomplete="off" spellcheck="false" />
+        <span class="ext-label">.hwpx</span>
+      </div>
+    </div>
+
+    <div id="status" class="status" data-i18n="statusInitial">AI 응답에서 추출한 마크다운을 변환합니다…</div>
+    <button id="downloadBtn" class="btn" type="button" data-i18n="download">다운로드</button>
+  </div>
+
+  <!-- 미리보기 영역 -->
+  <div class="preview-area">
+    <div class="preview-label" data-i18n="previewLabel">미리보기</div>
+    <div class="a4-container">
+      <div class="a4-page" id="previewContent">
+        <div class="preview-placeholder" data-i18n="previewLoading">내용을 불러오는 중…</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../lib/jszip.min.js"></script>
+  <script src="../lib/marked.min.js"></script>
+  <script src="../lib/converter.js"></script>
+  <script src="../lib/md-to-hwpx.js"></script>
+  <script src="../lib/katex.min.js"></script>
+  <script src="../lib/katex-auto-render.min.js"></script>
+  <script src="../lib/i18n.js" data-then="sidepanel.js"></script>
+</body>
+</html>

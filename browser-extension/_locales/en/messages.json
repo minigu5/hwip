@@ -1,0 +1,290 @@
+{
+  "extName": {
+    "message": "Hwip - AI to HWP"
+  },
+  "extDescription": {
+    "message": "Hover over math on AI sites to copy it as HWP equation syntax. Turn long AI answers into HWPX documents in one click."
+  },
+  "btnCopyHwp": {
+    "message": "Copy HWP"
+  },
+  "btnCopyHwpAria": {
+    "message": "Copy this equation as HWP equation syntax"
+  },
+  "flashNoMath": {
+    "message": "No equation"
+  },
+  "flashFailed": {
+    "message": "Conversion failed"
+  },
+  "btnToHwpx": {
+    "message": "To HWPX"
+  },
+  "btnToHwpxTitle": {
+    "message": "Convert this AI response to an HWPX document"
+  },
+  "extracting": {
+    "message": "Extracting…"
+  },
+  "extractFailed": {
+    "message": "Extraction failed"
+  },
+  "saveFailed": {
+    "message": "Save failed"
+  },
+  "converting": {
+    "message": "Converting…"
+  },
+  "copied": {
+    "message": "Copied!"
+  },
+  "copy": {
+    "message": "Copy"
+  },
+  "close": {
+    "message": "Close"
+  },
+  "retry": {
+    "message": "Try again"
+  },
+  "settings": {
+    "message": "Settings"
+  },
+  "popupTitle": {
+    "message": "Hwip - LaTeX → HWP Equation"
+  },
+  "siteLinkTitle": {
+    "message": "Go to website"
+  },
+  "pageChecking": {
+    "message": "Checking current page…"
+  },
+  "enableOnPage": {
+    "message": "Turn on for this page"
+  },
+  "openSettingsPage": {
+    "message": "Open settings page"
+  },
+  "inputLabel": {
+    "message": "Input (LaTeX)"
+  },
+  "inputPlaceholder": {
+    "message": "e.g. $$$$\\frac{2\\pi}{24}(t - \\phi_1)$$$$"
+  },
+  "outputLabel": {
+    "message": "Output (HWP equation)"
+  },
+  "hintDefault": {
+    "message": "Conversion is automatic as you type. Copy the result and paste it into the HWP equation editor."
+  },
+  "hintCopied": {
+    "message": "Copied to clipboard ✓"
+  },
+  "back": {
+    "message": "Back"
+  },
+  "settingAutoMath": {
+    "message": "Auto-detect math"
+  },
+  "settingAutoReport": {
+    "message": "Auto-detect AI reports"
+  },
+  "settingsReloadHint": {
+    "message": "Reload the website for changes to take effect."
+  },
+  "settingLanguage": {
+    "message": "Language"
+  },
+  "langAuto": {
+    "message": "Auto (browser setting)"
+  },
+  "convertFailedNetwork": {
+    "message": "Conversion failed (network error)"
+  },
+  "permRequesting": {
+    "message": "Requesting permission…"
+  },
+  "permDenied": {
+    "message": "Permission was denied, so it can't be turned on."
+  },
+  "activating": {
+    "message": "Turning on…"
+  },
+  "activatedPersist": {
+    "message": "✓ Turned on for this page. It stays on after you reload."
+  },
+  "permGrantedReload": {
+    "message": "✓ Permission granted. Reload the page to turn it on."
+  },
+  "fileGuideTitle": {
+    "message": "One setting is needed to use this on local files"
+  },
+  "fileGuideStep1": {
+    "message": "Click <b>Open settings page</b> below."
+  },
+  "fileGuideStep2": {
+    "message": "On the page that opens, turn on <code>Allow access to file URLs</code>."
+  },
+  "fileGuideStep3": {
+    "message": "Go back to this PDF/HTML file tab and reload. It turns on automatically."
+  },
+  "fileGuideNote": {
+    "message": "Chrome requires you to turn this toggle on yourself. The extension can't do it for you."
+  },
+  "fileAccessNeeded": {
+    "message": "File URL access needs to be allowed."
+  },
+  "internalGuideTitle": {
+    "message": "Extensions can't run on this page because of Chrome's security policy"
+  },
+  "internalPdfStep1": {
+    "message": "<b>Download</b> this PDF to your computer."
+  },
+  "internalPdfStep2": {
+    "message": "Open the downloaded file in Chrome and its address becomes <code>file://</code>."
+  },
+  "internalPdfStep3": {
+    "message": "Open the popup again on that page and click <b>Turn on for this page</b>. (If needed, the file URL access guide appears once more.)"
+  },
+  "internalStep1": {
+    "message": "<code>chrome://</code> pages, other extensions' pages and the Chrome Web Store are areas where Chrome blocks every extension from injecting scripts."
+  },
+  "internalStep2": {
+    "message": "Open a regular web page that has math in a new tab. <b>Turn on for this page</b> works there."
+  },
+  "internalStep3": {
+    "message": "In a hurry, you can copy the LaTeX and paste it directly into the input box at the top of this popup."
+  },
+  "internalPdfNote": {
+    "message": "PDFs shown inside the browser are rendered by the built-in PDF viewer extension in an isolated iframe. No other extension can reach inside it."
+  },
+  "unavailableHere": {
+    "message": "Not available on this page."
+  },
+  "autoSupported": {
+    "message": "✓ This page is supported automatically."
+  },
+  "activatedHover": {
+    "message": "✓ Turned on for this page. Hover over an equation."
+  },
+  "pdfPageStatus": {
+    "message": "This is a PDF page — note that even after turning on, the inside of the PDF can't be reached."
+  },
+  "notInAutoList": {
+    "message": "This page is not on the automatic support list."
+  },
+  "activateFailedUrl": {
+    "message": "Failed to turn on: can't parse the URL."
+  },
+  "pdfGuideTitle": {
+    "message": "How it works on PDF pages"
+  },
+  "pdfGuideStep1": {
+    "message": "The page itself is turned on."
+  },
+  "pdfGuideStep2": {
+    "message": "For math inside the PDF, select and copy the text, then paste it into the input box above to convert."
+  },
+  "pdfNote": {
+    "message": "Inside Chrome's PDF viewer, math is in an isolated iframe, so hover detection doesn't work for math in the PDF. Select and copy the text, then paste it into the input box at the top of this popup to convert."
+  },
+  "localPdfStatus": {
+    "message": "This is a local PDF file — turning it on may require file URL access."
+  },
+  "localFileStatus": {
+    "message": "This is a local file page."
+  },
+  "activatedShort": {
+    "message": "✓ Turned on for this page."
+  },
+  "localPdfGuideTitle": {
+    "message": "How it works on local PDFs"
+  },
+  "webstoreBlocked": {
+    "message": "Not available on the Chrome Web Store."
+  },
+  "howToActivate": {
+    "message": "How to turn on"
+  },
+  "sidepanelDocTitle": {
+    "message": "HWPX Conversion — Hwip"
+  },
+  "sidepanelHeading": {
+    "message": "📄 Convert to HWPX document"
+  },
+  "fontLabel": {
+    "message": "Font"
+  },
+  "fontLocalBtn": {
+    "message": "My PC fonts"
+  },
+  "fontSizeLabel": {
+    "message": "Font size"
+  },
+  "fontSizeDefault": {
+    "message": "10pt (default)"
+  },
+  "fileNameLabel": {
+    "message": "File name"
+  },
+  "fileNamePlaceholder": {
+    "message": "Leave blank to auto-detect"
+  },
+  "statusInitial": {
+    "message": "Converting the markdown extracted from the AI response…"
+  },
+  "download": {
+    "message": "Download"
+  },
+  "previewLabel": {
+    "message": "Preview"
+  },
+  "previewLoading": {
+    "message": "Loading content…"
+  },
+  "fontDefault": {
+    "message": "Default (함초롬바탕)"
+  },
+  "fontGroupDefault": {
+    "message": "HWP default fonts"
+  },
+  "fontGroupLocal": {
+    "message": "My PC fonts"
+  },
+  "fontLocalUnsupported": {
+    "message": "This browser doesn't support the Local Font Access API"
+  },
+  "fontLocalRefresh": {
+    "message": "Refresh PC fonts"
+  },
+  "fontLocalLoading": {
+    "message": "Loading…"
+  },
+  "previewUnavailable": {
+    "message": "Can't load the preview."
+  },
+  "previewRenderFailed": {
+    "message": "Preview rendering failed"
+  },
+  "noMarkdown": {
+    "message": "There is no markdown."
+  },
+  "convertingLong": {
+    "message": "Converting… (documents with math may take a moment)"
+  },
+  "convertDone": {
+    "message": "Done! Your file is downloading."
+  },
+  "convertFailedPrefix": {
+    "message": "Conversion failed: "
+  },
+  "storageErrorPrefix": {
+    "message": "Storage error: "
+  },
+  "nothingToConvert": {
+    "message": "There is nothing to convert. Click the button on the page again."
+  },
+  "previewPlaceholderHtml": {
+    "message": "Click the <b>To HWPX</b> button under the AI response."
+  }
+}

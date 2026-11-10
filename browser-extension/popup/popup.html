@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+
+  <!-- ── 메인 뷰 ── -->
+  <div class="view" id="mainView">
+    <div class="wrap">
+      <div class="header">
+        <h1 data-i18n="popupTitle">휩 - LaTeX → 한글 수식</h1>
+        <div class="header-actions">
+          <button class="icon-btn" id="settingsBtn" type="button" title="설정" data-i18n-title="settings">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
+          <a class="icon-btn site-link" id="siteLinkBtn" href="#" title="웹사이트로 이동" data-i18n-title="siteLinkTitle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="page-status" id="pageStatus">
+        <span class="page-status-text" id="pageStatusText" data-i18n="pageChecking">현재 페이지 확인 중…</span>
+        <button class="btn force-btn" id="forceOnBtn" type="button" data-i18n="enableOnPage" hidden>이 페이지에서 켜기</button>
+      </div>
+
+      <div class="guide-panel" id="guidePanel" hidden>
+        <div class="guide-title" id="guideTitle"></div>
+        <ol class="guide-steps" id="guideSteps"></ol>
+        <div class="guide-note" id="guideNote" hidden></div>
+        <div class="guide-actions">
+          <button class="btn btn-ghost" id="guideCloseBtn" type="button" data-i18n="close">닫기</button>
+          <button class="btn" id="guideOpenBtn" type="button" data-i18n="openSettingsPage" hidden>설정 페이지 열기</button>
+        </div>
+      </div>
+
+      <label class="label" for="input" data-i18n="inputLabel">입력 (LaTeX)</label>
+      <textarea id="input" placeholder="예: $$\frac{2\pi}{24}(t - \phi_1)$$" data-i18n-placeholder="inputPlaceholder" autofocus></textarea>
+
+      <div class="label-row">
+        <span class="label" data-i18n="outputLabel">출력 (한글 수식)</span>
+        <button class="btn" id="copyBtn" type="button" data-i18n="copy">복사</button>
+      </div>
+      <div class="output" id="output" aria-live="polite"></div>
+      <div class="hint" id="hint" data-i18n="hintDefault">입력하면 자동 변환됩니다. 결과를 복사해 한글 수식 편집기에 붙여넣으세요.</div>
+    </div>
+  </div>
+
+  <!-- ── 설정 뷰 ── -->
+  <div class="view" id="settingsView" hidden>
+    <div class="wrap">
+      <div class="header">
+        <button class="icon-btn" id="backBtn" type="button" title="뒤로" data-i18n-title="back">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+        <h1 data-i18n="settings">설정</h1>
+      </div>
+
+      <div class="settings-list">
+        <div class="settings-row">
+          <span class="settings-name" data-i18n="settingAutoMath">수식 변환 자동 감지</span>
+          <label class="toggle">
+            <input type="checkbox" id="toggleFormulaCopy" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-row">
+          <span class="settings-name" data-i18n="settingAutoReport">ai보고서 자동 감지</span>
+          <label class="toggle">
+            <input type="checkbox" id="toggleHwpxReport" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-row">
+          <label class="settings-name" for="langSelect" data-i18n="settingLanguage">언어</label>
+          <select class="settings-select" id="langSelect">
+            <option value="auto" data-i18n="langAuto">자동 (브라우저 설정)</option>
+            <option value="ko">한국어</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+      </div>
+      <p class="settings-hint" data-i18n="settingsReloadHint">웹사이트를 새로고침해야 적용됩니다.</p>
+    </div>
+  </div>
+
+  <script src="../lib/i18n.js" data-then="popup.js"></script>
+</body>
+</html>

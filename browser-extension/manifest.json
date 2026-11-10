@@ -1,0 +1,109 @@
+{
+"update_url": "https://clients2.google.com/service/update2/crx",
+
+  "manifest_version": 3,
+  "name": "__MSG_extName__",
+  "default_locale": "ko",
+  "version": "0.9.0",
+  "description": "__MSG_extDescription__",
+  "permissions": [
+    "clipboardWrite",
+    "clipboardRead",
+    "scripting",
+    "activeTab",
+    "storage",
+    "sidePanel"
+  ],
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src https://cdn.jsdelivr.net; object-src 'self'"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["templates/blank.hwpx"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "optional_host_permissions": [
+    "<all_urls>",
+    "file:///*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "__MSG_extName__",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*",
+        "https://aistudio.google.com/*",
+        "https://*.perplexity.ai/*",
+        "https://copilot.microsoft.com/*",
+        "https://www.bing.com/*",
+        "https://poe.com/*",
+        "https://chat.deepseek.com/*",
+        "https://chat.mistral.ai/*",
+        "https://grok.com/*",
+        "https://x.com/*",
+        "https://huggingface.co/*",
+        "https://www.phind.com/*",
+        "https://you.com/*",
+        "https://chatglm.cn/*",
+        "https://tongyi.aliyun.com/*",
+        "https://www.doubao.com/*",
+        "https://kimi.moonshot.cn/*"
+      ],
+      "js": [
+        "content/i18n-content.js",
+        "content/content.js",
+        "content/mixed-copy.js",
+        "content/report-extract.js"
+      ],
+      "css": [
+        "content/content.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "host_permissions": [
+    "https://hwip.dshs.dev/*",
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://claude.ai/*",
+    "https://gemini.google.com/*",
+    "https://aistudio.google.com/*",
+    "https://*.perplexity.ai/*",
+    "https://copilot.microsoft.com/*",
+    "https://www.bing.com/*",
+    "https://poe.com/*",
+    "https://chat.deepseek.com/*",
+    "https://chat.mistral.ai/*",
+    "https://grok.com/*",
+    "https://x.com/*",
+    "https://huggingface.co/*",
+    "https://www.phind.com/*",
+    "https://you.com/*",
+    "https://chatglm.cn/*",
+    "https://tongyi.aliyun.com/*",
+    "https://www.doubao.com/*",
+    "https://kimi.moonshot.cn/*"
+  ]
+}

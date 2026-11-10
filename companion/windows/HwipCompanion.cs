@@ -242,6 +242,7 @@ namespace HwipCompanion
 
     internal sealed class CompanionContext : ApplicationContext
     {
+        private const string FragmentPrefix = "HWIP_FRAGMENT_V1:";
         private readonly NotifyIcon tray;
         private readonly EquationClipboard equationClipboard;
         private readonly LocalServer server;
@@ -303,10 +304,26 @@ namespace HwipCompanion
 
         private void OnClipboardTextChanged(string text)
         {
-            if (autoConvertMenu == null || !autoConvertMenu.Checked || !LooksLikeHwpEquation(text)) return;
+            if (autoConvertMenu == null || !autoConvertMenu.Checked) return;
             try
             {
-                CopyResult result = equationClipboard.Copy(text);
+                CopyResult result;
+                if (text.StartsWith(FragmentPrefix, StringComparison.Ordinal))
+                {
+                    string encoded = text.Substring(FragmentPrefix.Length);
+                    if (encoded.Length > 1400000) throw new InvalidDataException("복사한 문단이 너무 깁니다. 1MB 이하로 나누어 복사해 주세요.");
+                    string payload = Encoding.UTF8.GetString(Convert.FromBase64String(encoded));
+                    var serializer = new JavaScriptSerializer { MaxJsonLength = 1024 * 1024 };
+                    FragmentEnvelope fragment = serializer.Deserialize<FragmentEnvelope>(payload);
+                    if (fragment == null || fragment.segments == null || fragment.segments.Count == 0) return;
+                    if (fragment.segments.Count > 1000) throw new InvalidDataException("한 번에 복사할 수 있는 텍스트·수식 조각은 1,000개입니다.");
+                    result = equationClipboard.CopyFragment(fragment.segments);
+                }
+                else
+                {
+                    if (!LooksLikeHwpEquation(text)) return;
+                    result = equationClipboard.Copy(text);
+                }
                 if (result.success)
                     tray.ShowBalloonTip(1200, "휩", "복사한 수식을 한글 수식 개체로 변환했습니다. 한글에서 Ctrl+V 하세요.", ToolTipIcon.Info);
                 else
@@ -455,6 +472,52 @@ namespace HwipCompanion
             Thread.Sleep(80);
             OleFlushClipboard();
             return CopyResult.Ok();
+        }
+
+        internal CopyResult CopyFragment(List<FragmentSegment> segments)
+        {
+            EnsureHwp();
+            ResetDocument();
+
+            bool hasEquation = false;
+            int totalCharacters = 0;
+            foreach (FragmentSegment segment in segments)
+            {
+                if (segment == null || String.IsNullOrEmpty(segment.value)) continue;
+                totalCharacters += segment.value.Length;
+                if (totalCharacters > 500000)
+                    return CopyResult.Fail("FRAGMENT_TOO_LONG", "문단 내용은 최대 500,000자까지 처리할 수 있습니다.");
+                if (String.Equals(segment.type, "equation", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (segment.value.Length > 50000)
+                        return CopyResult.Fail("EQUATION_TOO_LONG", "문단 안의 각 수식은 최대 50,000자까지 처리할 수 있습니다.");
+                    dynamic equation = hwp.HParameterSet.HEqEdit;
+                    hwp.HAction.GetDefault("EquationCreate", equation.HSet);
+                    equation.EqFontName = "HancomEQN";
+                    equation.String = segment.value;
+                    equation.BaseUnit = hwp.PointToHwpUnit(10.0);
+                    if (!hwp.HAction.Execute("EquationCreate", equation.HSet))
+                        return CopyResult.Fail("EQUATION_CREATE_FAILED", "문단에 포함된 수식 개체를 만들지 못했습니다.");
+                    hasEquation = true;
+                    hwp.Run("MoveRight");
+                }
+                else
+                {
+                    dynamic insert = hwp.HParameterSet.HInsertText;
+                    hwp.HAction.GetDefault("InsertText", insert.HSet);
+                    insert.Text = segment.value.Replace("\n", "\r\n");
+                    if (!hwp.HAction.Execute("InsertText", insert.HSet))
+                        return CopyResult.Fail("TEXT_INSERT_FAILED", "문단 텍스트를 만들지 못했습니다.");
+                }
+            }
+
+            if (!hasEquation) return CopyResult.Fail("EQUATION_REQUIRED", "선택한 내용에 수식이 없습니다.");
+            hwp.Run("MoveDocBegin");
+            hwp.Run("SelectAll");
+            hwp.Run("Copy");
+            Thread.Sleep(100);
+            OleFlushClipboard();
+            return CopyResult.OkFragment();
         }
 
         private void EnsureHwp()
@@ -627,6 +690,12 @@ namespace HwipCompanion
     }
 
     internal sealed class Request { internal string Method, Path, Origin, BodyText; }
+    internal sealed class FragmentEnvelope { public List<FragmentSegment> segments { get; set; } }
+    internal sealed class FragmentSegment
+    {
+        public string type { get; set; }
+        public string value { get; set; }
+    }
     internal sealed class RequestTooLargeException : Exception { internal RequestTooLargeException(string message) : base(message) { } }
 
     internal sealed class CopyResult
@@ -635,6 +704,7 @@ namespace HwipCompanion
         public string code { get; set; }
         public string message { get; set; }
         internal static CopyResult Ok() { return new CopyResult { success = true, code = "OK", message = "한글 수식 개체를 클립보드에 복사했습니다." }; }
+        internal static CopyResult OkFragment() { return new CopyResult { success = true, code = "OK", message = "텍스트와 한글 수식 개체를 클립보드에 복사했습니다." }; }
         internal static CopyResult Fail(string code, string message) { return new CopyResult { success = false, code = code, message = message }; }
     }
 }

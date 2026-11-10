@@ -1,0 +1,70 @@
+/* LaTeX → 한글(HWP) 수식 복사 — 플로팅 버튼
+ * 사이트 CSS 영향을 최소화하기 위해 핵심 시각 속성에 !important 를 사용한다. */
+.hwp-copy-btn {
+  position: fixed !important;
+  z-index: 2147483647 !important;
+  display: none;          /* 호버 시 JS가 inline-flex 로 전환 */
+  align-items: center !important;
+  gap: 4px !important;
+  margin: 0 !important;
+  padding: 3px 9px !important;
+  border: none !important;
+  border-radius: 7px !important;
+  background: #2f6df6 !important;
+  color: #ffffff !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo",
+    "Malgun Gothic", sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22) !important;
+  opacity: 0.96 !important;
+  transition: background 0.12s ease, opacity 0.12s ease !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  text-transform: none !important;
+}
+
+.hwp-copy-btn:hover {
+  background: #2257d4 !important;
+  opacity: 1 !important;
+}
+
+.hwp-copy-btn.copied {
+  background: #1e9e5a !important;
+}
+
+/* 보고서 → HWPX 변환 버튼 바 */
+.hwp-report-bar {
+  display: flex !important;
+  justify-content: flex-end !important;
+  margin: 6px 0 4px !important;
+  padding: 0 !important;
+}
+.hwp-report-btn {
+  border: none !important;
+  background: #16a34a !important;
+  color: #ffffff !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo",
+    "Malgun Gothic", sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 5px 12px !important;
+  border-radius: 7px !important;
+  cursor: pointer !important;
+  transition: background 0.12s ease !important;
+  white-space: nowrap !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15) !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+.hwp-report-btn:hover {
+  background: #15803d !important;
+}
+.hwp-report-btn:disabled {
+  background: #9aafd8 !important;
+  cursor: not-allowed !important;
+}

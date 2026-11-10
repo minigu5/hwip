@@ -80,6 +80,7 @@ convert('$$\\frac{2\\pi}{24}(t - \\phi_1)$$');
 - **LaTeX → 한글 수식 자동 변환**: 입력창에 수식을 붙여넣으면 즉시 변환, 클립보드에 자동 복사됩니다.
 - **수식 개체로 바로 복사(Windows)**: `HwipCompanion.exe`를 실행한 상태에서 **수식 개체 복사**를 누르면 한글 본문에서 `Ctrl+V`만으로 편집 가능한 수식 개체를 붙일 수 있습니다. 수식 편집기를 먼저 열 필요가 없습니다.
 - **AI 사이트 복사 자동 승격**: 보조 프로그램 실행 중 Gemini 등의 **HWP 수식 복사** 버튼으로 한글 수식 문법을 복사하면 이를 자동 감지해 네이티브 수식 개체로 교체합니다.
+- **문단 속 수식까지 한 번에 복사**: ChatGPT·Gemini 등에서 텍스트와 수식이 섞인 영역을 선택해 `Ctrl+C`하면, 보조 프로그램이 문단 순서를 유지한 채 텍스트와 편집 가능한 한글 수식 개체로 구성합니다. 한글에서는 `Ctrl+V`만 누르면 됩니다.
 - **미리보기**: 수식이 있을 때 출력 패널 하단에 KaTeX로 자동 렌더링됩니다. 입력이 없으면 숨겨집니다.
 - **이미지 OCR (브라우저 로컬 실행)**: 입력창 우측 **🖼️ 이미지 인식** 버튼으로 파일 선택, 이미지를 입력창에 끌어다 놓거나 붙여넣기(⌘/Ctrl+V)하면 LaTeX로 자동 인식 후 변환합니다. OCR은 서버 없이 **접속자의 브라우저에서만** 실행되며 이미지는 외부로 전송되지 않습니다.
 - **렌더링된 수식 감지 및 해결 안내**: AI 챗봇 화면에서 수식을 평문으로 그냥 복사하면(위/아래 첨자 정보 손실) 이를 자동 감지해 경고 모달을 띄웁니다. **"해결 방안 보기"**를 누르면 3가지 방법(① LaTeX 재요청 프롬프트, ② 이미지 OCR, ③ 크롬 확장 프로그램)을 안내합니다.
@@ -98,9 +99,9 @@ HWP 또는 HWPX 파일을 업로드하면, 문서 안의 텍스트 LaTeX 수식�
 - [hwpx-latex-to-equation](https://github.com/fakeminjun7321/hwpx-latex-to-equation) — HWPX ZIP+XML 파싱 및 수식 개체 삽입 구조
 - [rhwp](https://github.com/edwardkim/rhwp) — HWP 이진 파일 파싱 및 HWPX 변환 엔진
 
-### 🧩 크롬 확장 프로그램
+### 🧩 Chrome·Edge 확장 프로그램
 
-AI 사이트의 수식에 마우스를 올리면 바로 변환·복사하는 크롬 확장도 제공합니다. [크롬 웹스토어](https://chromewebstore.google.com/detail/meahkfhlalnljlgllhmhmfdhpkknfncg)에서 바로 설치할 수 있습니다. 이 확장의 [소스 코드](https://github.com/minigu5/latex-to-hwp-extension)는 별도 저장소로 관리됩니다.
+AI 사이트의 수식에 마우스를 올리면 바로 변환·복사하며, 수식이 포함된 문단 전체 복사도 지원합니다. [크롬 웹스토어](https://chromewebstore.google.com/detail/meahkfhlalnljlgllhmhmfdhpkknfncg)에서 설치할 수 있고 Chromium 기반 Microsoft Edge에서도 사용할 수 있습니다. 확장 소스는 [`browser-extension`](./browser-extension)에 함께 관리됩니다.
 
 ---
 
@@ -144,7 +145,7 @@ npm test     # 또는: node --test
 1. 웹페이지에서 `HwipCompanion.exe`를 내려받아 실행하고 **예**를 눌러 설치합니다.
 2. 목록에서 휩을 사용할 Chrome 프로필을 선택합니다.
 3. 선택한 각 프로필에서 열린 웹스토어의 **Chrome에 추가**를 한 번씩 누릅니다.
-4. Gemini에서 **HWP 수식 복사**를 누릅니다.
+4. 수식 하나는 **HWP 수식 복사**를 누릅니다. 문단 전체는 텍스트와 수식을 함께 선택하고 `Ctrl+C`를 누릅니다.
 5. 한글 본문에서 `Ctrl+V`를 누릅니다.
 
 Gemini 등에서 크롬 확장의 **HWP 수식 복사**를 사용하는 경우에는 휩 웹사이트를 거치지 않아도 됩니다. 보조 프로그램이 복사된 한글 수식 문법을 감지해 수식 개체로 바꿉니다. 자동 감지는 알림 영역의 휩 아이콘 우클릭 메뉴에서 끌 수 있으며, 클립보드 내용은 저장하거나 외부로 전송하지 않습니다.
