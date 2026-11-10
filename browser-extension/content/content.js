@@ -39,8 +39,8 @@
   //  - [data-math-source]  : ChatGPT (span[role="math"])
   //  - ms-katex       : Google AI Studio (ms-katex.inline / ms-katex.display)
   var HOVER_SELECTOR = FORCED_MODE
-    ? '.katex, .katex-display, mjx-container, math, [role="math"], [data-math], [data-math-source], ms-katex'
-    : '.katex, .katex-display, math, [role="math"], [data-math], [data-math-source], ms-katex';
+    ? '.katex, .katex-display, mjx-container, math, [role="math"], [data-math], [data-math-source], [data-testid="math-container"], [data-testid="math-inline"], [data-testid="math-block"], .math-inline, .math-display, .math-block, ms-katex'
+    : '.katex, .katex-display, math, [role="math"], [data-math], [data-math-source], [data-testid="math-container"], [data-testid="math-inline"], [data-testid="math-block"], .math-inline, .math-display, .math-block, ms-katex';
 
   var API_URL = 'https://hwip.dshs.dev/api/convert';
   var currentKatex = null;
@@ -255,7 +255,9 @@
     if (!t || !t.closest) return;
     if (t === btn) { cancelHide(); return; }
     var el = t.closest(HOVER_SELECTOR);
-    if (el && hasExtractable(el)) { cancelHide(); showConvert(el); }
+    // ChatGPT는 원본 LaTeX를 hover 시점보다 늦게 React props에 노출하기도 한다.
+    // 버튼 표시를 원문 추출 성공 여부로 막지 않고, 실제 추출은 클릭할 때 수행한다.
+    if (el) { cancelHide(); showConvert(el); }
   });
   document.addEventListener('mouseout', function (e) {
     var t = e.target;
