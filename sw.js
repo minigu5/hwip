@@ -5,7 +5,7 @@
  * 오프라인 상태에서도 같은 자원을 캐시에서 즉시 돌려주어 사이트가 깨지지 않게 한다.
  *
  * 전략 요약:
- *   - 같은 오리진 정적 자원: cache-first (캐시에 있으면 즉시, 없으면 네트워크 후 캐시)
+ *   - 같은 오리진 정적 자원: network-first → 실패 시 캐시 (배포 직후에도 옛 app.js가 돌지 않게)
  *   - 내비게이션 요청: network-first → 실패 시 캐시된 index.html로 폴백 (새로고침 보장)
  *   - CDN(jsdelivr) 자원: cache-first (KaTeX·transformers.js 런타임)
  *   - HuggingFace 모델, Vercel insights, rhwp 등 외부 트래픽: 네트워크 우선·캐시 없음
@@ -15,8 +15,12 @@
  * 로직을 고칠 때 CACHE_VERSION을 올리면 사용자 브라우저가 새 셸을 받는다.
  */
 
-var CACHE_VERSION = 'v14-2026-11-10-ocr-finetune';
-var CACHE_NAME = 'whip-app-shell-' + CACHE_VERSION;
+var CACHE_VERSION = 'v15-2026-11-10-network-first';
+// v14까지는 cache-first였고 캐시 이름이 'whip-app-shell-'로 시작했다. 접두어를 바꿔 두면
+// 옛 SW가 띄운 페이지(옛 app.js가 돌고 있을 수 있음)가 있을 때만 골라 새로고침할 수 있다.
+var CACHE_PREFIX = 'whip-shell-';
+var LEGACY_PREFIX = 'whip-app-shell-';
+var CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
 var APP_SHELL = [
   './',
@@ -54,17 +58,18 @@ self.addEventListener('install', function (event) {
 self.addEventListener('activate', function (event) {
   event.waitUntil(
     caches.keys().then(function (keys) {
-      var hadOldCache = keys.some(function (key) {
-        return key.indexOf('whip-app-shell-') === 0 && key !== CACHE_NAME;
-      });
+      // cache-first 시절 캐시가 있으면 열린 페이지가 옛 app.js로 돌고 있을 수 있어 새로고침을 요청한다.
+      // 그 뒤 버전끼리는 network-first라 페이지 코드가 이미 최신이므로 새로고침하지 않는다
+      // (받던 OCR 모델이나 인식 결과가 새로고침에 날아가지 않게).
+      var hadLegacyCache = keys.some(function (key) { return key.indexOf(LEGACY_PREFIX) === 0; });
       return Promise.all(keys.map(function (key) {
-        if (key.indexOf('whip-app-shell-') === 0 && key !== CACHE_NAME) {
+        if (key.indexOf(LEGACY_PREFIX) === 0 || (key.indexOf(CACHE_PREFIX) === 0 && key !== CACHE_NAME)) {
           return caches.delete(key);
         }
       })).then(function () {
         return self.clients.claim();
       }).then(function () {
-        if (!hadOldCache) return;
+        if (!hadLegacyCache) return;
         return self.clients.matchAll({ type: 'window' }).then(function (clients) {
           clients.forEach(function (c) { c.postMessage({ type: 'SW_UPDATED' }); });
         });
@@ -119,7 +124,23 @@ self.addEventListener('fetch', function (event) {
   var sameOrigin = url.origin === self.location.origin;
   if (!sameOrigin && !isCdnShell(url)) return; // 그 외 외부 자원은 손대지 않음
 
-  // cache-first: 캐시에 있으면 즉시 반환, 없으면 네트워크 후 캐시에 적재
+  // 같은 오리진: network-first. cache-first면 배포 직후 첫 방문에서 새 index.html과 옛 app.js가
+  // 섞여 돌고(옛 OCR 모델을 받기 시작했다가 SW 갱신 새로고침에 날아감), 새 SW가 깔린 뒤에야 바뀐다.
+  // HTTP 캐시가 ETag로 재검증하므로 바뀌지 않은 파일은 304로 가볍게 끝난다. 오프라인이면 캐시.
+  if (sameOrigin) {
+    event.respondWith(
+      fetch(req).then(function (res) {
+        if (res && res.status === 200 && res.type === 'basic') {
+          var copy = res.clone();
+          caches.open(CACHE_NAME).then(function (c) { c.put(req, copy).catch(function () {}); });
+        }
+        return res;
+      }).catch(function () { return caches.match(req); })
+    );
+    return;
+  }
+
+  // CDN(버전 고정 URL): cache-first. 캐시에 있으면 즉시 반환, 없으면 네트워크 후 캐시에 적재
   event.respondWith(
     caches.match(req).then(function (cached) {
       if (cached) return cached;

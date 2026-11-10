@@ -483,7 +483,7 @@
     ocrStatus.innerHTML = html;
   }
 
-  // transformers.js는 인코더(54MB)·디코더(26MB) 등 파일마다 따로 진행률을 보낸다.
+  // transformers.js는 인코더(14MB)·디코더(7MB) 등 파일마다 따로 진행률을 보낸다.
   // 파일별 %를 그대로 그리면 바가 두 번 차는 것처럼 보이므로 전체 바이트로 합산하고,
   // 늦게 시작한 파일 때문에 %가 뒤로 가지 않게 최댓값만 표시한다.
   // config·tokenizer 같은 작은 파일이 먼저 끝나 100%로 고정되지 않게 가중치 파일만 센다.
@@ -502,7 +502,7 @@
     }
     var loaded = 0, total = 0;
     Object.keys(ocrFiles).forEach(function (k) { loaded += ocrFiles[k].loaded; total += ocrFiles[k].total; });
-    if (!total) { setOcrStatus('AI 모델 준비 중… (최초 1회 약 80MB 다운로드)', 'busy'); return; }
+    if (!total) { setOcrStatus('AI 모델 준비 중… (최초 1회 약 20MB 다운로드)', 'busy'); return; }
     ocrPct = Math.max(ocrPct, Math.min(100, Math.round((loaded / total) * 100)));
     setOcrStatus('AI 모델 준비 중… ' + ocrPct +
       '% <span class="ocr-progress"><i style="width:' + ocrPct + '%"></i></span>', 'busy');

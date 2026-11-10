@@ -199,7 +199,8 @@ HWP/HWPX 파일을 업로드하면 브라우저 안에서 LaTeX 수식을 한컴
 
 `sw.js`가 첫 방문에서 앱 쉘(HTML·JS·CSS·`vendor/jszip.min.js`·KaTeX CDN)을 캐시에 담아 두고, 이후 새로고침이나 오프라인에서도 변환 페이지가 그대로 동작하게 한다.
 
-- **전략**: 내비게이션은 network-first → 실패 시 캐시된 `index.html` 폴백. 같은 오리진 정적 자원·KaTeX CDN은 cache-first. HuggingFace(OCR 모델)·rhwp·Vercel insights 등은 캐시하지 않고 통과.
+- **전략**: 내비게이션·같은 오리진 정적 자원은 network-first → 실패(오프라인) 시 캐시. 버전 고정 URL인 CDN(KaTeX·transformers.js)만 cache-first. HuggingFace(OCR 모델)·rhwp·Vercel insights 등은 캐시하지 않고 통과. 같은 오리진을 cache-first로 두면 배포 직후 첫 방문에서 옛 `app.js`가 돌아 옛 OCR 모델을 받다가 SW 갱신 새로고침에 날아갔다(v14까지).
+- **새로고침**: 새 SW는 cache-first 시절 캐시(`whip-app-shell-*`)가 있을 때만 `SW_UPDATED`를 보내고, `index.html`은 OCR 진행 중이거나 입력이 있으면 그마저 건너뛴다. 지금 캐시 접두어는 `whip-shell-`.
 - **캐시 무효화**: `CACHE_VERSION` 상수를 올리면 사용자 브라우저가 새 셸을 받는다. 앱 쉘 목록(`APP_SHELL`)이나 변환 로직을 고칠 때 함께 올린다. 현재 APP_SHELL에는 `src/md-to-hwpx.js`, `templates/blank.hwpx`, marked CDN, KaTeX auto-render CDN이 포함된다.
 - **오프라인 배너**: `index.html`이 `navigator.onLine`/`online`/`offline` 이벤트로 상단에 "⚠️ 오프라인" 배너를 슬라이드 표시.
 
@@ -222,7 +223,6 @@ HWP/HWPX 파일을 업로드하면 브라우저 안에서 LaTeX 수식을 한컴
 - 커밋·푸시는 사용자가 요청할 때만 한다.
 - `src/converter.js` 수정 시 `chrome-extension/lib/converter.js`도 함께 동기화한다.
 - 페이지 간 링크는 확장자 없는 경로(`guide`, `about#contact`)로 건다 — Vercel `cleanUrls`가 `.html`을 308 리디렉션해 이동이 느려지기 때문. 로컬 미리보기는 `npx serve`(cleanUrls 지원)로. 각 페이지의 `speculationrules`가 메뉴 링크를 미리 받아 두고 호버 시 미리 렌더링한다(방문 통계는 실제로 열릴 때만 로드).
-- 안내 페이지 공통 스타일·스크립트(`public/site.css`·`site.js`)는 SW cache-first라 수정 시 `CACHE_VERSION`을 올린다.
 - 앱 쉘 자원(HTML/JS/CSS/벤더/템플릿) 추가·삭제 시 `sw.js`의 `APP_SHELL`과 `CACHE_VERSION`을 함께 갱신.
 - `api/convert.js`는 변환 로직을 직접 구현하지 않고 `src/converter.js`에만 의존한다 — 중복 구현 금지.
 - `src/md-to-hwpx.js`는 `src/converter.js`(`window.LatexToHwp`)에 의존한다. 마크다운 변환 엔진을 수정할 때 이 의존 관계를 깨지 않도록 주의.

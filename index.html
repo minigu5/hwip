@@ -927,6 +927,10 @@
       });
       navigator.serviceWorker.addEventListener('message', function (event) {
         if (event.data && event.data.type === 'SW_UPDATED') {
+          // 옛 cache-first SW가 띄운 페이지를 최신 코드로 바꾸려는 새로고침이다(sw.js activate).
+          // 모델을 받거나 인식 중이거나 입력이 있으면 하던 일이 날아가므로 건너뛴다.
+          var input = document.getElementById('input');
+          if (document.querySelector('#ocrStatus.busy') || (input && input.value.trim())) return;
           window.location.reload();
         }
       });
