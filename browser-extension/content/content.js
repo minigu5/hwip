@@ -39,8 +39,8 @@
   //  - [data-math-source]  : ChatGPT (span[role="math"])
   //  - ms-katex       : Google AI Studio (ms-katex.inline / ms-katex.display)
   var HOVER_SELECTOR = FORCED_MODE
-    ? '.katex, mjx-container, math, [data-math], [data-math-source], ms-katex'
-    : '.katex, [data-math], [data-math-source], ms-katex';
+    ? '.katex, .katex-display, mjx-container, math, [role="math"], [data-math], [data-math-source], ms-katex'
+    : '.katex, .katex-display, math, [role="math"], [data-math], [data-math-source], ms-katex';
 
   var API_URL = 'https://hwip.dshs.dev/api/convert';
   var currentKatex = null;
@@ -66,20 +66,60 @@
   function closestDataMath(el) {
     var cur = el;
     while (cur) {
-      if (cur.getAttribute &&
-          (cur.getAttribute('data-math') || cur.getAttribute('data-math-source'))) return cur;
+      if (cur.getAttribute && dataMathValue(cur)) return cur;
       cur = cur.parentElement;
     }
     return null;
   }
   function dataMathValue(el) {
-    return ((el.getAttribute('data-math') || el.getAttribute('data-math-source')) || '').trim();
+    var keys = ['data-math', 'data-math-source', 'data-formula', 'data-latex', 'data-tex', 'data-expression'];
+    for (var i = 0; i < keys.length; i++) {
+      var value = el.getAttribute(keys[i]);
+      if (value && value.trim()) return value.trim();
+    }
+    return '';
+  }
+  function stripMathDelimiters(value) {
+    return (value || '').trim()
+      .replace(/^\$\$([\s\S]*)\$\$$/, '$1')
+      .replace(/^\\\[([\s\S]*)\\\]$/, '$1')
+      .replace(/^\\\(([\s\S]*)\\\)$/, '$1')
+      .replace(/^\$([\s\S]*)\$$/, '$1')
+      .trim();
+  }
+  function latexFromReactFiber(el) {
+    var current = el;
+    for (var ancestor = 0; current && ancestor < 7; ancestor++, current = current.parentElement) {
+      var keys;
+      try { keys = Object.keys(current); } catch (e) { continue; }
+      for (var i = 0; i < keys.length; i++) {
+        if (keys[i].indexOf('__reactFiber') !== 0 && keys[i].indexOf('__reactInternalInstance') !== 0) continue;
+        var fiber = current[keys[i]];
+        for (var depth = 0; fiber && depth < 50; depth++, fiber = fiber.return) {
+          try {
+            var props = fiber.memoizedProps;
+            if (!props) continue;
+            var propKeys = ['math', 'formula', 'tex', 'expression', 'latex', 'value'];
+            for (var p = 0; p < propKeys.length; p++) {
+              var value = props[propKeys[p]];
+              if (typeof value === 'string' && value.trim()) return value.trim();
+            }
+            if (typeof props.children === 'string' && /[\\{}^_=]/.test(props.children))
+              return props.children.trim();
+          } catch (e) { /* React 버전에 따라 접근할 수 없는 속성은 건너뜀 */ }
+        }
+      }
+    }
+    return '';
   }
   // 강제 모드 또는 알려진 추출 경로가 있으면 true
   function hasExtractable(el) {
     if (!el) return false;
     if (hasAnnotation(el)) return true;
-    if (closestDataMath(el)) return true;  // Gemini
+    if (closestDataMath(el)) return true;
+    if (latexFromReactFiber(el)) return true;
+    if (dataMathValue(el)) return true;
+    if (el.getAttribute && (el.getAttribute('aria-label') || el.getAttribute('alttext'))) return true;
     if (!FORCED_MODE) return false;
     if (el.querySelector('script[type="math/tex"], script[type^="math/tex"]')) return true;
     if (el.tagName && el.tagName.toLowerCase() === 'math') return true;
@@ -164,16 +204,24 @@
   function extractLatex(el) {
     // 1) Gemini(data-math) / ChatGPT(data-math-source): 부모 요소에 원본 LaTeX 저장
     var dmEl = closestDataMath(el);
-    if (dmEl) return dataMathValue(dmEl);
+    if (dmEl) return stripMathDelimiters(dataMathValue(dmEl));
     // 2) KaTeX/MathJax 공통 — annotation 에 raw LaTeX
     var ann = el.querySelector('annotation[encoding="application/x-tex"]');
-    if (ann && ann.textContent) return ann.textContent.trim();
-    // 2) 강제 모드 — MathJax v2 의 <script type="math/tex"> 에 raw LaTeX
+    if (ann && ann.textContent) return stripMathDelimiters(ann.textContent);
+    // 3) ChatGPT의 HTML 전용 KaTeX 렌더는 원문을 React props에만 보관할 수 있다.
+    var reactLatex = latexFromReactFiber(el);
+    if (reactLatex) return stripMathDelimiters(reactLatex);
+    // 4) 최신 ChatGPT/MathML 래퍼의 대체 속성
+    var directData = dataMathValue(el);
+    if (directData) return stripMathDelimiters(directData);
+    var accessible = el.getAttribute && (el.getAttribute('aria-label') || el.getAttribute('alttext'));
+    if (accessible) return stripMathDelimiters(accessible);
+    // 5) 강제 모드 — MathJax v2 의 <script type="math/tex"> 에 raw LaTeX
     if (FORCED_MODE) {
       var sc = el.querySelector('script[type="math/tex"], script[type^="math/tex"]');
       if (sc && sc.textContent) return sc.textContent.trim();
     }
-    // 3) 강제 모드 — content-forced.js 가 받아둔 raw 소스(.md 원문 등)에서 인덱스로 lookup
+    // 6) 강제 모드 — content-forced.js 가 받아둔 raw 소스(.md 원문 등)에서 인덱스로 lookup
     if (FORCED_MODE && Array.isArray(window.__hwpRawMathSources) && window.__hwpRawMathSources.length) {
       var idx = indexOfContainer(el);
       if (idx >= 0 && idx < window.__hwpRawMathSources.length) {
@@ -181,10 +229,10 @@
         if (rec && rec.src) return rec.src;
       }
     }
-    // 4) MathML <math> textContent
+    // 7) MathML <math> textContent
     var mml = (el.tagName && el.tagName.toLowerCase() === 'math') ? el : el.querySelector('math');
     if (mml && mml.textContent) return mml.textContent.trim();
-    // 5) 마지막 폴백 — 보이는 텍스트 (시각 문자라 정확도 낮음)
+    // 8) 마지막 폴백 — 보이는 텍스트 (시각 문자라 정확도 낮음)
     return (el.textContent || '').trim();
   }
 
