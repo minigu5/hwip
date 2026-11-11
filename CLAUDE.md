@@ -65,6 +65,12 @@ lambda  (t)= lambda  ` _{`0} +A _{1} sin( {2 pi } over {24} (t`-` phi  _{1} ))+A
 ```
 index.html              메인 UI (탭 2개: 텍스트 변환 / 파일 변환)
 privacy.html            개인정보 처리방침 페이지
+guide.html              사용법 (기능별 안내 + FAQ)
+examples.html           변환 예시 — 한글 수식은 converter 출력을 정적으로 박음(test/examples-page.test.js가 동기화 검증)
+syntax.html             한글 수식 문법 정리 (CONVERSION_RULES.md 기반, 미확인 기호 제외)
+about.html              소개·만든 사람·문의(#contact)
+terms.html              이용약관
+robots.txt, sitemap.xml 검색엔진용 (sitemap은 cleanUrls 경로)
 app.js                  UI 이벤트, OCR 흐름, 파일 변환 흐름, 마크다운 붙여넣기 흐름
 sw.js                   Service Worker — 앱 쉘 캐시·오프라인 지원
 api/
@@ -80,6 +86,8 @@ vendor/
   jszip.min.js          JSZip v3.10.1 (hwpx-convert.js·md-to-hwpx.js 의존성, MIT)
 public/
   favicon.png
+  site.css              안내 페이지 공통 스타일 (헤더·푸터·토큰은 index.html과 동일하게 유지)
+  site.js               안내 페이지 공통 스크립트 (테마 토글·복사 버튼·KaTeX 렌더·SW 등록)
   logo.svg              헤더 로고 — chrome-extension/store/icon.svg와 동일해야 함
 test/
   converter.test.js     변환 엔진 골든 테스트
@@ -135,9 +143,11 @@ CONVERSION_RULES.md     LaTeX → 한글 수식 전체 매핑 규칙 (스펙 기
 
 수식 이미지 → LaTeX 인식까지 **접속자 브라우저에서** 처리하고, 그 LaTeX를 `window.LatexToHwp.convert`에 그대로 넘긴다. OCR 자체는 서버리스 함수를 쓰지 않는다(모델 추론이 브라우저 WASM에서 실행됨). 변환 로직은 `api/convert.js` REST API로도 별도 제공한다.
 
-- **모델**: `alephpi/FormulaNet` (PP-FormulaNet-S 파인튜닝, 20M, `image-to-text` ONNX). 라이선스 **AGPL-3.0** — 호스팅 시 소스 공개 의무 유의.
+- **모델**: `minigu5/hwip-formulanet` — `alephpi/FormulaNet`(PP-FormulaNet-S 파인튜닝, 20M, `image-to-text` ONNX)을 화면 캡처·행렬·cases·다크모드용으로 다시 파인튜닝하고 가중치만 int8 압축(20MB). 학습·평가 도구는 `tools/ocr-train/`. 라이선스 **AGPL-3.0** — 호스팅 시 소스 공개 의무 유의.
 - **런타임**: `@huggingface/transformers`(transformers.js v3)를 CDN ESM으로 로드. 추론은 Web Worker `src/ocr-worker.js`에서 별도 스레드로 수행.
 - **모델 사용법/전처리는 추측 금지**: 동일 모델 저자의 검증된 구현(Texo-web)을 그대로 따랐다. `VisionEncoderDecoderModel.from_pretrained(..., {dtype:'fp32'})` + 1채널 384×384 텐서를 3채널로 복제해 `model.generate`. 전처리(`app.js`의 `preprocessImage`)는 UniMERNet 규약(그레이스케일·색반전·여백크롭·중앙패딩·mean 0.7931/std 0.1738)을 따른다. **이 값/순서를 바꾸면 정확도가 떨어지므로 함부로 수정하지 말 것.**
+- **후처리**: 모델 출력은 UniMER 라벨 규약(`a _ { n } ~ { = } ~ 1`, `\left ( \begin{array}` 행렬, `\operatorname* { l i m }`)이라 `converter.js`의 `cleanOcr()`로 표준 LaTeX로 정리한 뒤 입력창에 넣는다. 간격 잡음(`~`·`\!`) 제거, `{ = }`·`{ \frac … }` 감싸기 벗기기(인자 자리는 보존), array→pmatrix/cases, KaTeX 별칭(`\infin`·`\rarr`) 정규화, 생성 폭주 반복 축약. 벤치(508장)에서 433→475.
+- **투명 PNG**: 다크모드에서 복사한 투명 배경 이미지는 글자가 밝으므로 검정 배경에 합성한다(흰 배경이면 글자가 사라짐).
 - **검증**: 헤드리스 Chrome + matplotlib로 렌더한 수식 PNG로 E2E 인식·변환을 확인. (KaTeX는 헤드리스에서 웹폰트 글리프가 비어 부적합 — 실제 렌더 이미지를 쓸 것.)
 
 ## 파일 변환
@@ -189,7 +199,8 @@ HWP/HWPX 파일을 업로드하면 브라우저 안에서 LaTeX 수식을 한컴
 
 `sw.js`가 첫 방문에서 앱 쉘(HTML·JS·CSS·`vendor/jszip.min.js`·KaTeX CDN)을 캐시에 담아 두고, 이후 새로고침이나 오프라인에서도 변환 페이지가 그대로 동작하게 한다.
 
-- **전략**: 내비게이션은 network-first → 실패 시 캐시된 `index.html` 폴백. 같은 오리진 정적 자원·KaTeX CDN은 cache-first. HuggingFace(OCR 모델)·rhwp·Vercel insights 등은 캐시하지 않고 통과.
+- **전략**: 내비게이션·같은 오리진 정적 자원은 network-first → 실패(오프라인) 시 캐시. 버전 고정 URL인 CDN(KaTeX·transformers.js)만 cache-first. HuggingFace(OCR 모델)·rhwp·Vercel insights 등은 캐시하지 않고 통과. 같은 오리진을 cache-first로 두면 배포 직후 첫 방문에서 옛 `app.js`가 돌아 옛 OCR 모델을 받다가 SW 갱신 새로고침에 날아갔다(v14까지).
+- **새로고침**: 새 SW는 cache-first 시절 캐시(`whip-app-shell-*`)가 있을 때만 `SW_UPDATED`를 보내고, `index.html`은 OCR 진행 중이거나 입력이 있으면 그마저 건너뛴다. 지금 캐시 접두어는 `whip-shell-`.
 - **캐시 무효화**: `CACHE_VERSION` 상수를 올리면 사용자 브라우저가 새 셸을 받는다. 앱 쉘 목록(`APP_SHELL`)이나 변환 로직을 고칠 때 함께 올린다. 현재 APP_SHELL에는 `src/md-to-hwpx.js`, `templates/blank.hwpx`, marked CDN, KaTeX auto-render CDN이 포함된다.
 - **오프라인 배너**: `index.html`이 `navigator.onLine`/`online`/`offline` 이벤트로 상단에 "⚠️ 오프라인" 배너를 슬라이드 표시.
 
@@ -211,6 +222,7 @@ HWP/HWPX 파일을 업로드하면 브라우저 안에서 LaTeX 수식을 한컴
 - 외부 의존성은 최소로. 가능하면 추가하지 않는다.
 - 커밋·푸시는 사용자가 요청할 때만 한다.
 - `src/converter.js` 수정 시 `chrome-extension/lib/converter.js`도 함께 동기화한다.
+- 페이지 간 링크는 확장자 없는 경로(`guide`, `about#contact`)로 건다 — Vercel `cleanUrls`가 `.html`을 308 리디렉션해 이동이 느려지기 때문. 로컬 미리보기는 `npx serve`(cleanUrls 지원)로. 각 페이지의 `speculationrules`가 메뉴 링크를 미리 받아 두고 호버 시 미리 렌더링한다(방문 통계는 실제로 열릴 때만 로드).
 - 앱 쉘 자원(HTML/JS/CSS/벤더/템플릿) 추가·삭제 시 `sw.js`의 `APP_SHELL`과 `CACHE_VERSION`을 함께 갱신.
 - `api/convert.js`는 변환 로직을 직접 구현하지 않고 `src/converter.js`에만 의존한다 — 중복 구현 금지.
 - `src/md-to-hwpx.js`는 `src/converter.js`(`window.LatexToHwp`)에 의존한다. 마크다운 변환 엔진을 수정할 때 이 의존 관계를 깨지 않도록 주의.

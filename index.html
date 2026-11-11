@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="dshs-verify" content="3805361d07024e79b5e93ce8b7c87b8d">
   <title>휩 - LaTeX 한글 수식 변환기</title>
+  <meta name="description" content="ChatGPT·Claude·Gemini가 쓴 LaTeX 수식을 한컴오피스 한글(HWP) 수식 편집기 문법으로 바로 변환합니다. 이미지 수식 인식, HWP·HWPX 문서 변환, 마크다운→HWPX 지원. 무료, 회원가입 없음." />
+  <link rel="canonical" href="https://hwip.dshs.dev/" />
   <link rel="icon" type="image/png" href="public/favicon.png" />
   <script>
     /* 저장된 테마를 본문 렌더 전에 적용해 깜빡임(FOUC) 방지. 저장값이 없으면 시스템 테마를 따른다. */
@@ -25,10 +27,26 @@
   <script defer
     src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
   <script>
+    /* Vercel 방문 통계: 미리 렌더링(prerender)된 페이지는 실제로 열렸을 때만 집계한다. */
     window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    (function () {
+      function load(src) { var s = document.createElement('script'); s.defer = true; s.src = src; document.head.appendChild(s); }
+      function start() {
+        load('/_vercel/insights/script.js');
+        load('https://cdn.vercel-insights.com/v1/script.js');
+      }
+      if (document.prerendering) document.addEventListener('prerenderingchange', start, { once: true });
+      else start();
+    })();
   </script>
-  <script defer src="/_vercel/insights/script.js"></script>
-  <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
+  <script type="speculationrules">
+    {
+      "prefetch": [{ "source": "document", "where": { "selector_matches": ".site-nav a" }, "eagerness": "immediate" }],
+      "prerender": [{ "source": "document", "where": { "and": [
+        { "href_matches": "/*" }, { "not": { "href_matches": "/api/*" } }, { "not": { "selector_matches": "[aria-current]" } }
+      ] }, "eagerness": "moderate" }]
+    }
+  </script>
   <style>
     /* 브랜드 토큰은 크롬 확장(chrome-extension/store/src/common.css)과 맞춘다. */
     :root {
@@ -94,18 +112,40 @@
     a { color: var(--accent); }
 
     .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px 40px; }
-    .wrap.wide { max-width: 1120px; }
 
     /* ── 헤더 ── */
     .site-header {
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 20px 0;
+      max-width: 832px; margin: 0 auto;
+      position: sticky; top: 0; z-index: 50;
+      background: var(--ground);
+      /* 배경을 wrap 폭 밖까지 늘려 스크롤된 본문이 옆으로 비치지 않게 한다 */
+      box-shadow: 0 0 0 100vmax var(--ground);
+      clip-path: inset(0 -100vmax -1px);
     }
+    /* 스크롤되면 아래쪽에 전폭 구분선 */
+    .site-header::after {
+      content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+      /* 레이아웃 폭을 넓히면 가로 스크롤이 생기므로 그림자로만 전폭을 칠한다 */
+      background: var(--line); box-shadow: 0 0 0 100vmax var(--line); clip-path: inset(0 -100vmax);
+      opacity: 0; transition: opacity 0.15s;
+    }
+    .site-header.is-stuck::after { opacity: 1; }
     .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); }
     .brand img { display: block; width: 36px; height: 36px; }
     .brand-name { font-size: 20px; font-weight: 800; color: var(--blue); }
     .brand-sub { font-size: 14px; font-weight: 500; color: var(--ink-2); }
-    .header-actions { display: flex; align-items: center; gap: 4px; }
+    .brand { flex: none; }
+    .site-nav { display: flex; gap: 2px; margin-right: auto; margin-left: 8px; }
+    .site-nav a {
+      display: inline-flex; align-items: center; min-height: 36px; padding: 0 10px;
+      border-radius: 8px; color: var(--ink-2); font-size: 15px; font-weight: 600;
+      text-decoration: none; white-space: nowrap; transition: background 0.15s, color 0.15s;
+    }
+    .site-nav a:hover { background: var(--accent-tint); color: var(--accent); }
+    .site-nav a[aria-current="page"] { color: var(--accent); font-weight: 700; }
+    .header-actions { display: flex; align-items: center; gap: 4px; flex: none; }
     .ext-btn {
       display: inline-flex; align-items: center; gap: 6px;
       min-height: 36px; padding: 0 12px; margin-left: 4px;
@@ -118,6 +158,12 @@
     .theme-toggle .ico-sun { display: none; }
     [data-theme="dark"] .theme-toggle .ico-sun { display: block; }
     [data-theme="dark"] .theme-toggle .ico-moon { display: none; }
+    /* 좁은 화면에선 메뉴를 둘째 줄로 내리고 넘치면 가로 스크롤 */
+    @media (max-width: 900px) {
+      .site-header { flex-wrap: wrap; row-gap: 4px; }
+      .site-nav { order: 3; width: 100%; margin: 0 -10px; overflow-x: auto; scrollbar-width: none; }
+      .site-nav::-webkit-scrollbar { display: none; }
+    }
     @media (max-width: 640px) { .header-actions .hide-sm { display: none; } }
     /* 좁은 화면에선 부제를 빼서 로고와 버튼을 한 줄에 유지 */
     @media (max-width: 480px) { .brand-sub { display: none; } }
@@ -572,6 +618,13 @@
         <span class="brand-name">휩</span>
         <span class="brand-sub">AI to 한글(HWP)</span>
       </a>
+      <nav class="site-nav" aria-label="사이트 메뉴">
+        <a href="./" aria-current="page">변환기</a>
+        <a href="guide">사용법</a>
+        <a href="examples">예시</a>
+        <a href="syntax">문법</a>
+        <a href="about">소개</a>
+      </nav>
       <div class="header-actions">
         <a class="btn ghost hide-sm" href="https://github.com/minigu5/hwip" target="_blank" rel="noopener">GitHub</a>
         <button class="btn ghost theme-toggle" id="themeToggle" type="button"
@@ -734,8 +787,11 @@
         <a href="https://github.com/fakeminjun7321/hwpx-latex-to-equation" target="_blank" rel="noopener">hwpx-latex-to-equation</a>,
         <a href="https://github.com/edwardkim/rhwp" target="_blank" rel="noopener">rhwp</a>,
         <a href="https://github.com/minigu5/markdown_to_hwp" target="_blank" rel="noopener">markdown_to_hwp</a></span>
+      <a href="about">소개</a>
+      <a href="terms">이용약관</a>
+      <a href="privacy">개인정보처리방침</a>
+      <a href="about#contact">문의</a>
       <a href="https://github.com/minigu5/hwip" target="_blank" rel="noopener">GitHub</a>
-      <a href="privacy.html">개인정보처리방침</a>
       <span class="copy">© 2026 휩</span>
     </footer>
   </div>
@@ -886,10 +942,22 @@
       });
       navigator.serviceWorker.addEventListener('message', function (event) {
         if (event.data && event.data.type === 'SW_UPDATED') {
+          // 옛 cache-first SW가 띄운 페이지를 최신 코드로 바꾸려는 새로고침이다(sw.js activate).
+          // 모델을 받거나 인식 중이거나 입력이 있으면 하던 일이 날아가므로 건너뛴다.
+          var input = document.getElementById('input');
+          if (document.querySelector('#ocrStatus.busy') || (input && input.value.trim())) return;
           window.location.reload();
         }
       });
     }
+
+    /* 고정 헤더: 스크롤되면 구분선 표시 */
+    (function () {
+      var header = document.querySelector('.site-header');
+      function onScroll() { header.classList.toggle('is-stuck', window.scrollY > 0); }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    })();
 
     /* 오프라인 안내 배너 — 연결 상태에 따라 표시/숨김 */
     (function () {

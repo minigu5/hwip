@@ -1,0 +1,52 @@
+| 변형 | 크기 | 보기 일치(전체) | 깔끔 | 저해상도 | 다크 | HWP 출력 일치 | 토큰 오류율 | fp32와 동일 | 추론 ms |
+|---|---|---|---|---|---|---|---|---|---|
+| fp32 | 80MB | 89.4% (279/312) | 94.2% | 82.7% | 91.3% | 51.3% | 0.161 | 100.0% | 445 |
+| w8 | 20MB | 88.8% (277/312) | 93.3% | 81.7% | 91.3% | 51.6% | 0.166 | 95.2% | 615 |
+| dq8 | 21MB | 87.2% (272/312) | 92.3% | 78.8% | 90.4% | 47.8% | 0.309 | 85.6% | 651 |
+
+## fp32 대비 w8 차이
+- [12:clean] gt: x_{12}^{34}
+    fp32(O): x _ { 1 2 } ^ { 3 4 }
+    w8(X): \boldsymbol { x } _ { 1 2 } ^ { 3 4 }
+- [14:clean] gt: S_n = \frac{n(a_1 + a_n)}{2}
+    fp32(O): S _ { n } = { \frac { n { \bigl ( } a _ { 1 } + a _ { n } { \bigr ) } } { 2 } }
+    w8(X): S _ { n } = { \frac { n \left ( a _ { 1 } + a _ { n } \right ) } { 2 } }
+- [45:dark] gt: \int e^{-x^2} dx
+    fp32(O): \int e ^ { - x ^ { 2 } } d x
+    w8(O): \int \! e ^ { - x ^ { 2 } } d x
+- [52:small] gt: (f \circ g)(x) = f(g(x))
+    fp32(X): ( f \circ q ) ( x ) = f ( q ( x ) )
+    w8(O): ( f \circ g ) ( x ) = f ( g ( x ) )
+- [55:clean] gt: \sigma = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (x_i - \bar{x})^2}
+    fp32(O): \sigma = { \sqrt { \frac { 1 } { n } \sum _ { i = 1 } ^ { n } ( x _ { i } - { \bar { x } } ) ^ { 2 } } }
+    w8(O): \sigma = { \sqrt { { \frac { 1 } { n } } \sum _ { i = 1 } ^ { n } ( x _ { i } - { \bar { x } } ) ^ { 2 } } }
+- [58:small] gt: P(A|B) = \frac{P(B|A)P(A)}{P(B)}
+    fp32(O): P ( A | B ) = \frac { P ( B | A ) P ( A ) } { P ( B ) }
+    w8(O): P ( A | B ) = { \frac { P ( B | A ) P ( A ) } { P ( B ) } }
+- [63:dark] gt: A = \begin{pmatrix} a & b \\ c & d \end{pmatrix}
+    fp32(X): A = { \binom { a } { c } } \quad d
+    w8(X): A = { \binom { a } { c } } \quad b
+- [65:clean] gt: A^{-1} = \frac{1}{ad - bc} \begin{pmatrix} d & -b \\ -c & a \end{pmatrix}
+    fp32(X): A ^ { - 1 } = { \frac { 1 } { a d - b c } } { \binom { d } { - b } { - c } } ~ ~ a
+    w8(X): A ^ { - 1 } = { \frac { 1 } { a d - b c } } { \binom { d } { - b } { - c } } ~ a
+- [71:clean] gt: \| \mathbf{v} \| = \sqrt{v_1^2 + v_2^2 + v_3^2}
+    fp32(O): \| \mathbf { v } \| = { \sqrt { v _ { 1 } ^ { 2 } + v _ { 2 } ^ { 2 } + v _ { 3 } ^ { 2 } } }
+    w8(O): \| \mathbf { v } \| = \sqrt { v _ { 1 } ^ { 2 } + v _ { 2 } ^ { 2 } + v _ { 3 } ^ { 2 } }
+- [72:small] gt: F = G \frac{m_1 m_2}{r^2}
+    fp32(O): F = G { \frac { m _ { 1 } m _ { 2 } } { r ^ { 2 } } }
+    w8(X): \begin{array} { r } { F = G \frac { m _ { 1 } m _ { 2 } } { r ^ { 2 } } } \end{array}
+- [73:dark] gt: E_k = \frac{1}{2} m v^2
+    fp32(O): E _ { k } = { \frac { 1 } { 2 } } m v ^ { 2 }
+    w8(O): E _ { k } = \frac { 1 } { 2 } m v ^ { 2 }
+- [86:small] gt: \tau = r \times F
+    fp32(O): \tau = r \times F
+    w8(X): \boldsymbol { \tau } = \boldsymbol { r } \times \boldsymbol { F }
+- [90:small] gt: k = A e^{-\frac{E_a}{RT}}
+    fp32(X): k = A e ^ { - { \frac { E _ { n } } { N 7 } } }
+    w8(X): k = A e ^ { - { \frac { E _ { n } } { N } } }
+- [95:dark] gt: \lfloor x \rfloor + \lceil y \rceil
+    fp32(X): | x | + \lceil y \rceil
+    w8(X): | x | + \lceil y
+- [100:clean] gt: \triangle ABC \sim \triangle DEF
+    fp32(X): { A B C } \sim { D E F }
+    w8(O): \triangle A B C \sim \triangle D E F

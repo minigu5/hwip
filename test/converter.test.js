@@ -2,7 +2,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { convert } = require('../src/converter.js');
+const { convert, cleanOcr } = require('../src/converter.js');
 
 // 골든 케이스 (CLAUDE.md / CONVERSION_RULES.md의 기준 예시)
 // HWP에서 공백은 표시되지 않고 항 구분 용도이므로, 출력은 사용자 원본 골든과
@@ -219,4 +219,58 @@ test('revision 1.3 한글 전용 LADDER/SLADDER/LONGDIV 확장', () => {
   assert.strictEqual(convert('\\ladder{2&12&28\\\\2&6&14}'), 'LADDER {2 & 12 & 28 # 2 & 6 & 14}');
   assert.strictEqual(convert('\\sladder{2&12\\\\2&6&0}'), 'SLADDER {2 & 12 # 2 & 6 & 0}');
   assert.strictEqual(convert('\\longdiv{6}{422}{2532\\\\24}'), 'LONGDIV {6} {422} {2532 # 24}');
+});
+
+// 이미지 OCR(FormulaNet) 출력 정리 — UniMER 라벨 규약을 표준 LaTeX로
+test('cleanOcr: 띄어 쓴 토큰·간격 잡음·감싼 기호 정리', () => {
+  assert.strictEqual(cleanOcr('a _ { n } ~ { = } ~ a _ { 1 } r ^ { n ~ { - } ~ 1 }'), 'a_{n}=a_{1}r^{n-1}');
+  assert.strictEqual(cleanOcr('a _ { n } \\! = \\! a _ { 1 }'), 'a_{n}=a_{1}');
+  assert.strictEqual(cleanOcr('\\Delta ~ { = } ~ b ^ { ~ 2 } - 4 a c'), '\\Delta=b^{2}-4ac');
+  assert.strictEqual(cleanOcr('\\frac { 2 \\pi } { 2 4 }'), '\\frac{2\\pi}{24}');
+});
+
+test('cleanOcr: 함수 이름·KaTeX 별칭', () => {
+  assert.strictEqual(cleanOcr('\\operatorname* { l i m } _ { h \\rarr 0 } f'), '\\lim_{h\\rightarrow0}f');
+  assert.strictEqual(cleanOcr('A _ { 1 } \\mathrm { s i n } t'), 'A_{1}\\sin t');
+  assert.strictEqual(cleanOcr('2 a b { \\mathrm { c o s } } ~ C'), '2ab\\cos C');
+  assert.strictEqual(cleanOcr('\\int _ { - \\infin } ^ { \\infin } f = \\empty'), '\\int_{-\\infty}^{\\infty}f=\\emptyset');
+  assert.strictEqual(cleanOcr('\\mathrm { d } x'), '\\mathrm{d}x');
+});
+
+test('cleanOcr: 행렬·cases·한 줄 array 감싸기', () => {
+  assert.strictEqual(cleanOcr('A = \\left ( \\begin{array} { c c } { a } & { b } \\\\ { c } & { d } \\end{array} \\right )'),
+    'A=\\begin{pmatrix}a&b\\\\ c&d\\end{pmatrix}');
+  assert.strictEqual(cleanOcr('f ( x ) = \\left \\{ \\begin{array} { l l } { x } & { x \\geq 0 } \\\\ { - x } & { x < 0 } \\end{array} \\right.'),
+    'f(x)=\\begin{cases}x&x\\geq0\\\\ -x&x<0\\end{cases}');
+  assert.strictEqual(cleanOcr('\\begin{array} { r } { F = m a } \\end{array}'), 'F=ma');
+  // 세로줄 있는 첨가행렬은 array 유지
+  assert.strictEqual(cleanOcr('\\left [ \\begin{array} { c | c } { 1 } & { 2 } \\end{array} \\right ]'),
+    '\\left[\\begin{array}{c|c}{1}&{2}\\end{array}\\right]');
+});
+
+test('cleanOcr: 인자 자리의 그룹은 벗기지 않는다', () => {
+  assert.strictEqual(cleanOcr('S = { \\frac { n } { 2 } }'), 'S=\\frac{n}{2}');
+  assert.strictEqual(cleanOcr('\\frac { 1 } { n } { \\sum _ { i } } x'), '\\frac{1}{n}\\sum_{i}x');
+  assert.strictEqual(cleanOcr('\\sqrt { { \\frac { 1 } { n } } }'), '\\sqrt{\\frac{1}{n}}');
+  assert.strictEqual(cleanOcr('\\stackrel { ? } { = }'), '\\stackrel{?}{=}');
+  assert.strictEqual(cleanOcr('\\text { i f } ~ x > 0'), '\\text{if}~x>0');
+});
+
+test('cleanOcr: 생성 폭주 반복 축약', () => {
+  assert.strictEqual(cleanOcr('\\int ' + '\\! '.repeat(40) + 'x'), '\\int x');
+  assert.strictEqual(cleanOcr('\\int '.repeat(12) + 'x'), '\\int x');
+});
+
+test('cleanOcr: 붙어 나온 토큰(`},`)도 중괄호 짝 유지', () => {
+  assert.strictEqual(cleanOcr('x _ { 1 }, x _ { 2 }, \\dots, x _ { n }'), 'x_{1},x_{2},\\dots,x_{n}');
+});
+
+test('KaTeX 별칭·\\mathrm 글자 사이 공백', () => {
+  assert.strictEqual(convert('\\infin'), 'inf');
+  assert.strictEqual(convert('\\empty'), 'emptyset');
+  assert.strictEqual(convert('a \\lrarr b'), 'a lrarrow b');
+  assert.strictEqual(convert('f \\colon X'), 'f : X');
+  assert.strictEqual(convert('\\mathrm{s i n} x'), 'sin x');
+  assert.strictEqual(convert('\\operatorname*{lim}_{x}'), 'lim _{x}');
+  assert.strictEqual(convert('\\mathrm{m\\,s}'), '"m s"');
 });
