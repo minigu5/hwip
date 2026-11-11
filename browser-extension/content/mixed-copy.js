@@ -79,8 +79,8 @@
     });
   }
 
-  function encodeFragment(segments) {
-    var json = JSON.stringify({ segments: segments });
+  function encodeFragment(segments, fallbackText) {
+    var json = JSON.stringify({ segments: segments, fallbackText: fallbackText || '' });
     var bytes = new TextEncoder().encode(json);
     var binary = '';
     for (var i = 0; i < bytes.length; i += 0x8000)
@@ -91,10 +91,11 @@
   document.addEventListener('copy', function (event) {
     var source = extractSelection();
     if (!source) return;
+    var fallbackText = window.getSelection().toString();
 
     // Keep a readable fallback while conversion runs. The companion ignores it.
     event.preventDefault();
-    event.clipboardData.setData('text/plain', window.getSelection().toString());
+    event.clipboardData.setData('text/plain', fallbackText);
 
     Promise.all(source.map(function (segment) {
       if (segment.type !== 'latex') return Promise.resolve(segment);
@@ -102,7 +103,7 @@
         return { type: 'equation', value: hwp };
       });
     })).then(function (segments) {
-      return navigator.clipboard.writeText(encodeFragment(segments));
+      return navigator.clipboard.writeText(encodeFragment(segments, fallbackText));
     }).catch(function (error) {
       console.warn('[Hwip] mixed selection conversion failed:', error);
     });

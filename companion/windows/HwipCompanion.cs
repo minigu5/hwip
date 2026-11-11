@@ -317,7 +317,7 @@ namespace HwipCompanion
                     FragmentEnvelope fragment = serializer.Deserialize<FragmentEnvelope>(payload);
                     if (fragment == null || fragment.segments == null || fragment.segments.Count == 0) return;
                     if (fragment.segments.Count > 1000) throw new InvalidDataException("한 번에 복사할 수 있는 텍스트·수식 조각은 1,000개입니다.");
-                    result = equationClipboard.CopyFragment(fragment.segments);
+                    result = equationClipboard.CopyFragment(fragment.segments, fragment.fallbackText);
                 }
                 else
                 {
@@ -474,7 +474,7 @@ namespace HwipCompanion
             return CopyResult.Ok();
         }
 
-        internal CopyResult CopyFragment(List<FragmentSegment> segments)
+        internal CopyResult CopyFragment(List<FragmentSegment> segments, string fallbackText)
         {
             EnsureHwp();
             ResetDocument();
@@ -517,7 +517,39 @@ namespace HwipCompanion
             hwp.Run("Copy");
             Thread.Sleep(100);
             OleFlushClipboard();
+            PreservePlainTextFallback(fallbackText, segments);
             return CopyResult.OkFragment();
+        }
+
+        private static void PreservePlainTextFallback(string fallbackText, List<FragmentSegment> segments)
+        {
+            if (String.IsNullOrEmpty(fallbackText))
+            {
+                var reconstructed = new StringBuilder();
+                foreach (FragmentSegment segment in segments)
+                    if (segment != null && !String.IsNullOrEmpty(segment.value)) reconstructed.Append(segment.value);
+                fallbackText = reconstructed.ToString();
+            }
+
+            IDataObject native = Clipboard.GetDataObject();
+            if (native == null || !native.GetDataPresent("Hwp Native", false)) return;
+
+            var combined = new DataObject();
+            CopyClipboardFormat(native, combined, "Hwp_Native_Info");
+            CopyClipboardFormat(native, combined, "Hwp Native");
+            combined.SetData(DataFormats.UnicodeText, fallbackText);
+            combined.SetData(DataFormats.Text, fallbackText);
+            Clipboard.SetDataObject(combined, true);
+            OleFlushClipboard();
+        }
+
+        private static void CopyClipboardFormat(IDataObject source, DataObject destination, string format)
+        {
+            if (!source.GetDataPresent(format, false)) return;
+            object value = source.GetData(format, false);
+            var stream = value as MemoryStream;
+            if (stream != null) value = new MemoryStream(stream.ToArray(), false);
+            if (value != null) destination.SetData(format, false, value);
         }
 
         private void EnsureHwp()
@@ -690,7 +722,11 @@ namespace HwipCompanion
     }
 
     internal sealed class Request { internal string Method, Path, Origin, BodyText; }
-    internal sealed class FragmentEnvelope { public List<FragmentSegment> segments { get; set; } }
+    internal sealed class FragmentEnvelope
+    {
+        public List<FragmentSegment> segments { get; set; }
+        public string fallbackText { get; set; }
+    }
     internal sealed class FragmentSegment
     {
         public string type { get; set; }
