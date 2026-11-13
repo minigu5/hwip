@@ -20,7 +20,7 @@
 |----------|----------|---------------|
 | **메인 프로젝트** | `/` | [minigu5/hwip](https://github.com/minigu5/hwip) (옛 이름 `latex-to-hwp` — 자동 리다이렉트) |
 | **크롬 확장 프로그램** | `/chrome-extension` | [minigu5/hwip-extension](https://github.com/minigu5/hwip-extension) (공개, 2026-11-13 이력 정리 후 새로 만듦. 옛 비공개 저장소는 `hwip-extension-archive`) |
-| **Windows 보조 프로그램** | (로컬 없음) | [minigu5/hwip-companion](https://github.com/minigu5/hwip-companion) (공개, `v*` 태그 → Actions가 Release에 EXE 첨부) |
+| **Windows 보조 프로그램** | `/chrome-extension/companion/windows` | 확장 저장소 안. `companion-v*` 태그 → Actions가 Release(Latest)에 EXE 첨부, 다운로드는 `releases/latest/download/HwipCompanion.exe`. 옛 `minigu5/hwip-companion`은 보관됨 |
 
 1. **`/chrome-extension`은 메인 저장소(`hwip`)에 절대 커밋·푸시하지 말 것.** `.gitignore`의 `/chrome-extension/` 규칙은 의도적이다. 로컬 파일은 보존하되, 변경은 별도 저장소(`hwip-extension`)로만 푸시한다. 그 폴더엔 독립 `.git`이 없으므로 임시 위치에 `gh repo clone minigu5/hwip-extension` → `rsync -a --exclude='.git' --exclude='.DS_Store' chrome-extension/ <clone>/` → clone에서 commit·push.
 2. **로직 동기화**: `src/converter.js`를 수정하면 반드시 `chrome-extension/lib/converter.js`로 복사해 동기화. 동기화 후 각 저장소에 별도 커밋·푸시.
