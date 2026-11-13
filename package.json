@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "AI가 만든 Markdown LaTeX 수식을 한컴오피스 한글(HWP) 수식 편집기 문법으로 변환합니다.",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test \"test/**/*.test.js\""
   },
   "main": "src/converter.js",
   "license": "SEE LICENSE IN LICENSE",
