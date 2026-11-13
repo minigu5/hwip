@@ -19,9 +19,10 @@
 | 구성 요소 | 로컬 경로 | GitHub 저장소 |
 |----------|----------|---------------|
 | **메인 프로젝트** | `/` | [minigu5/hwip](https://github.com/minigu5/hwip) (옛 이름 `latex-to-hwp` — 자동 리다이렉트) |
-| **크롬 확장 프로그램** | `/chrome-extension` | [minigu5/latex-to-hwp-extension](https://github.com/minigu5/latex-to-hwp-extension) |
+| **크롬 확장 프로그램** | `/chrome-extension` | [minigu5/hwip-extension](https://github.com/minigu5/hwip-extension) (공개, 2026-11-13 이력 정리 후 새로 만듦. 옛 비공개 저장소는 `hwip-extension-archive`) |
+| **Windows 보조 프로그램** | (로컬 없음) | [minigu5/hwip-companion](https://github.com/minigu5/hwip-companion) (공개, `v*` 태그 → Actions가 Release에 EXE 첨부) |
 
-1. **`/chrome-extension`은 메인 저장소(`hwip`)에 절대 커밋·푸시하지 말 것.** `.gitignore`의 `/chrome-extension/` 규칙은 의도적이다. 로컬 파일은 보존하되, 변경은 별도 저장소(`latex-to-hwp-extension`)로만 푸시한다. 그 폴더엔 독립 `.git`이 없으므로 임시 위치에 `gh repo clone minigu5/latex-to-hwp-extension` → `rsync -a --exclude='.git' --exclude='.DS_Store' chrome-extension/ <clone>/` → clone에서 commit·push.
+1. **`/chrome-extension`은 메인 저장소(`hwip`)에 절대 커밋·푸시하지 말 것.** `.gitignore`의 `/chrome-extension/` 규칙은 의도적이다. 로컬 파일은 보존하되, 변경은 별도 저장소(`hwip-extension`)로만 푸시한다. 그 폴더엔 독립 `.git`이 없으므로 임시 위치에 `gh repo clone minigu5/hwip-extension` → `rsync -a --exclude='.git' --exclude='.DS_Store' chrome-extension/ <clone>/` → clone에서 commit·push.
 2. **로직 동기화**: `src/converter.js`를 수정하면 반드시 `chrome-extension/lib/converter.js`로 복사해 동기화. 동기화 후 각 저장소에 별도 커밋·푸시.
 3. **커밋 정책**: 한컴 공식 명세 PDF(`*.pdf`)는 저작권 보유(한글과컴퓨터)로 커밋 금지 — `.gitignore`로 이미 제외. 커밋·푸시는 사용자가 요청할 때만 수행한다.
 
