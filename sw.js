@@ -15,7 +15,7 @@
  * 로직을 고칠 때 CACHE_VERSION을 올리면 사용자 브라우저가 새 셸을 받는다.
  */
 
-var CACHE_VERSION = 'v15-2026-11-10-network-first';
+var CACHE_VERSION = 'v16-2026-11-25-strip-tag';
 // v14까지는 cache-first였고 캐시 이름이 'whip-app-shell-'로 시작했다. 접두어를 바꿔 두면
 // 옛 SW가 띄운 페이지(옛 app.js가 돌고 있을 수 있음)가 있을 때만 골라 새로고침할 수 있다.
 var CACHE_PREFIX = 'whip-shell-';

@@ -251,3 +251,19 @@ test('KaTeX 별칭·\\mathrm 글자 사이 공백', () => {
   assert.strictEqual(convert('\\operatorname*{lim}_{x}'), 'lim _{x}');
   assert.strictEqual(convert('\\mathrm{m\\,s}'), '"m s"');
 });
+
+// \tag{..}·\tag*{..} 수식 번호는 번호째 제거
+test('\\tag 수식 번호 제거', () => {
+  assert.strictEqual(convert('E=mc^2 \\tag{1}'), 'E `=` m c ^{2}');
+  assert.strictEqual(convert('\\tag{OMEGA-999} a=b'), 'a `=` b');
+  assert.strictEqual(convert('a=b \\tag*{(A_{1})} + c'), 'a `=` b `+` c');
+});
+
+// \displaystyle 류는 버리고, 단독 \lvert·\rvert·\big| 는 | 로 변환
+test('\\displaystyle 제거·세로줄 명령 변환', () => {
+  assert.strictEqual(convert('\\frac{\\displaystyle \\oint_{\\partial\\Omega} F}{\\displaystyle \\sqrt{x}}'),
+    '{oint _{partial Omega} F} over {sqrt {x}}');
+  assert.strictEqual(convert('\\lvert x\\rvert^2'), '| x | ^{2}');
+  assert.strictEqual(convert('\\big| x \\big|'), '| x |');
+  assert.strictEqual(convert('a \\mid b'), 'a | b');
+});

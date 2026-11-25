@@ -497,9 +497,21 @@
     if (name === 'left') return { text: 'LEFT' + leftRightDelim(tokens, pos), keyword: false };
     if (name === 'right') return { text: 'RIGHT' + leftRightDelim(tokens, pos), keyword: false };
     if (name === 'bigl' || name === 'bigr' || name === 'Bigl' || name === 'Bigr' ||
-        name === 'biggl' || name === 'biggr' || name === 'Biggl' || name === 'Biggr') {
+        name === 'biggl' || name === 'biggr' || name === 'Biggl' || name === 'Biggr' ||
+        name === 'big' || name === 'Big' || name === 'bigg' || name === 'Bigg' ||
+        name === 'bigm' || name === 'Bigm' || name === 'biggm' || name === 'Biggm') {
       return { text: readDelim(tokens, pos), keyword: false };
     }
+    // 단독 세로줄: 절댓값·노름 기호(뒤따르는 글자와 붙지 않게 keyword 처리)
+    if (name === 'vert' || name === 'lvert' || name === 'rvert' || name === 'mid') {
+      return { text: '|', keyword: false };
+    }
+    if (name === 'Vert' || name === 'lVert' || name === 'rVert') {
+      return { text: 'VERT', keyword: false };
+    }
+    // 한글 수식에는 수식 스타일 명령이 없다 — 글자째 노출되지 않게 버린다.
+    if (name === 'displaystyle' || name === 'textstyle' ||
+        name === 'scriptstyle' || name === 'scriptscriptstyle') return null;
 
     // 환경 (행렬, cases 등)
     if (name === 'begin') return parseEnvironment(tokens, pos);
@@ -635,9 +647,27 @@
     return s;
   }
 
+  // 수식 번호 \tag{..}, \tag*{..}는 한글 수식에 없으므로 번호째 제거한다.
+  function stripTags(s) {
+    var re = /\\tag\*?\s*\{/g, m;
+    while ((m = re.exec(s))) {
+      var depth = 1, j = re.lastIndex;
+      while (j < s.length && depth > 0) {
+        if (s[j] === '\\') j++;
+        else if (s[j] === '{') depth++;
+        else if (s[j] === '}') depth--;
+        j++;
+      }
+      if (depth > 0) break;
+      s = s.slice(0, m.index) + s.slice(j);
+      re.lastIndex = m.index;
+    }
+    return s;
+  }
+
   function convert(latex) {
     if (!latex || !latex.trim()) return '';
-    var body = stripDelimiters(latex);
+    var body = stripTags(stripDelimiters(latex));
     body = recoverLostStarSuperscript(body);
     var tokens = tokenize(body);
     var pos = { i: 0 };
