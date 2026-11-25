@@ -193,7 +193,7 @@ test('\\text{ s.t. } 앞뒤 공백 유지, := 는 한 기호', () => {
 test('\\\\[8pt] 행간 지정은 버리고 줄바꿈 # 만 남김', () => {
   assert.strictEqual(
     convert('\\[\\begin{aligned} a &= b \\\\[8pt] &= c \\end{aligned}\\]'),
-    'a & `=` b # & `=` c'
+    'eqalign{ a & `=` b # & `=` c }'
   );
   assert.strictEqual(convert('a \\\\ [a,b]'), 'a # [ a , b ]');
 });
@@ -266,4 +266,16 @@ test('\\displaystyle 제거·세로줄 명령 변환', () => {
   assert.strictEqual(convert('\\lvert x\\rvert^2'), '| x | ^{2}');
   assert.strictEqual(convert('\\big| x \\big|'), '| x |');
   assert.strictEqual(convert('a \\mid b'), 'a | b');
+});
+
+test('aligned는 eqalign{ }으로 감싸고 BOX 안에서도 유지', () => {
+  assert.strictEqual(convert('\\boxed{\\begin{aligned} Z &= 1 \\\\ &= 2\\end{aligned}}'),
+    '{BOX{eqalign{ Z & `=` 1 # & `=` 2 }}}');
+  assert.strictEqual(convert('\\begin{equation} a=b \\end{equation}'), 'a `=` b');
+});
+
+test('aligned 안의 세로줄(절댓값·RIGHT|)은 보존, 행렬 안은 제거', () => {
+  assert.strictEqual(convert('\\begin{aligned} |x|^2 &= \\left.f\\right|_{0} \\end{aligned}'),
+    'eqalign{ | x | ^{2} & `=` LEFT. f RIGHT | _{0} }');
+  assert.ok(!/\|/.test(convert('\\begin{vmatrix} a & b \\\\ c & d \\end{vmatrix}')));
 });

@@ -581,7 +581,9 @@
     if (e && e.type === 'cmd' && e.value === 'end') { pos.i++; readRawName(tokens, pos); }
 
     // HWP matrix doesn't support | or lines, so we clean them
-    content = content.replace(/\|/g, '').trim();
+    // (행렬·array 에만 적용 — aligned 안의 절댓값·LEFT|..RIGHT| 는 지우면 안 된다)
+    if (MATRIX_ENV.hasOwnProperty(env) || env === 'array') content = content.replace(/\|/g, '');
+    content = content.trim();
 
     if (MATRIX_ENV.hasOwnProperty(env) || env === 'array') {
       var mType = MATRIX_ENV[env] || 'matrix';
@@ -590,7 +592,12 @@
     if (env === 'cases') {
       return { text: 'cases{ ' + content + ' }', keyword: false };
     }
-    // align / aligned / equation / split 등은 내용만 (정렬 & 는 그대로 둠)
+    // 정렬 환경(& 정렬점·\\ 줄바꿈)은 eqalign{ } 으로 감싼다. 한글은 맨몸 `&`·`#`를
+    // 특히 BOX 안에서 처리하지 못해 첫 줄 뒤를 버리고 빈 네모를 만든다 (실측 2026-11-25).
+    if (/^(align|aligned|alignat|alignedat|split|eqnarray|flalign)\*?$/.test(env) && /[&#]/.test(content)) {
+      return { text: 'eqalign{ ' + content + ' }', keyword: false };
+    }
+    // equation / gather 등은 내용만
     return { text: content, keyword: false };
   }
 
